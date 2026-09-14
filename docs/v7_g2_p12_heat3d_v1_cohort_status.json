@@ -1,0 +1,50 @@
+{
+  "schema_version": "heat3d_v7_g2_p12_heat3d_v1_cohort_status_v1",
+  "observed_at": "2026-09-15T00:55:00+08:00",
+  "cohort": "heat3d_on_deepoheat_v1_formal_falseflag_20260915",
+  "status": "FAIL_CLOSED_AFTER_SEED0_POST_TRAIN_RELOAD",
+  "scientific_contract_unchanged": true,
+  "execution_contract": {
+    "xla_gpu_deterministic_ops": false,
+    "batch_size": 24,
+    "epochs": 200,
+    "train": 768,
+    "valid_iid": 128,
+    "test_iid": 0,
+    "fresh_start": true,
+    "checkpoint_selection": "minimum native-1024 valid_iid sample_first_relative_rmse_pct; earliest epoch tie"
+  },
+  "seeds": {
+    "0": {
+      "status": "FAILED",
+      "stage": "post_train_best_checkpoint_prediction_reload",
+      "epochs_completed": 200,
+      "best_epoch": 200,
+      "valid_selection_metric": 0.7842701897310662,
+      "formal_receipt": "not_written",
+      "evidence": "docs/v7_g2_p12_heat3d_v1_seed0_failure_receipt.json"
+    },
+    "1": {
+      "status": "NOT_STARTED",
+      "output_dir_created": false
+    },
+    "2": {
+      "status": "NOT_STARTED",
+      "output_dir_created": false
+    }
+  },
+  "launch_policy": {
+    "serial": true,
+    "seed1_or_seed2_started": false,
+    "existing_output_overwritten": false,
+    "resume_historical_epoch11_or_epoch103": false,
+    "tolerance_changed": false,
+    "accuracy_used_for_change": false
+  },
+  "guards": {
+    "p1i_test_iid_accessed": false,
+    "sealed_accessed": false,
+    "DeepOHeat_official_100_test_accessed": false,
+    "g1_modified": false
+  }
+}

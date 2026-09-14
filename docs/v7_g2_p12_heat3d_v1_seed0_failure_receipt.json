@@ -1,0 +1,74 @@
+{
+  "schema_version": "heat3d_v7_g2_p12_heat3d_v1_seed_failure_receipt_v1",
+  "observed_at": "2026-09-15T00:55:00+08:00",
+  "status": "FAILED_CHECKPOINT_RELOAD_NUMERICAL_DRIFT_FAIL_CLOSED",
+  "scope": "Heat3D-on-DeepOHeat-v1 fresh formal-candidate seed0; no test or sealed evaluation",
+  "execution": {
+    "host": "devbox WSL2 RTX 5070",
+    "tmux_session": "g2_heat3d_v1_formal_false_seed0_20260915",
+    "start_time": "2026-09-15T00:23:36+08:00",
+    "last_artifact_time": "2026-09-15T00:49:35+08:00",
+    "process_state": "EXITED_AFTER_POST_TRAIN_RELOAD_EXCEPTION",
+    "execution_path": "legacy",
+    "xla_flags": "--xla_gpu_deterministic_ops=false",
+    "allocator_flag": "XLA_PYTHON_CLIENT_PREALLOCATE=false",
+    "batch_size": 24,
+    "validation_batch_size": 32,
+    "epoch_budget": 200,
+    "epochs_completed": 200,
+    "optimizer_updates": 6400,
+    "test_iid_rows": 0
+  },
+  "failure": {
+    "stage": "best_checkpoint_prediction_reload",
+    "error": "RuntimeError: best checkpoint prediction reload drift",
+    "log_sha256": "abf59a2bac5d4e53f8b8a1cd2858ab108aadf6385b7e56a0ca853eb2af12d534",
+    "policy": "FAIL_CLOSED; no tolerance, model, loss, optimizer, batch, epoch, or checkpoint-rule change",
+    "formal_evidence_eligible": false,
+    "training_accuracy_interpretation": "not used for any configuration or gate decision"
+  },
+  "progress_at_exit": {
+    "progress_json_sha256": "8870625bd2b46bc31436eba5f724d5b50ca827f37d1b11cf3c5fd9ea5b8a826d",
+    "reported_status": "RUNNING (stale because the runner crashed before final status write)",
+    "reported_epoch": 200,
+    "reported_best_epoch": 200,
+    "reported_best_metric": 0.7842701897310662,
+    "reported_test_access": false,
+    "reported_latest_checkpoint_sha256": "ba1e323d38b1e501f1ff34737d5f0a56edfae661cacd31c39673d766fa5e9f9d"
+  },
+  "artifacts": {
+    "output_dir": "/home/xyh/myCodeGitOnly/heat3d-ic-g2/output/heat3d_v7_g2/heat3d_on_deepoheat_v1_formal_falseflag_20260915/seed_0",
+    "params_best_sample_first.pkl_sha256": "20d5a7a0225f5f2c72d8427bb538e6136cf90ac9f7fbb16ca817e31efd889603",
+    "params_final.pkl_sha256": "13e28ba5e037b1b6dc0cf742a2d4abb7493bb7d1b54cfacd4d871d32431428d6",
+    "latest_epoch.pkl_sha256": "ba1e323d38b1e501f1ff34737d5f0a56edfae661cacd31c39673d766fa5e9f9d",
+    "formal_training_receipt": "NOT_WRITTEN_DUE_TO_FAILURE",
+    "output_overwrite": false
+  },
+  "provenance": {
+    "repo_sha_at_launch": "08fec2ee227bb8b549a463698fcabd9aed434e3f",
+    "runner_sha256": "9f01a09979d216f6217f73f2fae47ee0f551de78bb082f4f1749a35ec704c4fb",
+    "launch_manifest_sha256": "cec7df520a85ad739ad1adb80421597bfa61d25ce3230d168172eda76dce9c83",
+    "source_sha256": "a39a4f51e853f9114d86feb88f74553914b2bfc68ab1c553a3a31df25893fff7",
+    "subset_manifest_sha256": "e719665176a22213487ee92c1aac993dd01b02a51555c7cd68bf81a13b861558",
+    "label_generation_receipt_sha256": "a4bb99638a977b2004a93a88b469166ff7da697e89181e64e04152c7f96fe4fd",
+    "normalization_file_sha256": "fe37d5e81228cafa625d1d7cff5adea7413e0717a350c3023a53c6f1f67fb38e",
+    "normalization_payload_sha256": "3a0273bb92b8c060df8a214b1e0e7dd0e4b5df6bece86b7dea15197ca56ed0db"
+  },
+  "cohort_status": {
+    "seed0": "FAILED_CHECKPOINT_RELOAD_NUMERICAL_DRIFT",
+    "seed1": "NOT_STARTED",
+    "seed2": "NOT_STARTED",
+    "serial_policy_respected": true,
+    "next_seed_blocked_until_policy_review": true,
+    "historical_epoch11_epoch103_outputs_touched": false
+  },
+  "sealed_guards": {
+    "p1i_test_iid_accessed": false,
+    "sealed_accessed": false,
+    "DeepOHeat_official_100_test_accessed": false,
+    "g1_modified": false,
+    "multi_htc_started": false,
+    "therm_fm_downloaded": false
+  },
+  "next_action": "Do not launch seed1/2 or reuse this output as formal evidence. Obtain an explicit versioned review of the reload-drift policy; any new cohort must use a unique output root and rerun all seeds under one unchanged scientific contract."
+}
