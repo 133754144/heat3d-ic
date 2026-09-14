@@ -281,6 +281,10 @@ def aggregate(args: argparse.Namespace) -> dict[str, Any]:
     if args.output.exists(): raise FileExistsError(f"refusing to overwrite {args.output}")
     if args.work_dir.exists() and any(args.work_dir.iterdir()): raise FileExistsError(f"refusing to overwrite {args.work_dir}")
     args.work_dir.mkdir(parents=True, exist_ok=True)
+    # Child traces contain optimizer/state metadata whose pickle provenance
+    # references the pinned upstream package.  Make that immutable checkout
+    # importable before unpickling; this does not alter model execution.
+    sys.path.insert(0, str(args.upstream_root.resolve()))
     common = ["--dataset-root", str(args.dataset_root), "--dataset-manifest", str(args.dataset_manifest), "--statistics", str(args.statistics), "--upstream-root", str(args.upstream_root)]
     env = os.environ.copy(); env["PYTHONUNBUFFERED"] = "1"
     specs = [("same_seed_0", 0, "continuous", args.work_dir / "same_0"), ("same_seed_0_repeat1", 0, "continuous", args.work_dir / "same_1"), ("same_seed_0_repeat2", 0, "continuous", args.work_dir / "same_2"), ("inter_seed_0", 0, "continuous", args.work_dir / "inter_0"), ("inter_seed_1", 1, "continuous", args.work_dir / "inter_1"), ("inter_seed_2", 2, "continuous", args.work_dir / "inter_2")]
