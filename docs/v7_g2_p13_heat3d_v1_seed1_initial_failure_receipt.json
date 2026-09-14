@@ -1,0 +1,21 @@
+{
+  "schema_version": "heat3d_v7_g2_p13_seed_failure_receipt_v1",
+  "model": "Heat3D-on-DeepOHeat-v1",
+  "seed": 1,
+  "attempt": "initial",
+  "status": "FAILED_EXECUTION_ENTRYPOINT",
+  "started_at": "2026-09-15T03:52:58+08:00",
+  "finished_at": "2026-09-15T03:53:00+08:00",
+  "command_entrypoint": "python3 -B scripts/run_v7_g2_p6_heat3d_v1_formal.py",
+  "error_class": "environment_entrypoint",
+  "error": "ModuleNotFoundError: No module named 'jax'",
+  "cause": "system python3 was used instead of the devbox reconstructed conda python entrypoint",
+  "output_dir": "/home/xyh/myCodeGitOnly/heat3d-ic-g2/output/heat3d_v7_g2/heat3d_on_deepoheat_v1_formal_e3_20260915/seed_1",
+  "output_created": false,
+  "log_path": "/tmp/g2_heat3d_v1_p13_false_seed1_20260915.log",
+  "log_sha256": "0674155a2c451ee7291c41a740f78af6d13e67f92396f1c69aa3c7a87fc430ce",
+  "scientific_config_changed": false,
+  "test_or_sealed_access": false,
+  "retry_policy": "same_contract_fresh_retry_in_new_output_directory",
+  "not_accuracy_evidence": true
+}
