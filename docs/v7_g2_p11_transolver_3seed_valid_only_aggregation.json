@@ -1,0 +1,112 @@
+{
+  "schema_version": "heat3d_v7_g2_p11_transolver_3seed_valid_only_aggregation_v1",
+  "status": "COMPLETE_VALID_ONLY_AGGREGATION",
+  "observed_at": "2026-09-14T21:18:25+08:00",
+  "scope": "Transolver P1i formal seeds 0/1/2; valid_iid only; test and sealed splits remain locked",
+  "contract": {
+    "train_samples": 768,
+    "valid_iid_samples": 128,
+    "batch_size": 1,
+    "epochs": 500,
+    "selection_metric": "sample_first_relative_rmse_pct",
+    "primary_metric": "point_global_relative_rmse_pct",
+    "checkpoint_rule": "minimum valid_iid selection metric; earliest epoch on exact tie",
+    "repo_sha": "3f306cc49f1fca10787a3e9aa4fac0935eebbf52",
+    "runner_sha256": "235fed17156b75b1015e3c8547a24b78077e8f435a2be27de320ecc3ab653a55",
+    "launch_manifest_sha256": "af0a35abb6db0f908d46a783d67423fbdec1ae5f8a496e65e92f254f61737a91",
+    "dataset_manifest_sha256": "f19987c659968c2ac14eade1f1ef7e206c8f7eeb94f58fde5897d6e765978514",
+    "normalization_sha256": "554ef44e093e60a2a45cff88e74d488a982fa69d1e227e9f7d43427cf3e0406a"
+  },
+  "per_seed": [
+    {
+      "seed": 0,
+      "status": "COMPLETE_FORMAL_TRAIN",
+      "best_epoch": 330,
+      "selection_metric_best": 16.265669691931386,
+      "primary_metric_at_best_epoch": 18.789814132957165,
+      "primary_metric_min_epoch": 330,
+      "primary_metric_min": 18.789814132957165,
+      "selection_metric_final": 18.93760628896677,
+      "primary_metric_final": 22.26364696517707,
+      "selection_best_to_final_delta": 2.6719365970353834,
+      "primary_best_to_final_delta": 3.4738328322199052,
+      "wall_seconds_observed": 4848.0,
+      "all_history_values_finite": true,
+      "best_reload_prediction_bitwise_equal": true,
+      "final_reload_prediction_bitwise_equal": true,
+      "test_or_sealed_access": false,
+      "run_receipt_sha256": "7b1aaa9aec53b24d93faa68c26a9cf37530bf23f1b8e07bf28c858b18a7dd4ae",
+      "best_checkpoint_sha256": "f70ad7b897b2e1831a0f06b9300907ceb904a4d646cd7d7a8b8f949bdd0256eb",
+      "final_checkpoint_sha256": "de9b8bef4f76d10af96ed54572ae2abb4cbaae750fca79b729a3a1ff3c037925"
+    },
+    {
+      "seed": 1,
+      "status": "COMPLETE_FORMAL_TRAIN",
+      "best_epoch": 192,
+      "selection_metric_best": 14.865819932284415,
+      "primary_metric_at_best_epoch": 17.535582622299806,
+      "primary_metric_min_epoch": 188,
+      "primary_metric_min": 17.30841601656092,
+      "selection_metric_final": 17.442428545269813,
+      "primary_metric_final": 19.566723480670117,
+      "selection_best_to_final_delta": 2.576608612985398,
+      "primary_best_to_final_delta": 2.0311408583703106,
+      "wall_seconds_observed": 4916.0,
+      "all_history_values_finite": true,
+      "best_reload_prediction_bitwise_equal": true,
+      "final_reload_prediction_bitwise_equal": true,
+      "test_or_sealed_access": false,
+      "run_receipt_sha256": "1f351d969f7e1c3dfd3be560715443e9b7b79b93bfd7c256cdcf65d640be9d8b",
+      "best_checkpoint_sha256": "75d8a61556935ff6609620b0670a14af8a4b5e6482a559b45092bdb75c142ccd",
+      "final_checkpoint_sha256": "377dee7f77e64a12c40481dfa49f57766db2d3d4691db1b833ab5cfd95dcd091"
+    },
+    {
+      "seed": 2,
+      "status": "COMPLETE_FORMAL_TRAIN",
+      "best_epoch": 204,
+      "selection_metric_best": 16.87697496773444,
+      "primary_metric_at_best_epoch": 19.344089867795606,
+      "primary_metric_min_epoch": 190,
+      "primary_metric_min": 18.995936253206853,
+      "selection_metric_final": 20.811632339905913,
+      "primary_metric_final": 24.03415661245785,
+      "selection_best_to_final_delta": 3.934657372171472,
+      "primary_best_to_final_delta": 4.690066744662243,
+      "wall_seconds_observed": 4889.0,
+      "all_history_values_finite": true,
+      "best_reload_prediction_bitwise_equal": true,
+      "final_reload_prediction_bitwise_equal": true,
+      "test_or_sealed_access": false,
+      "run_receipt_sha256": "159e5b5aa3844701e94b07e450d31bea7302ba47f832aa16a2fff4101e1570f1",
+      "best_checkpoint_sha256": "6110ecc97bcdc1eb597bfe0c318d22ea048a9ce9da868daf23d43347d8ed89cb",
+      "final_checkpoint_sha256": "2f908e3f71f19fbd67dd4128d1c0c7e5a65c8865cfc8adae29e697df1da16e0d"
+    }
+  ],
+  "aggregate_sample_mean_sd": {
+    "selection_metric_best_pct": {"mean": 16.00282153065008, "sample_sd": 1.0310203737418193},
+    "primary_metric_at_selected_epoch_pct": {"mean": 18.556495541017526, "sample_sd": 0.9265542554331201},
+    "selection_metric_final_pct": {"mean": 19.063889058047497, "sample_sd": 1.6881481142875456},
+    "primary_metric_final_pct": {"mean": 21.954842352768345, "sample_sd": 2.2496688452375304},
+    "selection_best_to_final_delta_pct": {"mean": 3.0610675273974177, "sample_sd": 0.7580509671552604},
+    "primary_best_to_final_delta_pct": {"mean": 3.3983468117508195, "sample_sd": 1.3310692399958122},
+    "wall_seconds_observed": {"mean": 4883.666666666667, "sample_sd": 34.122328955294556},
+    "wall_hours_observed": {"mean": 1.3565740740740742, "sample_sd": 0.00947842470980407}
+  },
+  "anomaly_assessment": {
+    "status": "NO_NUMERICAL_ANOMALY",
+    "criteria": [
+      "all three runs reached 500 epochs and 384000 optimizer updates",
+      "all recorded train and valid values are finite",
+      "best and final checkpoint reload probes are bitwise equal",
+      "runtime spread is 68 seconds and no seed exited abnormally"
+    ],
+    "seed_comment": "Seed 1 has the lowest valid selection metric; this is reported descriptively and was not used to alter protocol."
+  },
+  "test_isolation": {
+    "p1i_test_iid_accessed": false,
+    "sealed_accessed": false,
+    "DeepOHeat_official_test_accessed": false,
+    "evaluation_unlock": "not authorized"
+  },
+  "interpretation": "Valid-only three-seed closeout for Transolver. These metrics are not test-set evidence and do not complete the Heat3D-vs-GINO common-task comparison while GINO remains fail-closed."
+}

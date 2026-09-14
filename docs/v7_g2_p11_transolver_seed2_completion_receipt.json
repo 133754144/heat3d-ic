@@ -1,0 +1,54 @@
+{
+  "schema_version": "heat3d_v7_g2_p11_transolver_completion_receipt_v1",
+  "status": "COMPLETE_FORMAL_TRAIN",
+  "model": "Transolver",
+  "seed": 2,
+  "started_at_local": "2026-09-14T19:56:56+08:00",
+  "completed_at_local": "2026-09-14T21:18:25+08:00",
+  "wall_seconds_observed": 4889.0,
+  "epochs": 500,
+  "optimizer_updates": 384000,
+  "repo_sha": "3f306cc49f1fca10787a3e9aa4fac0935eebbf52",
+  "runner_sha256": "235fed17156b75b1015e3c8547a24b78077e8f435a2be27de320ecc3ab653a55",
+  "launch_manifest_sha256": "af0a35abb6db0f908d46a783d67423fbdec1ae5f8a496e65e92f254f61737a91",
+  "dataset_manifest_sha256": "f19987c659968c2ac14eade1f1ef7e206c8f7eeb94f58fde5897d6e765978514",
+  "normalization_sha256": "554ef44e093e60a2a45cff88e74d488a982fa69d1e227e9f7d43427cf3e0406a",
+  "metrics_valid_iid_only": {
+    "selection_metric": "sample_first_relative_rmse_pct",
+    "selection_best_epoch": 204,
+    "selection_best_value": 16.87697496773444,
+    "selection_final_value": 20.811632339905913,
+    "primary_metric": "point_global_relative_rmse_pct",
+    "primary_at_selection_epoch": 19.344089867795606,
+    "primary_min_epoch": 190,
+    "primary_min_value": 18.995936253206853,
+    "primary_final_value": 24.03415661245785,
+    "all_history_values_finite": true
+  },
+  "resource": {
+    "gpu_name": "NVIDIA GeForce RTX 5070",
+    "peak_allocated_bytes": 109385216,
+    "peak_reserved_bytes": 119537664,
+    "first_train_step_wall_seconds": 0.5055265370174311,
+    "first_valid_forward_wall_seconds": 0.0034034179989248514
+  },
+  "artifacts": {
+    "output_dir": "/home/xyh/myCodeGitOnly/heat3d-ic-g2/output/heat3d_v7_g2/transolver/seed_2",
+    "best_valid_iid_sha256": "6110ecc97bcdc1eb597bfe0c318d22ea048a9ce9da868daf23d43347d8ed89cb",
+    "final_epoch_sha256": "2f908e3f71f19fbd67dd4128d1c0c7e5a65c8865cfc8adae29e697df1da16e0d",
+    "latest_epoch_sha256": "1defde362926144c8a2949d122795cb482b8070c2e7f6da4536d427eb5379d69",
+    "run_receipt_sha256": "159e5b5aa3844701e94b07e450d31bea7302ba47f832aa16a2fff4101e1570f1"
+  },
+  "checkpoint_reload": {
+    "best_prediction_bitwise_equal": true,
+    "final_prediction_bitwise_equal": true,
+    "exact_resume_in_this_run": false,
+    "prior_model_level_resume_gate": "PASS"
+  },
+  "test_isolation": {
+    "test_or_sealed_access": false,
+    "p1i_test_iid_accessed": false,
+    "DeepOHeat_official_test_accessed": false
+  },
+  "launch_receipt_sha256": "ebb22ddd9a82bace6398aee2e131ed5cc6f5281ea749451ad88c775223926ee9"
+}

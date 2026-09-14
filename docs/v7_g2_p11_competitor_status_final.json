@@ -1,0 +1,50 @@
+{
+  "schema_version": "heat3d_v7_g2_p11_competitor_status_final_v1",
+  "observed_at": "2026-09-14T21:18:25+08:00",
+  "scope": "G2 competitor control-plane status after serial Transolver closeout; no test/sealed access",
+  "DeepOHeat_v1": {
+    "track": "semiconductor_native",
+    "status": "COMPLETE_FORMAL_TRAIN_FINAL_CHECKPOINT_FROZEN",
+    "seed": 42,
+    "official_test": "SEALED"
+  },
+  "Transolver": {
+    "track": "P1i_common_task_independent_release",
+    "status": "COMPLETE_VALID_ONLY_3_SEEDS",
+    "seeds": {"0": "COMPLETE_FORMAL_TRAIN", "1": "COMPLETE_FORMAL_TRAIN", "2": "COMPLETE_FORMAL_TRAIN"},
+    "selection_rule": "valid_iid sample_first_relative_rmse_pct; earliest epoch tie",
+    "aggregation_receipt": "docs/v7_g2_p11_transolver_3seed_valid_only_aggregation.json",
+    "test_evaluation": "SEALED_NOT_UNLOCKED"
+  },
+  "GINO": {
+    "track": "P1i_common_task",
+    "status": "NUMERICAL_STABILITY_FAIL_CLOSED",
+    "formal_training": "NOT_STARTED",
+    "scientific_config": "frozen; r_in=0.15, r_out=0.033, latent_grid=32^3",
+    "fallback_formal_use": "forbidden"
+  },
+  "Heat3D_on_DeepOHeat_v1": {
+    "track": "supervised_cross_benchmark",
+    "status": "BLOCKED_PENDING_INTERRUPTED_RUN_ROOT_CAUSE_AND_PRODUCTION_RESUME_GATE",
+    "seed0": "historical qualification run stopped; no new formal rerun",
+    "seed1": "NOT_STARTED",
+    "seed2": "NOT_STARTED",
+    "historical_checkpoint_use": "not formal evidence"
+  },
+  "other": {
+    "multi_htc": "PROVENANCE_READY_FORMAL_NOT_STARTED",
+    "Therm_FM": "TRANSFER_TRACK_NO_LARGE_CHECKPOINT_DOWNLOADED",
+    "Geo_FNO": "EXCLUDED_FROM_FORMAL_SCOPE",
+    "DeepOHeat_v2": "DESIGN_LOOP_TRACK_ONLY"
+  },
+  "guards": {
+    "g1_modified": false,
+    "p1i_test_iid_accessed": false,
+    "sealed_accessed": false,
+    "DeepOHeat_official_100_test_accessed": false,
+    "multi_htc_started": false,
+    "therm_fm_downloaded": false,
+    "new_heat3d_formal_started": false
+  },
+  "next_step_recommendation": "Do not unlock any test. Close Heat3D fresh production exact-resume/efficiency qualification, then consider a serial Heat3D-on-v1 formal rerun; keep GINO fail-closed pending independent semantic approval."
+}
