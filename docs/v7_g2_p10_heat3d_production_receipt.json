@@ -1,0 +1,47 @@
+{
+  "schema_version": "heat3d_v7_g2_p10_heat3d_production_receipt_v1",
+  "status": "HEAT3D_NONDETERMINISTIC_EXECUTION_APPROVED",
+  "raw_aggregate": {
+    "path": "/private/tmp/g2_e4_heat3d_production_20260914.json",
+    "sha256": "214c687c574ae6849991074646cca7196f6e3212ad2b959ee440af79fbb2b105"
+  },
+  "scope": "devbox-only false-flag bounded rehearsal; continuous 3e plus 1e save/process-exit/2e resume",
+  "scientific_contract": {
+    "xla_gpu_deterministic_ops": false,
+    "train_samples": 768,
+    "valid_iid_samples": 128,
+    "batch_size": 24,
+    "optimizer_steps_per_epoch": 32,
+    "model_loss_optimizer_schedule_data_unchanged": true,
+    "formal_training_started": false,
+    "test_or_sealed_access": false
+  },
+  "continuous": {
+    "preparation_seconds": 374.5279788900516,
+    "epoch_seconds": [621.2290749679669, 4.377000312961172, 4.002493513049558],
+    "step_median_seconds": [18.1488168159849, 0.06979347849846818, 0.06997089099604636],
+    "valid_forward_median_seconds": [4.139404953020858, 0.4685666215082165, 0.38655361798009835],
+    "compile_count": 32,
+    "all_finite": true
+  },
+  "resume": {
+    "split_save_preparation_seconds": 368.204918464995,
+    "resume_preparation_seconds": 371.74085695302347,
+    "final_state_relative_l2": 0.00041785419852132606,
+    "final_state_rms_normalized": 0.00041785419852132514,
+    "resume_additional_drift_within_upstream_policy": true,
+    "checkpoint_load": "PASS"
+  },
+  "projection": {
+    "single_seed_200_epochs_hours": 0.24316668405339847,
+    "three_seed_200_epochs_hours": 0.7295000521601954,
+    "basis": "continuous steady/runtime-only epoch median; no accuracy selection"
+  },
+  "environment": {
+    "python": "3.14.3",
+    "jax": "0.9.1",
+    "jaxlib": "0.9.1",
+    "device": "WSL2 RTX 5070",
+    "xla_flags": "--xla_gpu_deterministic_ops=false"
+  }
+}

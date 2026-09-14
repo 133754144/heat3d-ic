@@ -1,0 +1,33 @@
+{
+  "schema_version": "heat3d_v7_g2_p10_gate_decision_prelaunch_v1",
+  "status": "TRANSOLVER_RELEASED_GINO_FAIL_CLOSED_HEAT3D_AMENDMENT_APPROVED",
+  "heat3d": "HEAT3D_NONDETERMINISTIC_EXECUTION_APPROVED; long Heat3D-on-v1 remains deferred",
+  "gino": "GINO_NUMERICAL_STABILITY_FAIL_CLOSED; no formal GINO",
+  "transolver": "TRANSOLVER_INDEPENDENT_PRODUCTION_GATE_PASS; eligible for serial formal launch",
+  "launch_order": {
+    "basis": "runtime projection only",
+    "first_model": "Transolver",
+    "single_seed_projected_hours": 1.4551089966698783,
+    "threshold": "<=24 h/seed",
+    "serial_only": true
+  },
+  "common_statistics": {
+    "primary_contrasts": ["Heat3D vs GINO", "Heat3D vs Transolver"],
+    "contextual_contrasts": ["Vanilla RIGNO vs GINO", "Vanilla RIGNO vs Transolver"],
+    "descriptive_only": ["GINO vs Transolver"],
+    "primary_metric": "point_global_relative_rmse_pct",
+    "checkpoint_selection": "valid_iid sample_first_relative_rmse_pct",
+    "seeds": [0, 1, 2],
+    "bootstrap_replicates": 10000,
+    "posthoc_changes": false
+  },
+  "hard_boundaries": {
+    "g1_modified": false,
+    "p1i_test_iid_accessed": false,
+    "sealed_accessed": false,
+    "deepoheat_official_test_accessed": false,
+    "multi_htc_started": false,
+    "therm_fm_downloaded": false
+  },
+  "formal_training_started_at_receipt_creation": false
+}

@@ -1,0 +1,43 @@
+{
+  "schema_version": "heat3d_v7_g2_p10_gino_geometry_receipt_v1",
+  "status": "PASS_GEOMETRY_NON_BOUNDARY_ZERO",
+  "raw_receipt": {
+    "path": "/private/tmp/g2_e4_gino_geometry_896_20260914.json",
+    "sha256": "cb08e61d752cdfd079b3554e3b72754e1c07f5ece37b0f44a5bf29b8e3df5064"
+  },
+  "scope": {
+    "train": 768,
+    "valid_iid": 128,
+    "processed": 896,
+    "target_truth_accuracy_opened": false,
+    "test_iid_opened": false,
+    "sealed_opened": false
+  },
+  "scientific_contract": {
+    "upstream": "neuraloperator/neuraloperator@00b7d86f8d74ff0af55da53eb585fe26df9c71f0",
+    "backend": "Open3D FixedRadiusSearch plus torch-scatter",
+    "fallback": "diagnostic oracle only",
+    "r_in": 0.15,
+    "r_out": 0.033,
+    "latent_grid": [32, 32, 32]
+  },
+  "totals": {
+    "zero_difference_samples": 92,
+    "differing_samples": 804,
+    "total_differing_edges": 2057,
+    "boundary_only_count": 2057,
+    "non_boundary_disagreement": 0,
+    "input_fallback_only": 789,
+    "input_open3d_only": 970,
+    "output_fallback_only": 104,
+    "output_open3d_only": 194,
+    "radius_margin_abs": {
+      "max": 4.693302715040593e-06,
+      "p50": 1.0246354620324638e-07,
+      "p90": 6.430870078399931e-07,
+      "p95": 1.1008202431897485e-06,
+      "p99": 2.823674872608815e-06
+    }
+  },
+  "decision": "geometry issue closed under upstream-authoritative numerical policy; no fallback bitwise gate"
+}

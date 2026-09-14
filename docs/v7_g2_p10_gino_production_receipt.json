@@ -1,0 +1,44 @@
+{
+  "schema_version": "heat3d_v7_g2_p10_gino_production_receipt_v1",
+  "status": "GINO_NUMERICAL_STABILITY_FAIL_CLOSED",
+  "raw_aggregate": {
+    "path": "/private/tmp/g2_e4_gino_production_retry3_20260914.json",
+    "sha256": "a7f9bf2e0e090a6c27297d9532a38d795af57d3cd860a53d4aaa2630288c0a35"
+  },
+  "authoritative_backend": "Open3D FixedRadiusSearch plus torch-scatter",
+  "scientific_contract": {
+    "r_in": 0.15,
+    "r_out": 0.033,
+    "latent_grid": [32, 32, 32],
+    "architecture_changed": false,
+    "information_budget_changed": false,
+    "formal_training_started": false,
+    "test_or_sealed_access": false
+  },
+  "same_seed_over_inter_seed_ratio": {
+    "loss": 0.0030436165764700512,
+    "prediction": 0.006924790956572676,
+    "parameters": 0.0011888842002980343,
+    "updates_rms": 0.020671455212458736,
+    "updates_absolute": 0.2183420594047082
+  },
+  "resume_over_same_seed_noise": {
+    "loss": 8.695810128045144,
+    "prediction": 10.140802620581514,
+    "parameters": 1.2783234052964902,
+    "updates_rms": 4.870307368100663,
+    "updates_absolute": 0.941205813057556
+  },
+  "decision": {
+    "all_finite": true,
+    "same_seed_noise_target_lt_0.1": true,
+    "resume_within_same_seed_noise": false,
+    "no_accuracy_used": true,
+    "classification": "GINO_NUMERICAL_STABILITY_FAIL_CLOSED"
+  },
+  "engineering_retries": [
+    "retry1 ragged probe finite-check failure; retained",
+    "retry2 upstream-module unpickle failure; retained",
+    "retry3 native Tensor resume checkpoint; numerical gate result above"
+  ]
+}

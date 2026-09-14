@@ -1,0 +1,41 @@
+{
+  "schema_version": "heat3d_v7_g2_p10_human_approval_closeout_receipt_v1",
+  "status": "HUMAN_APPROVAL_RECORDED_PRODUCTION_AMENDMENT_CONDITIONAL",
+  "approval_basis": "The user explicitly approved the upstream-authoritative reproducibility policy, independent GINO/Transolver qualification scope, and the Heat3D deterministic=false amendment, conditional on the bounded production gates.",
+  "approved_scope": {
+    "reproducibility_policy": "upstream_authoritative semantics; GPU numerical drift allowed within bounded stability envelope",
+    "gino_scope": "independent Open3D FixedRadiusSearch plus torch-scatter qualification; fallback diagnostic-only",
+    "transolver_scope": "independent CUDA/execution/resume qualification; not blocked by GINO",
+    "heat3d_execution_amendment": "xla_gpu_deterministic_ops=false for production candidate after finite 3e and process-resume PASS"
+  },
+  "conditions": {
+    "heat3d_production_gate": "SATISFIED_BY_G2_E4_RECEIPT",
+    "gino_production_gate": "NOT_SATISFIED; preserve FAIL_CLOSED",
+    "transolver_production_gate": "SATISFIED_BY_G2_E4_RUNTIME_PLUS_PRIOR_EXECUTION_RESUME",
+    "formal_config_changed_by_approval": false,
+    "old_fail_closed_receipts_preserved": true
+  },
+  "provenance_corrections": {
+    "gino_e3_geometry_current_fields": "inherited_from_E2_*; fresh E4 896 audit is the current receipt",
+    "heat3d_deterministic_300_127_seconds": "SUPERSEDED_NON_REPRESENTATIVE_OUTLIER; cause intentionally not inferred"
+  },
+  "execution_code_sha256": {
+    "heat3d_e4_production_runner": "bfdc331842faafc80557ac16feb8bee824b06fceb3172b8734508780f149b41c",
+    "gino_e4_production_runner": "943a2093d2fa4111649835dd053e3c0ef9e0e70a0779f05f6eee76ff278488ae",
+    "gino_896_geometry_runner": "f6b0e7d93a69df5170cb3c0cb22a14d536121f5bbbe614c5f866894f8ba642b4",
+    "external_runtime_runner": "96cc25ae3fb761d5e5879cfd7c995d0ddd6dd60e9a3af49b8dbe698f22fb42b4"
+  },
+  "documentation_sha256": {
+    "reproducibility_policy": "ac6a31e7e7303cdf68318dc6fad0281261cb580dce2bbea80528fe3645b8cffd",
+    "qualification_scope_amendment": "357488001cd1cd5373b0015840dc6452a65343f65617bf44a5d7c226de82e5c5",
+    "heat3d_execution_amendment_candidate": "a1d2b8e60ad052f9806d66ab6af188e09c82ac6aeac0091b0931874908df59a4"
+  },
+  "hard_boundaries": {
+    "g1_modified": false,
+    "p1i_test_iid_accessed": false,
+    "sealed_accessed": false,
+    "deepoheat_official_test_accessed": false,
+    "multi_htc_started": false,
+    "therm_fm_downloaded": false
+  }
+}

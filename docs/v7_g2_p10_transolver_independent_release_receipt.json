@@ -1,0 +1,27 @@
+{
+  "schema_version": "heat3d_v7_g2_p10_transolver_independent_release_receipt_v1",
+  "status": "TRANSOLVER_INDEPENDENT_PRODUCTION_GATE_PASS",
+  "scope": "independent qualification release; GINO status does not block this gate",
+  "evidence": {
+    "prior_cuda_execution_resume": "docs/v7_g2_e2_external_hot_path_current_receipt.json",
+    "current_runtime": "docs/v7_g2_p10_external_runtime_receipt.json",
+    "current_runtime_raw_sha256": "4384aacd6f3366a1d2534ca88b31028574b0c3395e68283d82343824c9aee705",
+    "runtime_status": "PASS_RUNTIME_FINITE",
+    "single_seed_500_epoch_projection_hours": 1.4551089966698783,
+    "three_seed_projection_hours": 4.365326990009635
+  },
+  "frozen_contract": {
+    "layers": 8,
+    "hidden_width": 128,
+    "heads": 8,
+    "slices": 64,
+    "optimizer": "AdamW lr=1e-3 wd=1e-5",
+    "gradient_clip": 0.1,
+    "scheduler": "CosineAnnealingLR T_max=500",
+    "loss": "decoded physical-space relative L2",
+    "cuda_required": true,
+    "data_cache": "verified_ram after startup byte-identity verification",
+    "test_or_sealed_access": false
+  },
+  "formal_release_rule": "<=24 h/seed permits serial seeds 0->1->2; runtime-only projection, no accuracy-based change"
+}
