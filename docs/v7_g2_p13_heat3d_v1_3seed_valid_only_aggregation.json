@@ -1,0 +1,109 @@
+{
+  "schema_version": "heat3d_v7_g2_p13_heat3d_v1_3seed_valid_only_aggregation_v1",
+  "status": "TRAINING_COMPLETE_EVALUATION_STILL_SEALED",
+  "scope": "fresh serial 200-epoch Heat3D-on-DeepOHeat-v1 cohort; valid-only native-1024 selection",
+  "execution": {
+    "remote_repo_sha": "043b0ba54b80ff790632c80cda6c21de46bb5111",
+    "runner": "scripts/run_v7_g2_p6_heat3d_v1_formal.py",
+    "execution_path": "legacy",
+    "xla_flags": "--xla_gpu_deterministic_ops=false",
+    "batch_size": 24,
+    "validation_batch_size": 32,
+    "epochs": 200,
+    "serial_gpu_only": true,
+    "fresh_start_no_resume": true
+  },
+  "dataset": {
+    "train": 768,
+    "valid": 128,
+    "test_or_sealed_access": false,
+    "subset_sha256": "e719665176a22213487ee92c1aac993dd01b02a51555c7cd68bf81a13b861558",
+    "label_receipt_sha256": "a4bb99638a977b2004a93a88b469166ff7da697e89181e64e04152c7f96fe4fd",
+    "normalization_sha256": "3a0273bb92b8c060df8a214b1e0e7dd0e4b5df6bece86b7dea15197ca56ed0db"
+  },
+  "metric_contract": {
+    "selection": "valid_sample_first_relative_rmse_pct_on_native_1024",
+    "selection_split": "valid_iid",
+    "tie_break": "earliest",
+    "U_outputs_used_for_selection": false,
+    "primary_common_metric": "NOT_EMITTED_BY_FROZEN_NATIVE_RUNNER; no post-hoc metric was computed",
+    "accuracy_claim": "valid-only diagnostic; no test claim"
+  },
+  "seeds": [
+    {
+      "seed": 0,
+      "attempt": "initial",
+      "status": "COMPLETE_FORMAL_TRAIN",
+      "output_path": "/home/xyh/myCodeGitOnly/heat3d-ic-g2/output/heat3d_v7_g2/heat3d_on_deepoheat_v1_formal_e3_20260915/seed_0",
+      "receipt_sha256": "fa8fd9fc9d95dcb6450b7a2a56d01c9770a2406c7e7329d5e0077369f9a51679",
+      "best_epoch": 200,
+      "selection_value_pct": 0.774624157732962,
+      "final_value_pct": 0.774624157732962,
+      "best_to_final_degradation_pct_points": 0.0,
+      "training_wall_seconds": 1242.1780981969787,
+      "preparation_wall_seconds": 346.5133632890065,
+      "peak_bytes_in_use": 3959750144,
+      "best_checkpoint_sha256": "6a24871fb58e50735892a0159fd5d5bface9466de8f8445d5ebe8437e32fa071",
+      "final_checkpoint_sha256": "59f6e62dec8a53a2bcf10843e1cd8bf19d7f95c393aefada2478b2add7bee17f",
+      "reload_integrity": "PASS",
+      "repeated_inference": {"max_abs": 0.006096154451370239, "relative_l2": 1.1259043410006165e-05, "gate": "diagnostic_only"}
+    },
+    {
+      "seed": 1,
+      "attempt": "retry1_after_entrypoint_failure",
+      "status": "COMPLETE_FORMAL_TRAIN",
+      "output_path": "/home/xyh/myCodeGitOnly/heat3d-ic-g2/output/heat3d_v7_g2/heat3d_on_deepoheat_v1_formal_e3_20260915/seed_1_retry1",
+      "receipt_sha256": "98935135ead51041ca1431a2b0c95e2b8e10b9d509b618b80324dfe38bffafb8",
+      "initial_failure_receipt": "docs/v7_g2_p13_heat3d_v1_seed1_initial_failure_receipt.json",
+      "best_epoch": 200,
+      "selection_value_pct": 0.7957860200447484,
+      "final_value_pct": 0.7957860200447484,
+      "best_to_final_degradation_pct_points": 0.0,
+      "training_wall_seconds": 1249.3649697040091,
+      "preparation_wall_seconds": 350.42975006997585,
+      "peak_bytes_in_use": 4056896256,
+      "best_checkpoint_sha256": "11219c17e3a5920cbe1b466d80ef692244acd3b622b4ad79091b97386536c2fe",
+      "final_checkpoint_sha256": "61c4cc68e6a45f18ea72358efe60e81b031d22fd99acad57c0fa581283509236",
+      "reload_integrity": "PASS",
+      "repeated_inference": {"max_abs": 0.005888700485229492, "relative_l2": 1.2445376715393962e-05, "gate": "diagnostic_only"}
+    },
+    {
+      "seed": 2,
+      "attempt": "initial",
+      "status": "COMPLETE_FORMAL_TRAIN",
+      "output_path": "/home/xyh/myCodeGitOnly/heat3d-ic-g2/output/heat3d_v7_g2/heat3d_on_deepoheat_v1_formal_e3_20260915/seed_2",
+      "receipt_sha256": "8734037c647e5b85938ceec6302b0f71d8a51f6c294640d36677af344dd4d4bd",
+      "best_epoch": 200,
+      "selection_value_pct": 0.7694945515952675,
+      "final_value_pct": 0.7694945515952675,
+      "best_to_final_degradation_pct_points": 0.0,
+      "training_wall_seconds": 1254.079156472988,
+      "preparation_wall_seconds": 352.10098891402595,
+      "peak_bytes_in_use": 3980733952,
+      "best_checkpoint_sha256": "780cc15cef16ed66bedd0d49e2646e3259d0f6bf21cb6fe3cbc9b8610643cc9f",
+      "final_checkpoint_sha256": "16e27ba0632df6e6c4346b956aa744dd35c24ede35dd4dbf51ba544150f9168a",
+      "reload_integrity": "PASS",
+      "repeated_inference": {"max_abs": 0.006839752197265625, "relative_l2": 1.275198345894756e-05, "gate": "diagnostic_only"}
+    }
+  ],
+  "aggregate": {
+    "selection_mean_pct": 0.779968243124326,
+    "selection_sample_sd_pct": 0.013936633912468072,
+    "final_mean_pct": 0.779968243124326,
+    "final_sample_sd_pct": 0.013936633912468072,
+    "training_wall_mean_seconds": 1248.540741457992,
+    "training_wall_sample_sd_seconds": 5.99318873166795,
+    "training_wall_mean_hours": 0.34681687262722,
+    "peak_memory_max_bytes": 4056896256,
+    "anomaly_assessment": "no numerical/checkpoint anomaly; seed1 initial entrypoint failure was retried under the same scientific contract in a new output directory",
+    "primary_metric_status": "not available from frozen native runner; no post-hoc selection or test evaluation"
+  },
+  "hard_boundaries": {
+    "p1i_test_iid_accessed": false,
+    "sealed_accessed": false,
+    "deepoheat_official100_accessed": false,
+    "g1_modified": false,
+    "multi_htc_started": false,
+    "therm_fm_downloaded": false
+  }
+}
