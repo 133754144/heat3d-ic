@@ -1,0 +1,46 @@
+{
+  "schema_version": "heat3d_v7_g2_p11_competitor_status_snapshot_v1",
+  "observed_at": "2026-09-14T18:37:07+08:00",
+  "scope": "G2 competitor control-plane status; no test/sealed access",
+  "DeepOHeat_v1": {
+    "track": "semiconductor_native",
+    "status": "COMPLETE_FORMAL_TRAIN_FINAL_CHECKPOINT_FROZEN",
+    "seed": 42,
+    "official_test": "SEALED"
+  },
+  "GINO": {
+    "track": "P1i_common_task",
+    "status": "NUMERICAL_STABILITY_FAIL_CLOSED",
+    "formal_training": "NOT_STARTED",
+    "scientific_config": "frozen; r_in=0.15, r_out=0.033, latent_grid=32^3"
+  },
+  "Heat3D_on_DeepOHeat_v1": {
+    "track": "supervised_cross_benchmark",
+    "status": "BLOCKED_PENDING_INTERRUPTED_RUN_ROOT_CAUSE_AND_EFFICIENCY_GATE",
+    "seed0": "STOPPED_FOR_ENGINEERING_EFFICIENCY_REQUALIFICATION_EPOCH11",
+    "seed1": "NOT_STARTED",
+    "seed2": "NOT_STARTED"
+  },
+  "Transolver": {
+    "track": "P1i_common_task_independent_release",
+    "seed0": "COMPLETE_FORMAL_TRAIN",
+    "seed1": "RUNNING_FORMAL",
+    "seed2": "QUEUED_SERIAL",
+    "scientific_config": "same frozen contract as seed0"
+  },
+  "other": {
+    "multi_htc": "PROVENANCE_READY_FORMAL_NOT_STARTED",
+    "Therm_FM": "TRANSFER_TRACK_NO_LARGE_CHECKPOINT_DOWNLOADED",
+    "Geo_FNO": "EXCLUDED_FROM_FORMAL_SCOPE",
+    "DeepOHeat_v2": "DESIGN_LOOP_TRACK_ONLY"
+  },
+  "guards": {
+    "g1_modified": false,
+    "p1i_test_iid_accessed": false,
+    "sealed_accessed": false,
+    "DeepOHeat_official_100_test_accessed": false,
+    "multi_htc_started": false,
+    "therm_fm_downloaded": false,
+    "new_long_heat3d_started": false
+  }
+}
