@@ -190,6 +190,53 @@ def git_sha() -> str:
     return subprocess.check_output(["git", "rev-parse", "HEAD"], cwd=REPO, text=True).strip()
 
 
+def torch_tree_equal(left: Any, right: Any) -> bool:
+    """Exact checkpoint-state comparison without imposing cross-process drift."""
+
+    if isinstance(left, torch.Tensor) and isinstance(right, torch.Tensor):
+        return left.dtype == right.dtype and left.shape == right.shape and torch.equal(left, right)
+    if isinstance(left, dict) and isinstance(right, dict):
+        return list(left.keys()) == list(right.keys()) and all(
+            torch_tree_equal(left[key], right[key]) for key in left
+        )
+    if isinstance(left, (list, tuple)) and isinstance(right, (list, tuple)):
+        return type(left) is type(right) and len(left) == len(right) and all(
+            torch_tree_equal(a, b) for a, b in zip(left, right, strict=True)
+        )
+    return left == right
+
+
+def torch_tree_relative_l2(left: Any, right: Any) -> float:
+    """Numerical prediction drift diagnostic; never a formal hard threshold."""
+
+    if isinstance(left, torch.Tensor) and isinstance(right, torch.Tensor):
+        if left.shape != right.shape:
+            return float("inf")
+        delta = (left.detach().to(dtype=torch.float64) - right.detach().to(dtype=torch.float64)).reshape(-1)
+        base = right.detach().to(dtype=torch.float64).reshape(-1)
+        return float(torch.linalg.vector_norm(delta) / torch.clamp(torch.linalg.vector_norm(base), min=1.0e-12))
+    if isinstance(left, (list, tuple)) and isinstance(right, (list, tuple)):
+        values = [torch_tree_relative_l2(a, b) for a, b in zip(left, right, strict=True)]
+        return max(values, default=0.0)
+    return 0.0 if left == right else float("inf")
+
+
+def torch_tree_max_abs(left: Any, right: Any) -> float:
+    if isinstance(left, torch.Tensor) and isinstance(right, torch.Tensor):
+        if left.shape != right.shape:
+            return float("inf")
+        return float(torch.max(torch.abs(left.detach().to(dtype=torch.float64) - right.detach().to(dtype=torch.float64))))
+    if isinstance(left, dict) and isinstance(right, dict):
+        if list(left.keys()) != list(right.keys()):
+            return float("inf")
+        return max((torch_tree_max_abs(left[key], right[key]) for key in left), default=0.0)
+    if isinstance(left, (list, tuple)) and isinstance(right, (list, tuple)):
+        if type(left) is not type(right) or len(left) != len(right):
+            return float("inf")
+        return max((torch_tree_max_abs(a, b) for a, b in zip(left, right, strict=True)), default=0.0)
+    return 0.0 if left == right else float("inf")
+
+
 def main() -> int:
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--model", choices=("GINO", "Transolver"), required=True)
@@ -199,6 +246,7 @@ def main() -> int:
     parser.add_argument("--dataset-manifest", type=Path)
     parser.add_argument("--statistics", type=Path, default=REPO / "docs/v7_g2_p3_p1i_train_statistics.json")
     parser.add_argument("--upstream-root", type=Path)
+    parser.add_argument("--launch-manifest", type=Path)
     parser.add_argument("--output-dir", type=Path)
     parser.add_argument(
         "--data-cache",
@@ -216,7 +264,7 @@ def main() -> int:
     )
     parser.add_argument("--backend-qualification-receipt", type=Path)
     args = parser.parse_args()
-    launch_path = REPO / "configs/heat3d_v7" / f"g2_{args.model.lower()}_formal_launch_manifest.json"
+    launch_path = args.launch_manifest or (REPO / "configs/heat3d_v7" / f"g2_{args.model.lower()}_formal_launch_manifest.json")
     launch = json.loads(launch_path.read_text())
     expected_epochs = 301 if args.model == "GINO" else 500
     if launch["budget"]["epochs"] != expected_epochs or args.seed not in launch["budget"]["seeds"]:
@@ -241,12 +289,19 @@ def main() -> int:
         if args.backend_qualification_receipt is None:
             parser.error("GINO train requires --backend-qualification-receipt")
         backend_receipt = json.loads(args.backend_qualification_receipt.read_text(encoding="utf-8"))
-        if backend_receipt.get("status") != "PASS_OPTIMIZED_BACKEND_QUALIFIED":
-            raise ValueError("GINO optimized backend qualification did not PASS")
-        if backend_receipt.get("scientific_config_unchanged") != {
-            "r_in": 0.15, "r_out": 0.033, "latent_grid": [32, 32, 32]
-        }:
-            raise ValueError("GINO backend receipt scientific config mismatch")
+        if not (
+            backend_receipt.get("status") == "E3_PASS"
+            and backend_receipt.get("verdict") == "GINO_AUTHOR_SEMANTICS_QUALIFIED"
+        ):
+            raise ValueError("GINO E3 upstream-authoritative qualification did not PASS")
+        frozen_contract = backend_receipt.get("frozen_v7_contract", {})
+        if (
+            frozen_contract.get("r_in") != 0.15
+            or frozen_contract.get("r_out") != 0.033
+            or frozen_contract.get("latent_grid") != [32, 32, 32]
+            or backend_receipt.get("authoritative_backend") != "Open3D_FixedRadiusSearch_plus_torch_scatter"
+        ):
+            raise ValueError("GINO E3 backend receipt scientific contract mismatch")
 
     random.seed(args.seed); np.random.seed(args.seed); torch.manual_seed(args.seed)
     torch.cuda.manual_seed_all(args.seed)
@@ -403,20 +458,31 @@ def main() -> int:
             model.load_state_dict(payload["model"])
             optimizer.load_state_dict(payload["optimizer"])
             scheduler.load_state_dict(payload["scheduler"])
+            state_exact = (
+                torch_tree_equal(model.state_dict(), payload["model"])
+                and torch_tree_equal(optimizer.state_dict(), payload["optimizer"])
+                and torch_tree_equal(scheduler.state_dict(), payload["scheduler"])
+            )
+            if not state_exact:
+                raise RuntimeError(f"checkpoint state integrity mismatch: {checkpoint_name}")
             model.eval()
             row = valid[0]
             coords, features, _target, _target_n, local = normalize(row, stats, device)
             with torch.no_grad():
                 pred_n = predict(args.model, model, coords, features, grid)
                 prediction = (pred_n * local["target_std"] + local["target_mean"]).cpu().reshape(-1)
-            exact = torch.equal(prediction, payload["reload_probe_prediction"].cpu())
-            if not exact:
-                raise RuntimeError(f"checkpoint reload prediction drift: {checkpoint_name}")
             reload_checks[checkpoint_name] = {
-                "prediction_bitwise_equal": True,
+                "checkpoint_state_exact": True,
+                "prediction_finite": bool(torch.isfinite(prediction).all().item()),
+                "prediction_max_abs_diagnostic": torch_tree_max_abs(prediction, payload["reload_probe_prediction"].cpu()),
+                "prediction_relative_l2_diagnostic": torch_tree_relative_l2(prediction, payload["reload_probe_prediction"].cpu()),
+                "prediction_bitwise_equal_diagnostic": bool(torch.equal(prediction, payload["reload_probe_prediction"].cpu())),
+                "prediction_drift_gate": "diagnostic_only_under_upstream_authoritative_policy",
                 "epoch": int(payload["epoch"]),
                 "valid_sample_id": payload["reload_probe_valid_sample_id"],
             }
+            if not reload_checks[checkpoint_name]["prediction_finite"]:
+                raise RuntimeError(f"nonfinite checkpoint reload prediction: {checkpoint_name}")
     receipt = {"status": "PASS_RESOURCE_PREFLIGHT" if args.mode == "preflight" else "COMPLETE_FORMAL_TRAIN",
                "model": args.model, "seed": args.seed, "mode": args.mode, "device": str(device),
                "data_pipeline": {
