@@ -1,0 +1,57 @@
+{
+  "schema_version": "heat3d_v7_g2_p11_interruption_root_cause_receipt_v1",
+  "status": "ROOT_CAUSE_CLOSED_HISTORICAL_RUN_NOT_FORMAL_RESUMABLE",
+  "scope": "Heat3D-on-DeepOHeat-v1 seed0 historical attempts; read-only audit",
+  "epoch11_attempt": {
+    "classification": "EFFICIENCY_QUALIFICATION_STOP",
+    "status": "STOPPED_FOR_ENGINEERING_EFFICIENCY_REQUALIFICATION",
+    "last_completed_epoch": 11,
+    "best_epoch": 10,
+    "best_metric": 3.094172426618463,
+    "stop_at_completed_epoch_boundary": true,
+    "runtime_or_oom_error": false,
+    "archive": "output/_engineering_archives/g2_e_seed0_epoch11_20260911",
+    "archive_receipt_sha256": "985962b082eee0e8e8225e48c8d57a5c3bb24f5e18aa334254aff2fd6ef16200",
+    "best_checkpoint_sha256": "a48926bf94e301b72ac3b5f092e370267a8cf7e65f7cb94944643cd30b1baec0",
+    "log_sha256": "52da78bb3404288de628dcc3f11731ffd03e5703082c9e217b9126d7a2507735"
+  },
+  "epoch103_attempt": {
+    "classification": "HOST_REBOOT_INTERRUPTION",
+    "last_completed_epoch": 103,
+    "best_epoch": 102,
+    "best_metric": 0.8708822379171116,
+    "host_reboot": "2026-09-11T09:29+08:00",
+    "exact_exit_reason": "not_recoverable_from_retained_journal_or_tmp_logs",
+    "oom_confirmed": false,
+    "cuda_xid_confirmed": false,
+    "archive": "output/heat3d_v7_g2/heat3d_on_deepoheat_v1/aborted_host_reboot_20260911"
+  },
+  "earlier_parallel_attempt": {
+    "classification": "RESOURCE_CONTENTION",
+    "seed2": "OOM_BEFORE_PROGRESS",
+    "seed0_seed1": "stopped_after_short_initialization_run_by_serialization_directive",
+    "mixed_with_serial_results": false
+  },
+  "provenance": {
+    "epoch11_repo_sha": "a59fde9c9a0edd2981b2a8be49f7e4036e533744",
+    "runner_sha256": "265337dc346d5e2e729c6361c005e64bb98cf2ff1f95b1ca2d859f5bbc1941d3",
+    "config_sha256": "ee95f0e94a667703660eb5aa7229f3c7ed50efd0b696b9778cea979639fd21a5",
+    "subset_sha256": "e719665176a22213487ee92c1aac993dd01b02a51555c7cd68bf81a13b861558",
+    "label_receipt_sha256": "a4bb99638a977b2004a93a88b469166ff7da697e89181e64e04152c7f96fe4fd",
+    "normalization_sha256": "3a0273bb92b8c060df8a214b1e0e7dd0e4b5df6bece86b7dea15197ca56ed0db"
+  },
+  "resume_decision": {
+    "epoch11_direct_formal_resume": false,
+    "epoch103_direct_formal_resume": false,
+    "reason": "archived artifacts lack complete optimizer/scheduler/RNG/batch-order state",
+    "bounded_e2_resume_gate": "PASS_MECHANISM_ONLY",
+    "future_formal_action": "fresh_initial_state_after_efficiency_and_production_resume_gates"
+  },
+  "hard_boundaries": {
+    "g1_modified": false,
+    "p1i_test_iid_accessed": false,
+    "sealed_accessed": false,
+    "DeepOHeat_official_100_test_accessed": false,
+    "new_heat3d_training_started": false
+  }
+}
