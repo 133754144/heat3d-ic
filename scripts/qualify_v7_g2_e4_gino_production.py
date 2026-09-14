@@ -244,7 +244,10 @@ def run_child(args: argparse.Namespace) -> dict[str, Any]:
     if args.phase == "split-save":
         checkpoint = args.output_dir / "mid_checkpoint.pt"
         if checkpoint.exists(): raise FileExistsError("refusing to overwrite mid checkpoint")
-        torch.save({"model": final["model"], "optimizer": final["optimizer"], "scheduler": final["scheduler"], "step": SPLIT_STEPS, "seed": args.seed, "runner_sha": runner_sha, "dataset_sha": DATASET_SHA, "statistics_sha": STATS_SHA, "upstream_commit": UPSTREAM_COMMIT, "test_or_sealed_access": False}, checkpoint)
+        # Keep the resume artifact in native torch state-dict form.  The
+        # NumPy snapshot in ``final`` is intentionally reserved for compact
+        # trace comparison and is not a valid ``load_state_dict`` input.
+        torch.save({"model": model.state_dict(), "optimizer": optimizer.state_dict(), "scheduler": scheduler.state_dict(), "step": SPLIT_STEPS, "seed": args.seed, "runner_sha": runner_sha, "dataset_sha": DATASET_SHA, "statistics_sha": STATS_SHA, "upstream_commit": UPSTREAM_COMMIT, "test_or_sealed_access": False}, checkpoint)
     final_state_path = args.output_dir / "final_state.pt"
     if args.phase != "split-save":
         if final_state_path.exists(): raise FileExistsError("refusing to overwrite final state")
