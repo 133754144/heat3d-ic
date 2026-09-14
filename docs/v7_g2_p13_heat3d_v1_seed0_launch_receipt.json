@@ -1,0 +1,54 @@
+{
+  "schema_version": "heat3d_v7_g2_p13_heat3d_v1_seed_launch_receipt_v1",
+  "status": "FORMAL_RUNNING_SEED0",
+  "started_at_devbox": "2026-09-15T03:25:05+08:00",
+  "execution_host": "devbox WSL2 RTX 5070",
+  "tmux_session": "g2_heat3d_v1_p13_false_seed0_20260915",
+  "model": "Heat3D-on-DeepOHeat-v1",
+  "seed": 0,
+  "epoch_budget": 200,
+  "execution_path": "legacy",
+  "xla_flags": "--xla_gpu_deterministic_ops=false",
+  "allocator_flag": "XLA_PYTHON_CLIENT_PREALLOCATE=false",
+  "batch_size": 24,
+  "validation_batch_size": 32,
+  "output_dir": "/home/xyh/myCodeGitOnly/heat3d-ic-g2/output/heat3d_v7_g2/heat3d_on_deepoheat_v1_formal_e3_20260915/seed_0",
+  "log_path": "/tmp/g2_heat3d_v1_p13_false_seed0_20260915.log",
+  "provenance": {
+    "repo_sha_at_launch": "043b0ba54b80ff790632c80cda6c21de46bb5111",
+    "runner_sha256": "11ac504d2f06790b647fc3ad625921eabf73c9e195a772ebfcd2ca167fbc6da0",
+    "launch_manifest_sha256": "0bde4919225eca5725841ece5dc36f8b5f50e3087278891538a97f5b69670c92",
+    "source_sha256": "a39a4f51e853f9114d86feb88f74553914b2bfc68ab1c553a3a31df25893fff7",
+    "subset_manifest_sha256": "e719665176a22213487ee92c1aac993dd01b02a51555c7cd68bf81a13b861558",
+    "label_generation_receipt_sha256": "a4bb99638a977b2004a93a88b469166ff7da697e89181e64e04152c7f96fe4fd",
+    "normalization_file_sha256": "fe37d5e81228cafa625d1d7cff5adea7413e0717a350c3023a53c6f1f67fb38e",
+    "normalization_payload_sha256": "3a0273bb92b8c060df8a214b1e0e7dd0e4b5df6bece86b7dea15197ca56ed0db"
+  },
+  "scientific_contract": {
+    "train": 768,
+    "valid_iid": 128,
+    "test_iid": 0,
+    "native_output": 1024,
+    "U_outputs_used_for_selection": false,
+    "checkpoint_selection": "minimum native-1024 valid_iid sample_first_relative_rmse_pct; earliest epoch tie",
+    "fresh_start": true,
+    "historical_epoch11_or_epoch103_resume": false,
+    "prediction_reload_drift": "diagnostic_only; state tree exact integrity is the gate",
+    "test_or_sealed_access": false
+  },
+  "prelaunch_guards": {
+    "new_output_root_absent": true,
+    "prior_p12_output_preserved": true,
+    "seed1_output_absent": true,
+    "seed2_output_absent": true,
+    "single_gpu_job_policy": true,
+    "contract_check": "PASS_CONTRACT_CHECK_NO_DATA_NO_TRAINING"
+  },
+  "monitor": {
+    "ssh": "ssh devbox",
+    "tmux": "tmux attach -t g2_heat3d_v1_p13_false_seed0_20260915",
+    "log": "tail -f /tmp/g2_heat3d_v1_p13_false_seed0_20260915.log",
+    "progress": "cat ~/myCodeGitOnly/heat3d-ic-g2/output/heat3d_v7_g2/heat3d_on_deepoheat_v1_formal_e3_20260915/seed_0/progress.json"
+  },
+  "test_unlock": "not authorized"
+}
