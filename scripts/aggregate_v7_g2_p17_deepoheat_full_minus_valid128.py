@@ -23,6 +23,14 @@ def summary(values: list[float]) -> dict[str, float | int]:
     return {"n": len(values), "mean": mean(values), "sample_sd": stdev(values) if len(values) > 1 else 0.0}
 
 
+def metric_from_row(row: dict[str, Any], *names: str) -> float | None:
+    for name in names:
+        if name in row:
+            value = row[name]
+            return None if value is None else float(value)
+    return None
+
+
 def main() -> int:
     ap = argparse.ArgumentParser()
     ap.add_argument("--receipt", action="append", required=True, help="SEED=PATH")
@@ -56,6 +64,14 @@ def main() -> int:
         "hard_boundaries": {"test_iid": False, "sealed": False, "official100": False},
     }
     best, final, wall, rss, device = [], [], [], [], []
+    secondary_names = (
+        ("point_global_relative_rmse_pct", "point_global_relative_rmse_pct"),
+        ("rmse_K", "rmse_K_mean"),
+        ("mae_K", "mae_K_mean"),
+        ("peak_temperature_error_K", "peak_error_K_rms"),
+    )
+    secondary_best: dict[str, list[float]] = {key: [] for key, _ in secondary_names}
+    secondary_final: dict[str, list[float]] = {key: [] for key, _ in secondary_names}
     for seed in (0, 1, 2):
         path, p = rows[seed]
         history = p.get("metrics", {}).get("validation_history", [])
@@ -66,6 +82,13 @@ def main() -> int:
         best_value = float(best_row["sample_first_relative_rmse_pct"])
         final_value = float(final_row["sample_first_relative_rmse_pct"])
         best.append(best_value); final.append(final_value)
+        for key, alias in secondary_names:
+            best_secondary = metric_from_row(best_row, alias, key)
+            final_secondary = metric_from_row(final_row, alias, key)
+            if best_secondary is not None:
+                secondary_best[key].append(best_secondary)
+            if final_secondary is not None:
+                secondary_final[key].append(final_secondary)
         runtime = p.get("runtime", {})
         wall_value = float(runtime.get("total_wall_seconds", 0.0)); wall.append(wall_value)
         rss_value = float(runtime.get("peak_rss_bytes", 0.0)); rss.append(rss_value)
@@ -89,6 +112,10 @@ def main() -> int:
         "best_to_final_degradation_pct_points": summary([final[i] - best[i] for i in range(3)]),
         "training_wall_seconds": summary(wall),
         "peak_rss_bytes_max": max(rss), "peak_device_bytes_max": max(device),
+    }
+    out["aggregate"]["secondary_metrics"] = {
+        "best": {key: summary(values) for key, values in secondary_best.items() if values},
+        "final": {key: summary(values) for key, values in secondary_final.items() if values},
     }
     args.output.parent.mkdir(parents=True, exist_ok=True)
     args.output.write_text(json.dumps(out, indent=2, sort_keys=True) + "\n", encoding="utf-8")
