@@ -43,6 +43,13 @@ def dense_summary(path: Path) -> dict[str, Any]:
     return result
 
 
+def metric_stats(rows: list[dict[str, Any]], representation: str, metric: str) -> dict[str, float | int]:
+    """Aggregate one metric across the three valid-only seed receipts."""
+
+    values = [float(row["representations"][representation][metric]) for row in rows]
+    return stats(values)
+
+
 def main() -> int:
     parser = argparse.ArgumentParser()
     parser.add_argument("--run-receipt", action="append", required=True, help="SEED=PATH")
@@ -123,6 +130,9 @@ def main() -> int:
         }
         payload_out["runs"][str(seed)]["best_common_scheduled_epoch"] = common_epoch
         payload_out["runs"][str(seed)]["best_common_scheduled_metric"] = common_value
+    # Keep a complete valid-only summary for every frozen representation.  The
+    # primary selection remains native; these summaries are descriptive and do
+    # not feed back into training or checkpoint selection.
     payload_out["aggregate"] = {
         "native_best_metric": stats(native_best_values),
         "final_native_metric": stats(final_values),
@@ -134,6 +144,23 @@ def main() -> int:
             float(payload_out["runs"][str(seed)]["training_wall_seconds"]) for seed in (0, 1, 2)
         ]),
     }
+    dense_metric_names = (
+        "sample_first_relative_rmse_pct",
+        "point_global_relative_rmse_pct",
+        "rmse_K",
+        "mae_K",
+        "peak_rmse_K",
+    )
+    for epoch in (200, 400, 600):
+        epoch_rows = [payload_out["dense_receipts"][str(seed)][str(epoch)] for seed in (0, 1, 2)]
+        payload_out["aggregate"].setdefault("dense_by_epoch", {})[str(epoch)] = {
+            representation: {
+                metric: metric_stats(epoch_rows, representation, metric)
+                for metric in dense_metric_names
+                if metric in epoch_rows[0]["representations"][representation]
+            }
+            for representation in ("native_1024", "idw_dense_571256", "u_v2_dense_571256")
+        }
     payload_out["hard_boundaries"] = {
         "p1i_test_iid_accessed": False, "sealed_accessed": False,
         "deepoheat_official100_accessed": False,
