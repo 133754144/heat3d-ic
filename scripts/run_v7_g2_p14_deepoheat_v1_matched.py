@@ -48,6 +48,7 @@ BATCH_FUNCTIONS = 50
 ITERATIONS = 100_000
 VALIDATION_INTERVAL = 10_000
 VALID_BATCH_FUNCTIONS = 4
+FINITE_TREE_CHECK_INTERVAL = 100
 FORBIDDEN_TEST_FILES = {"fs_test_volume.npy", "u_test_volume.npy"}
 
 
@@ -389,8 +390,15 @@ def main() -> int:
         step_seconds = time.perf_counter() - step_started
         if first_step_seconds is None:
             first_step_seconds = step_seconds
-        if not np.isfinite(float(loss)) or not finite_tree(gradients) or not finite_tree(model):
-            raise FloatingPointError(f"nonfinite loss/gradient/model at iteration {iteration}")
+        # The scalar loss is checked every update.  Walking every parameter and
+        # gradient leaf through ``np.asarray`` each update would force a full
+        # device-to-host copy and dominate the runtime; the science-neutral
+        # diagnostic therefore checks the complete trees at a fixed cadence.
+        if not np.isfinite(float(loss)):
+            raise FloatingPointError(f"nonfinite loss at iteration {iteration}")
+        if iteration % FINITE_TREE_CHECK_INTERVAL == 0 or iteration == 1:
+            if not finite_tree(gradients) or not finite_tree(model):
+                raise FloatingPointError(f"nonfinite gradient/model at iteration {iteration}")
         last_loss = float(loss)
         if iteration % 100 == 0 or iteration == 1:
             print(f"iteration={iteration}/{iterations} physics_loss={last_loss:.9g}", flush=True)
@@ -451,6 +459,7 @@ def main() -> int:
             "gpu_only": True,
             "serial_gpu_task": True,
             "official_test_access": False,
+            "finite_tree_check_interval": FINITE_TREE_CHECK_INTERVAL,
         },
         "data": {
             "fs_train_file": str(args.fs_train), "fs_train_sha256": FS_TRAIN_SHA256,
