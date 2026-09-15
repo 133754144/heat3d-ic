@@ -1,0 +1,77 @@
+{
+  "schema_version": "heat3d_v7_g2_p15_heat3d_v1_e600_frozen_protocol_v1",
+  "status": "FROZEN_BEFORE_TRAINING",
+  "scope": "fresh Heat3D-on-DeepOHeat-v1 e600 convergence study; valid_iid only",
+  "freeze_parent_repo_commit_sha": "f4e7d4e",
+  "comparison_reference": {
+    "g1_formal_code_sha": "191a7a06a681556f575a1c04e2b61cb13363efe1",
+    "g1_closed_science_tag": "v7-g1-science-sealed-20260903",
+    "p14_1_u_v2_aggregate": "docs/v7_g2_p14_1_u_v2_aggregate.json",
+    "p14_1_u_v2_aggregate_sha256": "49ee09d1b52ac30dc6634a5a546c50b81c3afdd01dce1549acb63cb2dfa08095"
+  },
+  "data": {
+    "source": "fs_train_volume.npy",
+    "source_sha256": "a39a4f51e853f9114d86feb88f74553914b2bfc68ab1c553a3a31df25893fff7",
+    "subset_manifest": "configs/heat3d_v7/g2_deepoheat_v1_volumetric_subset_manifest.json",
+    "subset_manifest_sha256": "e719665176a22213487ee92c1aac993dd01b02a51555c7cd68bf81a13b861558",
+    "labels_root": "data/g2/deepoheat_v1_volumetric_labels",
+    "label_receipt_sha256": "a4bb99638a977b2004a93a88b469166ff7da697e89181e64e04152c7f96fe4fd",
+    "normalization": "docs/v7_g2_p5_deepoheat_v1_train_normalization.json",
+    "normalization_payload_sha256": "3a0273bb92b8c060df8a214b1e0e7dd0e4b5df6bece86b7dea15197ca56ed0db",
+    "roles": {"train": 768, "valid_iid": 128},
+    "test_iid": "sealed",
+    "sealed": "sealed",
+    "deepoheat_official100": "sealed"
+  },
+  "science": {
+    "architecture": "frozen Heat3D RIGNO from v7_g1_full_p1i.json",
+    "loss": "frozen full physics-aware supervised native loss",
+    "optimizer": "frozen Adam/Optax contract",
+    "batch_size": 24,
+    "validation_batch_size": 32,
+    "seeds": [0, 1, 2],
+    "epochs": 600,
+    "horizon_change": "200 -> 600 only; fresh scheduler initialized for 600 epochs",
+    "resume": false,
+    "test_or_sealed_access": false
+  },
+  "validation_and_checkpoints": {
+    "native_selection_metric": "native_1024_valid_iid_sample_first_relative_rmse_pct",
+    "native_best_checkpoint": "minimum metric, earliest epoch tie, evaluated every epoch",
+    "common_dense_domain": "U-v2 full DeepOHeat-v1 grid 101x101x56=571256 points",
+    "common_dense_metric": "sample_first_relative_rmse_pct in deltaT_K temperature space",
+    "dense_evaluation_schedule": "epochs 200, 400, 600 only; frozen before training because U-v2 is expensive",
+    "best_common_checkpoint": "minimum U-v2 full-field metric among scheduled checkpoints, earliest tie",
+    "required_checkpoints": ["best-native", "best-common-scheduled", "final-e600"],
+    "idw_dense": "post-run diagnostic on native/best checkpoints using frozen P14 evaluator",
+    "test_unlock": false
+  },
+  "runner": {
+    "script": "scripts/run_v7_g2_p6_heat3d_v1_formal.py",
+    "runner_file_sha256_at_freeze": "c9ffc77e1e4b1a309addce10df15321a378f52ae72aad5d7f2098fa7eba95997",
+    "config_file_sha256": "ee95f0e94a667703660eb5aa7229f3c7ed50efd0b696b9778cea979639fd21a5",
+    "required_flags": ["--epochs 600", "--dense-checkpoint-epochs 200,400,600", "--execution-path legacy"],
+    "deterministic_ops": false,
+    "fresh_output_root": "output/heat3d_v7_g2/heat3d_on_deepoheat_v1_e600_p15",
+    "no_overwrite": true
+  },
+  "convergence": {
+    "within_600": "interior scheduled/native best with late plateau or degradation",
+    "right_censored": "best native or scheduled common checkpoint at/near epoch 600 with continued improvement",
+    "stop_rule": "right-censored runs stop at 600; no extension to 1200/3000"
+  },
+  "required_receipt_fields": [
+    "repo_commit_sha", "runner_sha256", "config_sha256", "dataset_manifest_sha256",
+    "normalization_sha256", "seed", "best_native_epoch", "best_common_epoch",
+    "final_epoch", "native_metrics", "idw_dense_metrics", "u_v2_dense_metrics",
+    "training_wall_seconds", "peak_device_memory", "parameter_count",
+    "checkpoint_sha256", "checkpoint_reload_integrity", "test_or_sealed_access"
+  ],
+  "hard_boundaries": {
+    "p1i_test_iid_accessed": false,
+    "sealed_accessed": false,
+    "deepoheat_official100_accessed": false,
+    "formal_test_evaluation": false,
+    "checkpoint_overwrite": false
+  }
+}
