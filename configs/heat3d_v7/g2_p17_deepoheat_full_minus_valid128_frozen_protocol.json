@@ -38,6 +38,13 @@
     "checkpoint_selection": "minimum valid metric, earliest iteration tie",
     "retain": ["best-fullfield", "final-100k"]
   },
+  "runner": {
+    "script": "scripts/run_v7_g2_p14_deepoheat_v1_matched.py",
+    "runner_file_sha256_at_freeze": "359c067b071c3216bbdc03316ee0b64bb0ea78617a8234fff02d10ae2dea6bf8",
+    "pool_manifest_argument": "--pool-index-manifest",
+    "resume": false,
+    "no_overwrite": true
+  },
   "seeds": [0, 1, 2],
   "execution": {
     "serial_gpu_tasks": true,
