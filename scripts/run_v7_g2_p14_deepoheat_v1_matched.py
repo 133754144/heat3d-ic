@@ -114,7 +114,8 @@ def decode_indices(manifest: dict[str, Any], role: str) -> np.ndarray:
 
 
 def load_contract(
-    *, fs_train_path: Path, subset_path: Path, labels_root: Path
+    *, fs_train_path: Path, subset_path: Path, labels_root: Path,
+    pool_manifest_path: Path | None = None,
 ) -> tuple[np.memmap, dict[str, Any], dict[str, Any], np.ndarray, np.ndarray]:
     if fs_train_path.name != "fs_train_volume.npy":
         raise ValueError("only the official fs_train_volume.npy is accepted")
@@ -128,18 +129,39 @@ def load_contract(
     manifest = json.loads(subset_path.read_text(encoding="utf-8"))
     if manifest["selection"]["accuracy_or_temperature_observed"] is not False:
         raise ValueError("subset selection was not temperature/accuracy blind")
-    train_indices = decode_indices(manifest, "train")
+    frozen_train_indices = decode_indices(manifest, "train")
     valid_indices = decode_indices(manifest, "valid")
-    if len(train_indices) != 768 or len(valid_indices) != 128:
-        raise ValueError("matched contract requires exactly 768 train and 128 valid IDs")
-    if np.intersect1d(train_indices, valid_indices).size:
-        raise ValueError("train/valid source index overlap")
     fs_train = np.load(fs_train_path, mmap_mode="r", allow_pickle=False)
     if fs_train.shape != (100000, 101, 101) or fs_train.dtype != np.float64:
         raise ValueError(f"official source shape/dtype mismatch: {fs_train.shape}/{fs_train.dtype}")
+    if pool_manifest_path is None:
+        train_indices = frozen_train_indices
+        if len(train_indices) != 768 or len(valid_indices) != 128:
+            raise ValueError("matched contract requires exactly 768 train and 128 valid IDs")
+    else:
+        pool_payload = json.loads(pool_manifest_path.read_text(encoding="utf-8"))
+        if pool_payload.get("status") != "FROZEN_EXCLUSION_MANIFEST":
+            raise ValueError("P17 pool manifest is not frozen")
+        encoded = pool_payload.get("training_pool", {}).get("included_source_indices")
+        if not isinstance(encoded, list):
+            raise ValueError("P17 pool manifest lacks included source indices")
+        train_indices = np.asarray(encoded, dtype=np.int64)
+        expected = np.setdiff1d(np.arange(fs_train.shape[0], dtype=np.int64), valid_indices)
+        if not np.array_equal(train_indices, expected):
+            raise ValueError("P17 pool is not exactly full source pool minus valid128")
+        if len(train_indices) + len(valid_indices) != fs_train.shape[0]:
+            raise ValueError("P17 pool cardinality mismatch")
+    if np.intersect1d(train_indices, valid_indices).size:
+        raise ValueError("train/valid source index overlap")
     receipt = json.loads(receipt_path.read_text(encoding="utf-8"))
     rows = receipt.get("rows", [])
-    for role, indices in (("train", train_indices), ("valid", valid_indices)):
+    # The frozen label receipt contains all 768 matched-train rows plus the
+    # 128 valid rows.  For P17 the training pool is full-minus-valid128, so
+    # only the original 768 rows have label receipts to cross-check here; the
+    # complete source file SHA and exact exclusion audit cover the remaining
+    # pool members.
+    receipt_train_indices = frozen_train_indices if pool_manifest_path else train_indices
+    for role, indices in (("train", receipt_train_indices), ("valid", valid_indices)):
         role_rows = [row for row in rows if row.get("role") == role]
         if [int(row["source_index"]) for row in role_rows] != indices.tolist():
             raise ValueError(f"{role} row ordering/source IDs drifted")
@@ -261,11 +283,12 @@ def accelerator_receipt() -> dict[str, Any]:
     }
 
 
-def contract_payload(*, seed: int, source_indices: np.ndarray) -> dict[str, Any]:
+def contract_payload(*, seed: int, source_indices: np.ndarray,
+                     pool_manifest_path: Path | None = None) -> dict[str, Any]:
     return {
-        "schema_version": "heat3d_v7_g2_p14_deepoheat_v1_same_physical_case_budget_v1",
+        "schema_version": "heat3d_v7_g2_p17_deepoheat_v1_full_minus_valid128_v1" if pool_manifest_path else "heat3d_v7_g2_p14_deepoheat_v1_same_physical_case_budget_v1",
         "status": "FROZEN_BEFORE_TRAINING",
-        "classification": "SAME_PHYSICAL_CASE_BUDGET",
+        "classification": "NATIVE_RECIPE_HELDOUT_VALIDATION" if pool_manifest_path else "SAME_PHYSICAL_CASE_BUDGET",
         "not_same_information_budget": True,
         "upstream": {
             "repo": "xlyu0127/DeepOHeat-v1",
@@ -281,7 +304,7 @@ def contract_payload(*, seed: int, source_indices: np.ndarray) -> dict[str, Any]
             "iterations": ITERATIONS,
             "normalization": "none; native nondimensional u",
         },
-        "planned_variation": "only training physical-case source pool changes from official 100000 to frozen 768 IDs",
+        "planned_variation": "only training physical-case source pool excludes frozen valid128 IDs from official full pool" if pool_manifest_path else "only training physical-case source pool changes from official 100000 to frozen 768 IDs",
         "seed": seed,
         "source_indices": {
             "count": int(len(source_indices)),
@@ -295,6 +318,12 @@ def contract_payload(*, seed: int, source_indices: np.ndarray) -> dict[str, Any]
             "tie_break": "earliest iteration",
             "official_test_used": False,
         },
+        "pool_manifest": None if pool_manifest_path is None else {
+            "path": str(pool_manifest_path),
+            "sha256": file_sha256(pool_manifest_path),
+            "training_case_count": int(len(source_indices)),
+            "excluded_valid_case_count": 128,
+        },
     }
 
 
@@ -305,6 +334,8 @@ def main() -> int:
     parser.add_argument("--upstream-root", type=Path, required=True)
     parser.add_argument("--fs-train", type=Path, required=True)
     parser.add_argument("--subset-manifest", type=Path, required=True)
+    parser.add_argument("--pool-index-manifest", type=Path,
+                        help="P17 frozen full-pool-minus-valid128 manifest")
     parser.add_argument("--labels-root", type=Path, required=True)
     parser.add_argument("--output-dir", type=Path, required=True)
     args = parser.parse_args()
@@ -324,12 +355,14 @@ def main() -> int:
 
     install_test_file_guard()
     fs_train, manifest, label_receipt, train_indices, valid_indices = load_contract(
-        fs_train_path=args.fs_train, subset_path=args.subset_manifest, labels_root=args.labels_root
+        fs_train_path=args.fs_train, subset_path=args.subset_manifest, labels_root=args.labels_root,
+        pool_manifest_path=args.pool_index_manifest,
     )
     if args.output_dir.exists() and any(args.output_dir.iterdir()):
         raise FileExistsError("refusing to overwrite a non-empty matched output directory")
     args.output_dir.mkdir(parents=True, exist_ok=True)
-    contract = contract_payload(seed=args.seed, source_indices=train_indices)
+    contract = contract_payload(seed=args.seed, source_indices=train_indices,
+                                pool_manifest_path=args.pool_index_manifest)
     (args.output_dir / "matched_contract.json").write_text(
         json.dumps(contract, indent=2, sort_keys=True) + "\n", encoding="utf-8"
     )
@@ -420,7 +453,7 @@ def main() -> int:
                 best_checkpoint = {"model_file": "DeepOHeat_v1_best.eqx", "model_sha256": model_sha, "optimizer_file": "DeepOHeat_v1_best.opt.pkl", "optimizer_sha256": opt_sha}
                 best_validation = dict(metrics)
         if args.mode == "train" and (iteration % 1000 == 0 or iteration == ITERATIONS):
-            progress = {"status": "RUNNING", "seed": args.seed, "iteration": iteration, "iterations": ITERATIONS, "physics_loss": last_loss, "best_iteration": best_iteration, "best_metric": best_metric, "global_update_count": iteration}
+            progress = {"status": "RUNNING", "seed": args.seed, "iteration": iteration, "iterations": ITERATIONS, "physics_loss": last_loss, "best_iteration": best_iteration, "best_metric": best_metric, "global_update_count": iteration, "test_access": False}
             temporary = progress_path.with_suffix(".tmp")
             temporary.write_text(json.dumps(progress, indent=2, sort_keys=True) + "\n", encoding="utf-8")
             temporary.replace(progress_path)
@@ -465,10 +498,10 @@ def main() -> int:
             "fs_train_file": str(args.fs_train), "fs_train_sha256": FS_TRAIN_SHA256,
             "subset_manifest": str(args.subset_manifest), "subset_manifest_sha256": SUBSET_SHA256,
             "labels_root": str(args.labels_root), "label_receipt_sha256": LABEL_RECEIPT_SHA256,
-            "train_case_count": 768, "valid_case_count": 128,
+            "train_case_count": int(len(train_indices)), "valid_case_count": 128,
             "train_indices_sha256": contract["source_indices"]["little_endian_int64_sha256"],
         },
-        "model": {"parameter_count": parameter_count, "mesh_shape": list(MESH_SHAPE), "pde_collocation_evaluations": BATCH_FUNCTIONS * ITERATIONS, "pde_functions_per_iteration": BATCH_FUNCTIONS},
+        "model": {"parameter_count": parameter_count, "mesh_shape": list(MESH_SHAPE), "pde_collocation_evaluations": BATCH_FUNCTIONS * ITERATIONS, "sampled_function_instances_processed": BATCH_FUNCTIONS * ITERATIONS, "pde_functions_per_iteration": BATCH_FUNCTIONS},
         "metrics": {"selection_metric": "valid full-field sample_first_relative_rmse_pct", "selection_split": "valid", "best_iteration": best_iteration, "best_metric": best_metric, "best_validation": best_validation, "validation_history": validation_history, "final_physics_loss": last_loss},
         "runtime": {"total_wall_seconds": total_seconds, "first_step_wall_seconds": first_step_seconds, "average_step_seconds_excluding_first": (total_seconds - float(first_step_seconds or 0.0)) / max(ITERATIONS - 1, 1), "peak_rss_bytes": peak_rss_bytes(), "device_before": device_before, "device_after": device_after},
         "checkpoint": {"best": best_checkpoint, "final_model_file": final_model_path.name, "final_model_sha256": final_model_sha, "final_optimizer_file": final_opt_path.name, "final_optimizer_sha256": final_opt_sha, "reload": {"status": "PASS", "max_abs": reload_max_abs, "relative_l2": reload_rel}},
