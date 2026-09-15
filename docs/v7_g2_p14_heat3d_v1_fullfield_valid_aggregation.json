@@ -1,0 +1,86 @@
+{
+  "schema_version": "heat3d_v7_g2_p14_heat3d_v1_fullfield_valid_aggregation_v1",
+  "status": "PASS_VALID_ONLY_INFERENCE",
+  "classification": "SAME_PHYSICAL_CASE_BUDGET_COMPARISON_VIEW",
+  "domain": {
+    "shape": [101, 101, 56],
+    "point_count": 571256,
+    "temperature_space": "deltaT_K",
+    "conditioning_count": 1024,
+    "valid_count": 128,
+    "selection_checkpoint": "Heat3D native-1024 valid sample_first_relative_rmse_pct; no post-hoc full-field selection"
+  },
+  "contract": {
+    "heat3d_aggregation": "docs/v7_g2_p13_heat3d_v1_3seed_valid_only_aggregation.json",
+    "heat3d_aggregation_sha256": "7b249e62139e29f4641212a635bf96a15fe2caa47cea9057820a1be541c3f80f",
+    "subset_manifest_sha256": "e719665176a22213487ee92c1aac993dd01b02a51555c7cd68bf81a13b861558",
+    "label_receipt_sha256": "a4bb99638a977b2004a93a88b469166ff7da697e89181e64e04152c7f96fe4fd",
+    "normalization_payload_sha256": "3a0273bb92b8c060df8a214b1e0e7dd0e4b5df6bece86b7dea15197ca56ed0db",
+    "evaluator": "scripts/evaluate_v7_g2_p14_heat3d_v1_fullfield.py",
+    "evaluator_repo_sha": "59f6a351d0fd702e8c821a559dd4c1f2e29fbd66",
+    "training_parameter_count": 892776,
+    "training_wall_seconds_mean": 1248.540741457992,
+    "training_wall_seconds_sample_sd": 5.99318873166795,
+    "training_peak_bytes_in_use_max": 4056896256,
+    "test_or_sealed_access": false
+  },
+  "seeds": [
+    {
+      "seed": 0,
+      "remote_receipt_path": "/tmp/g2_p14_heat3d_fullfield_seed0.json",
+      "checkpoint_sha256": "6a24871fb58e50735892a0159fd5d5bface9466de8f8445d5ebe8437e32fa071",
+      "native_selection_pct": 0.774624157732962,
+      "receipt_sha256": "6564f79e422a07e96431678492c7aa73d177f971fcba0ad907f0caa717d25132",
+      "inference_wall_seconds": 24.010329045995604,
+      "sample_first_relative_rmse_pct": 1.4417581854570234,
+      "point_global_relative_rmse_pct": 1.4478958208173216,
+      "raw_cv_weighted_rmse_K": 0.37677478645509804,
+      "peak_rmse_K": 0.4239211375961549,
+      "interface_rmse_K": 0.12004900513669678
+    },
+    {
+      "seed": 1,
+      "remote_receipt_path": "/tmp/g2_p14_heat3d_fullfield_seed1.json",
+      "checkpoint_sha256": "11219c17e3a5920cbe1b466d80ef692244acd3b622b4ad79091b97386536c2fe",
+      "native_selection_pct": 0.7957860200447484,
+      "receipt_sha256": "d2370515a1d786e14b096ab40cd06c1630d8efbe62a8b3748be3c592911b1fde",
+      "inference_wall_seconds": 23.848482195986435,
+      "sample_first_relative_rmse_pct": 1.4123709094785906,
+      "point_global_relative_rmse_pct": 1.4207700874038407,
+      "raw_cv_weighted_rmse_K": 0.36948690329727213,
+      "peak_rmse_K": 0.44820549419972344,
+      "interface_rmse_K": 0.10129512951536898
+    },
+    {
+      "seed": 2,
+      "remote_receipt_path": "/tmp/g2_p14_heat3d_fullfield_seed2.json",
+      "checkpoint_sha256": "780cc15cef16ed66bedd0d49e2646e3259d0f6bf21cb6fe3cbc9b8610643cc9f",
+      "native_selection_pct": 0.7694945515952675,
+      "receipt_sha256": "d2b2e43ee0d1afe4cc28b16edb58d364c061840e569e7207a63369a936d3089a",
+      "inference_wall_seconds": 25.1595759660122,
+      "sample_first_relative_rmse_pct": 1.4402918889827778,
+      "point_global_relative_rmse_pct": 1.4471716538876986,
+      "raw_cv_weighted_rmse_K": 0.3765301716508707,
+      "peak_rmse_K": 0.37848723085578934,
+      "interface_rmse_K": 0.11782395395090484
+    }
+  ],
+  "aggregate": {
+    "sample_first_relative_rmse_pct_mean": 1.4314736613061305,
+    "sample_first_relative_rmse_pct_sample_sd": 0.016559705669969928,
+    "point_global_relative_rmse_pct_mean": 1.4386125207029536,
+    "point_global_relative_rmse_pct_sample_sd": 0.015456242232847568,
+    "raw_cv_weighted_rmse_K_mean": 0.3742639538010803,
+    "raw_cv_weighted_rmse_K_sample_sd": 0.004138854640786771,
+    "peak_rmse_K_mean": 0.4168712875505559,
+    "peak_rmse_K_sample_sd": 0.035389749224494525,
+    "inference_wall_seconds_mean": 24.339462402664747,
+    "inference_wall_seconds_sample_sd": 0.7148344516769704
+  },
+  "hard_boundaries": {
+    "p1i_test_iid_accessed": false,
+    "sealed_accessed": false,
+    "deepoheat_official100_accessed": false
+  },
+  "note": "This is an inference-only comparison view. Heat3D checkpoints were fixed by the preregistered native-1024 valid rule; full-field values were not used to select or modify checkpoints."
+}

@@ -1,0 +1,35 @@
+{
+  "schema_version": "heat3d_v7_g2_p14_deepoheat_v1_preclosure_receipt_v1",
+  "status": "CLOSED_VALID_ONLY_NO_TEST_UNLOCK",
+  "native_reference": {
+    "status": "NOT_DIRECTLY_COMPARABLE",
+    "audit": "docs/v7_g2_p14_deepoheat_v1_native_reference_audit.json",
+    "reason": "All 128 candidate valid rows are in the official native 100000-row training pool; official release has no held-out valid split."
+  },
+  "matched_physical_case_budget": {
+    "status": "COMPLETE_VALID_ONLY_SAME_PHYSICAL_CASE_BUDGET",
+    "aggregation": "docs/v7_g2_p14_deepoheat_v1_matched_aggregation.json",
+    "seeds": [0, 1, 2],
+    "runner_sha256": "fb2b06cc8c727a1374b4b62b804919ecfac73add",
+    "upstream_sha256": "3ef3d9c41666a56b5940b39a61166ccaa5aaedb2",
+    "all_checkpoint_reload": "PASS",
+    "all_finite": true,
+    "test_or_sealed_access": false
+  },
+  "same_domain_heat3d_view": {
+    "status": "PASS_VALID_ONLY_INFERENCE",
+    "aggregation": "docs/v7_g2_p14_heat3d_v1_fullfield_valid_aggregation.json",
+    "evaluator_repo_sha": "59f6a351d0fd702e8c821a559dd4c1f2e29fbd66",
+    "domain": "101x101x56 / 571256 points / deltaT_K",
+    "test_or_sealed_access": false
+  },
+  "hard_boundaries": {
+    "g1_modified": false,
+    "p1i_test_iid_accessed": false,
+    "sealed_accessed": false,
+    "deepoheat_official100_accessed": false,
+    "multi_htc_started": false,
+    "therm_fm_downloaded": false
+  },
+  "decision": "Stop this pre-closure workstream. Do not start Heat3D 600e, Therm-FM, multi-HTC, or any test evaluation without a separately approved protocol."
+}

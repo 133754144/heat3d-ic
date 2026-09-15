@@ -1,6 +1,6 @@
 {
   "schema_version": "heat3d_v7_g2_p13_baseline_taxonomy_status_v1",
-  "observed_at": "2026-09-15T17:57:07+08:00",
+  "observed_at": "2026-09-15T22:59:42+08:00",
   "scope": "valid-only G2 baseline closure; test/sealed evaluation remains locked",
   "taxonomy": {
     "common_task_supervised": [
@@ -10,7 +10,8 @@
     ],
     "semiconductor_native": [
       {"model": "DeepOHeat-v1", "status": "COMPLETE_UPSTREAM_SEED42_FROZEN", "formal_scope": "official dense physics-informed protocol"},
-      {"model": "Heat3D-on-DeepOHeat-v1", "status": "COMPLETE_VALID_ONLY_3_SEEDS", "formal_scope": "supervised method-native cross-benchmark; native-1024 valid-only selection"}
+      {"model": "Heat3D-on-DeepOHeat-v1", "status": "COMPLETE_VALID_ONLY_3_SEEDS", "formal_scope": "supervised method-native cross-benchmark; native-1024 valid-only selection; 571256-point valid-only evaluator"}
+    ,{"model": "DeepOHeat-v1 matched 768/128", "status": "COMPLETE_VALID_ONLY_SAME_PHYSICAL_CASE_BUDGET", "formal_scope": "upstream-faithful physics-informed matched cohort; not same information budget"}
     ],
     "pretrained_foundation": [
       {"model": "Therm-FM", "status": "NEEDS_AMENDMENT_NO_LARGE_ARTIFACT", "formal_scope": "pretrained transfer only"}
@@ -25,6 +26,7 @@
     "GINO": "COMPLETE_VALID_ONLY_3_SEEDS",
     "Transolver": "INDEPENDENT_VALID_ONLY_COMPLETE",
     "Heat3D_on_DeepOHeat_v1": "P13_COHORT_COMPLETE_VALID_ONLY_TEST_SEALED",
+    "DeepOHeat_v1_matched_768_128": "P14_COMPLETE_VALID_ONLY_SAME_PHYSICAL_CASE_BUDGET",
     "Therm_FM": "NEEDS_AMENDMENT",
     "test_unlock": "NOT_AUTHORIZED"
   },
@@ -50,6 +52,11 @@
     "gino_seed2_completion": "docs/v7_g2_p13_gino_seed2_completion_receipt.json",
     "gino_3seed_aggregation": "docs/v7_g2_p13_gino_3seed_valid_only_aggregation.json",
     "transolver": "docs/v7_g2_p11_transolver_3seed_valid_only_aggregation.json",
-    "thermfm": "docs/v7_g2_p13_thermfm_compatibility_receipt.json"
+    "thermfm": "docs/v7_g2_p13_thermfm_compatibility_receipt.json",
+    "deepoheat_v1_native_audit": "docs/v7_g2_p14_deepoheat_v1_native_reference_audit.json",
+    "deepoheat_v1_matched_aggregation": "docs/v7_g2_p14_deepoheat_v1_matched_aggregation.json",
+    "heat3d_v1_fullfield_valid_aggregation": "docs/v7_g2_p14_heat3d_v1_fullfield_valid_aggregation.json",
+    "deepoheat_v1_preclosure_final": "docs/v7_g2_p14_deepoheat_v1_preclosure_final.md",
+    "deepoheat_v1_preclosure_receipt": "docs/v7_g2_p14_deepoheat_v1_preclosure_receipt.json"
   }
 }
