@@ -1,0 +1,57 @@
+{
+  "schema_version": "heat3d_v7_g2_p13_gino_seed0_checkpoint_repair_receipt_v1",
+  "model": "GINO",
+  "seed": 0,
+  "status": "COMPLETE_FORMAL_TRAIN_REPAIRED",
+  "scope": "post-hoc integrity repair only; no training, truth, or forbidden split access",
+  "original_run": {
+    "repo_sha": "53d8da5ec6691b4e168bdc68a333b31b2ac4221d",
+    "runner_sha256": "7f93287b6381a977ca3de32b11977a275a9e63171b0587bf1c1d40d4b8ad52da",
+    "launch_manifest_sha256": "d5e14d4d258b82afe1fb3dc54839222f39861b90f830b3952a3501a91dfd20db",
+    "output_path": "/home/xyh/myCodeGitOnly/heat3d-ic-g2/output/heat3d_v7_g2/gino_p13_e3/seed_0",
+    "log_path": "/tmp/g2_gino_p13_e3_seed0_20260915.log",
+    "log_sha256": "7f31455c333ce3f932ce931007274676dc079a7387a4ee2ed1f162e752eee53b",
+    "original_exit_failure": "checkpoint state integrity mismatch: best_valid_iid.pt"
+  },
+  "diagnosis": {
+    "cause": "runner compared OrderedDict key order and treated PyTorch _metadata bookkeeping as model state",
+    "scientific_state_values": "exact after reload for model tensors, optimizer state, and scheduler state",
+    "finite_state": true,
+    "accuracy_used": false
+  },
+  "repair_verification": {
+    "verification_repo_sha": "f9b36ef6ab8f5e775de52f043c696a756aa4be0a",
+    "verification_runner_sha256": "cbc634ee1782ba15342b4aa67d2a0ea1e3eb0faf6b9caf508a55068c8b2e5977",
+    "canonical_comparator": "key-set/value comparison; _metadata ignored",
+    "best_valid_iid.pt": {
+      "epoch": 124,
+      "global_update_count": 95232,
+      "best_metric": 15.495079682086594,
+      "sha256": "9ae1485065a14c86cc28cfe1d279faddfbeda701b51ef418cf2b0461b83c55e8",
+      "model_state_equal": true,
+      "optimizer_state_equal": true,
+      "scheduler_state_equal": true
+    },
+    "latest_epoch.pt": {
+      "epoch": 301,
+      "global_update_count": 231168,
+      "best_epoch": 124,
+      "sha256": "b6203c38bae43b3df4ab56c40de81fb9ada16ca0057d0e0eb572638d8c641471",
+      "model_state_equal": true,
+      "optimizer_state_equal": true,
+      "scheduler_state_equal": true
+    },
+    "final_epoch.pt": {
+      "epoch": 301,
+      "global_update_count": 231168,
+      "sha256": "5398cf899e5d0a98e469bddc9ea8a9082a20a6208f97caf553a7a1ef1365a301",
+      "model_state_equal": true,
+      "optimizer_state_equal": true,
+      "scheduler_state_equal": true
+    }
+  },
+  "scientific_contract_unchanged": true,
+  "test_iid_or_sealed_access": false,
+  "deepoheat_official100_access": false,
+  "formal_training_released_for_followup_seeds": true
+}
