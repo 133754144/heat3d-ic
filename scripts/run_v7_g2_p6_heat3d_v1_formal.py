@@ -137,6 +137,14 @@ def main() -> int:
         type=Path,
         help="required PASS receipt before an experimental slim path can run",
     )
+    parser.add_argument(
+        "--epochs", type=int, default=200,
+        help="training horizon; default 200 preserves the frozen P13 contract",
+    )
+    parser.add_argument(
+        "--dense-checkpoint-epochs", default="",
+        help="optional comma-separated epochs to retain for post-run dense evaluation",
+    )
     parser.add_argument("--fs-train", type=Path)
     parser.add_argument("--subset-manifest", type=Path)
     parser.add_argument("--labels-root", type=Path)
@@ -249,7 +257,15 @@ def main() -> int:
     model_config = helper.resolve_model_config(config["model"], tuple(stats["feature_names"]))
     model = RIGNO(**model_config)
     params = model_init_full(model, jax.random.PRNGKey(args.seed), train_batches[0])["params"]
-    optimizer = make_p1i_optimizer(config["optimizer"], epochs=200, updates_per_epoch=len(train_batches))
+    epochs = int(args.epochs)
+    if epochs < 1:
+        raise ValueError("epochs must be positive")
+    dense_checkpoint_epochs = {
+        int(value) for value in str(args.dense_checkpoint_epochs).split(",") if value.strip()
+    }
+    if any(value < 1 or value > epochs for value in dense_checkpoint_epochs):
+        raise ValueError("dense checkpoint epoch outside training horizon")
+    optimizer = make_p1i_optimizer(config["optimizer"], epochs=epochs, updates_per_epoch=len(train_batches))
     apply_fn = lambda current, batch, rng: model_apply_full(model, current, batch, rng)
     batch_loss = lambda prediction, batch: loss_fn_full(prediction, batch, loss_config)
     def validation_outputs(current: Any, batch: Any) -> tuple[Any, Any]:
@@ -297,14 +313,14 @@ def main() -> int:
             raise ValueError("resume seed mismatch")
         state = resume_payload["state_object"]
         completed_epoch = int(resume_payload.get("epoch", 0))
-        if completed_epoch < 1 or completed_epoch >= 200:
-            raise ValueError("resume must point to a completed epoch in [1,199]")
+        if completed_epoch < 1 or completed_epoch >= epochs:
+            raise ValueError("resume must point to a completed epoch before the configured horizon")
         start_epoch = completed_epoch + 1
         best_metric = float(resume_payload.get("best_metric", float("inf")))
         best_epoch = resume_payload.get("best_epoch")
         update_count = int(resume_payload.get("global_update_count", state.step))
     started = time.perf_counter()
-    for epoch in range(start_epoch, 201):
+    for epoch in range(start_epoch, epochs + 1):
         order = np.random.default_rng(args.seed + epoch).permutation(len(train_batches))
         losses = []
         epoch_started = time.perf_counter()
@@ -359,10 +375,22 @@ def main() -> int:
             },
             scheduler_state={"schedule": "embedded_in_optax", "epoch": epoch},
         )
-        (output / "progress.json").write_text(json.dumps({"status":"RUNNING","seed":args.seed,"epoch":epoch,"epochs":200,"best_epoch":best_epoch,"best_metric":best_metric,"test_access":False,"execution_path":args.execution_path,"latest_checkpoint_sha256":sha256(output / "latest_epoch.pkl")}, indent=2)+"\n")
+        if epoch in dense_checkpoint_epochs:
+            atomic_training_checkpoint(
+                output / f"epoch_{epoch:04d}.pkl", state=state,
+                metadata={
+                    "epoch": epoch, "seed": args.seed,
+                    "selection_metric": "native_1024_valid_sample_first_relative_rmse_pct",
+                    "selection_value": metric, "U_outputs_used_for_selection": False,
+                    "test_access": False, "runner_sha": repo_sha(),
+                    "config_sha": sha256(args.heat3d_config),
+                    "data_sha": sha256(args.labels_root / "label_generation_receipt.json"),
+                },
+            )
+        (output / "progress.json").write_text(json.dumps({"status":"RUNNING","seed":args.seed,"epoch":epoch,"epochs":epochs,"best_epoch":best_epoch,"best_metric":best_metric,"test_access":False,"execution_path":args.execution_path,"latest_checkpoint_sha256":sha256(output / "latest_epoch.pkl")}, indent=2)+"\n")
         print(json.dumps(row, sort_keys=True), flush=True)
     final_report = atomic_training_checkpoint(output / "params_final.pkl", state=state, metadata={
-        "epoch": 200, "seed": args.seed, "best_epoch": best_epoch, "test_access": False,
+        "epoch": epochs, "seed": args.seed, "best_epoch": best_epoch, "test_access": False,
         "runner_sha": repo_sha(), "config_sha": sha256(args.heat3d_config),
         "data_sha": sha256(args.labels_root / "label_generation_receipt.json"),
     })
@@ -387,7 +415,7 @@ def main() -> int:
     memory = jax.devices()[0].memory_stats() or {}
     receipt = {
         "schema_version": "heat3d_v7_g2_p6_heat3d_v1_formal_training_v1",
-        "status": "COMPLETE_FORMAL_TRAIN", "seed": args.seed, "epochs": 200,
+        "status": "COMPLETE_FORMAL_TRAIN", "seed": args.seed, "epochs": epochs,
         "optimizer_update_count": update_count, "parameter_count": tree_parameter_count(state.params),
         "selection": {"domain": "native_1024", "metric": "valid_sample_first_relative_rmse_pct", "tie": "earliest", "best_epoch": best_epoch, "best_value": best_metric, "U_used": False},
         "checkpoints": {
@@ -412,7 +440,7 @@ def main() -> int:
         "history": history, "execution_path": args.execution_path, "resumed_from": str(args.resume_from) if args.resume_from else None, "test_or_sealed_access": False,
     }
     (output / "formal_training_receipt.json").write_text(json.dumps(receipt, indent=2, sort_keys=True)+"\n")
-    (output / "progress.json").write_text(json.dumps({"status":"COMPLETE","seed":args.seed,"epoch":200,"best_epoch":best_epoch,"best_metric":best_metric,"test_access":False},indent=2)+"\n")
+    (output / "progress.json").write_text(json.dumps({"status":"COMPLETE","seed":args.seed,"epoch":epochs,"epochs":epochs,"best_epoch":best_epoch,"best_metric":best_metric,"test_access":False},indent=2)+"\n")
     print(json.dumps({key:value for key,value in receipt.items() if key!="history"},indent=2,sort_keys=True))
     return 0
 
