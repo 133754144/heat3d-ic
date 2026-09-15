@@ -55,6 +55,7 @@ def main() -> int:
     parser.add_argument("--run-receipt", action="append", required=True, help="SEED=PATH")
     parser.add_argument("--dense-receipt", action="append", required=True, help="SEED:EPOCH=PATH")
     parser.add_argument("--output", type=Path, required=True)
+    parser.add_argument("--markdown", type=Path, help="optional human-readable valid-only summary")
     args = parser.parse_args()
     if len(args.run_receipt) != 3:
         raise SystemExit("three --run-receipt values are required")
@@ -167,6 +168,34 @@ def main() -> int:
     }
     args.output.parent.mkdir(parents=True, exist_ok=True)
     args.output.write_text(json.dumps(payload_out, indent=2, sort_keys=True) + "\n", encoding="utf-8")
+    if args.markdown is not None:
+        lines = [
+            "# V7 G2-P15：Heat3D e600 valid-only convergence",
+            "",
+            "仅使用 train 768 / valid_iid 128；dense U-v2 只在预注册的 epoch 200/400/600 评估。",
+            "",
+            "| seed | best-native epoch | best-native [%] | best-common epoch | best-common U-v2 [%] | final-native [%] | wall h |",
+            "|---:|---:|---:|---:|---:|---:|---:|",
+        ]
+        for seed in (0, 1, 2):
+            run = payload_out["runs"][str(seed)]
+            lines.append(
+                f"| {seed} | {run['native_best_epoch']} | {run['native_best_metric']:.6f} | "
+                f"{run['best_common_scheduled_epoch']} | {run['best_common_scheduled_metric']:.6f} | "
+                f"{run['final_native_metric']:.6f} | {float(run['training_wall_seconds']) / 3600.0:.3f} |"
+            )
+        lines.extend([
+            "",
+            "## Across-seed summary",
+            "",
+            f"native best = {payload_out['aggregate']['native_best_metric']['mean']:.6f} ± {payload_out['aggregate']['native_best_metric']['sample_sd']:.6f}% (sample SD); ",
+            f"scheduled U-v2 best = {payload_out['aggregate']['best_common_scheduled_u_v2_metric']['mean']:.6f} ± {payload_out['aggregate']['best_common_scheduled_u_v2_metric']['sample_sd']:.6f}%; ",
+            f"final native = {payload_out['aggregate']['final_native_metric']['mean']:.6f} ± {payload_out['aggregate']['final_native_metric']['sample_sd']:.6f}%.",
+            "",
+            "Dense metrics are descriptive and do not alter native checkpoint selection. No test/sealed/official100 data were opened.",
+        ])
+        args.markdown.parent.mkdir(parents=True, exist_ok=True)
+        args.markdown.write_text("\n".join(lines) + "\n", encoding="utf-8")
     print(json.dumps({"status": payload_out["status"], "output": str(args.output)}, sort_keys=True))
     return 0
 
