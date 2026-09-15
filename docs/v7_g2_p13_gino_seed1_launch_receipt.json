@@ -1,0 +1,56 @@
+{
+  "schema_version": "heat3d_v7_g2_p13_gino_seed_launch_receipt_v1",
+  "model": "GINO",
+  "seed": 1,
+  "status": "RUNNING_FORMAL_SEED1",
+  "launched_at": "2026-09-15T11:56:31+08:00",
+  "remote_host": "devbox WSL2",
+  "tmux_session": "g2_gino_p13_e3_seed1_20260915",
+  "pid_at_launch": 1895229,
+  "repo_sha": "f9b36ef6ab8f5e775de52f043c696a756aa4be0a",
+  "runner": {
+    "path": "scripts/run_v7_g2_p1i_external_formal.py",
+    "sha256": "cbc634ee1782ba15342b4aa67d2a0ea1e3eb0faf6b9caf508a55068c8b2e5977"
+  },
+  "launch_manifest": {
+    "path": "configs/heat3d_v7/g2_p13_gino_formal_launch_manifest.json",
+    "sha256": "bebf116e91b921a4c121d617cb0b6a8e0bb5459c7627204ac977616bda9a1409"
+  },
+  "upstream": "neuraloperator/neuraloperator@00b7d86f8d74ff0af55da53eb585fe26df9c71f0",
+  "backend_qualification": {
+    "path": "docs/v7_g2_p13_gino_e3_qualification.json",
+    "sha256": "86e84d729e2b2e254acbc0ed5d8a35ded1bf6f91351583c7ece51701ba4f72b9",
+    "verdict": "E3_PASS / GINO_AUTHOR_SEMANTICS_QUALIFIED"
+  },
+  "scientific_contract": {
+    "dataset_manifest_sha256": "f19987c659968c2ac14eade1f1ef7e206c8f7eeb94f58fde5897d6e765978514",
+    "roles": {"train": 768, "valid_iid": 128},
+    "forbidden": ["test_iid", "sealed"],
+    "normalization_payload_sha256": "554ef44e093e60a2a45cff88e74d488a982fa69d1e227e9f7d43427cf3e0406a",
+    "input": "coords + 11 physical features",
+    "radius": {"input": 0.15, "output": 0.033},
+    "latent_grid": [32, 32, 32],
+    "backend": "Open3D FixedRadiusSearch + torch-scatter",
+    "optimizer": "AdamW(lr=1e-3, weight_decay=1e-4)",
+    "scheduler": "StepLR(step_size=50, gamma=0.5)",
+    "budget": {"epochs": 301, "batch_size": 1},
+    "fresh_start": true
+  },
+  "environment": {
+    "conda_environment": "g2-gino-open3d-src",
+    "python": "3.12.12",
+    "pytorch": "2.9.0+cu130",
+    "cuda": "13.0",
+    "open3d": "0.19.0",
+    "torch_scatter": "2.1.2+pt29cu130",
+    "gpu": "NVIDIA GeForce RTX 5070"
+  },
+  "output_path": "/home/xyh/myCodeGitOnly/heat3d-ic-g2/output/heat3d_v7_g2/gino_p13_e3/seed_1",
+  "log_path": "/tmp/g2_gino_p13_e3_seed1_20260915.log",
+  "data_cache": "verified_ram",
+  "test_or_sealed_access": false,
+  "formal_accuracy_claim_allowed": false,
+  "serial_gpu_only": true,
+  "seed0_repair_receipt": "docs/v7_g2_p13_gino_seed0_checkpoint_repair_receipt.json",
+  "seed2_started": false
+}
