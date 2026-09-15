@@ -142,13 +142,15 @@ def load_contract(
         pool_payload = json.loads(pool_manifest_path.read_text(encoding="utf-8"))
         if pool_payload.get("status") != "FROZEN_EXCLUSION_MANIFEST":
             raise ValueError("P17 pool manifest is not frozen")
-        encoded = pool_payload.get("training_pool", {}).get("included_source_indices")
-        if not isinstance(encoded, list):
-            raise ValueError("P17 pool manifest lacks included source indices")
-        train_indices = np.asarray(encoded, dtype=np.int64)
         expected = np.setdiff1d(np.arange(fs_train.shape[0], dtype=np.int64), valid_indices)
+        encoded = pool_payload.get("training_pool", {}).get("included_source_indices")
+        train_indices = expected if encoded is None else np.asarray(encoded, dtype=np.int64)
         if not np.array_equal(train_indices, expected):
             raise ValueError("P17 pool is not exactly full source pool minus valid128")
+        expected_hash = hashlib.sha256(np.asarray(expected, dtype="<i8").tobytes()).hexdigest()
+        declared_hash = pool_payload.get("training_pool", {}).get("included_source_indices_int64_sha256")
+        if declared_hash is not None and str(declared_hash) != expected_hash:
+            raise ValueError("P17 included pool hash mismatch")
         if len(train_indices) + len(valid_indices) != fs_train.shape[0]:
             raise ValueError("P17 pool cardinality mismatch")
     if np.intersect1d(train_indices, valid_indices).size:

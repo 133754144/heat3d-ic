@@ -88,9 +88,9 @@ def main() -> int:
         },
         "training_pool": {
             "count": int(len(pool)),
-            "included_source_indices": pool.tolist(),
             "included_source_indices_int64_sha256": int64_sha(pool),
             "construction": "np.setdiff1d(np.arange(original_pool_size), excluded_valid.source_indices)",
+            "materialization": "runner reconstructs included indices from construction; full list is not duplicated in the manifest",
         },
         "overlap_audit": {
             "excluded_valid_duplicate_count": duplicate_valid,
