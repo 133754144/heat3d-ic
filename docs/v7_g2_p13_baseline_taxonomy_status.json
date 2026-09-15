@@ -1,12 +1,12 @@
 {
   "schema_version": "heat3d_v7_g2_p13_baseline_taxonomy_status_v1",
-  "observed_at": "2026-09-15T14:58:20+08:00",
+  "observed_at": "2026-09-15T17:57:07+08:00",
   "scope": "valid-only G2 baseline closure; test/sealed evaluation remains locked",
   "taxonomy": {
     "common_task_supervised": [
       {"model": "Heat3D", "status": "FROZEN_G1_VALID_ONLY_REFERENCE", "formal_scope": "existing G1 result; G1 not reopened"},
       {"model": "Transolver", "status": "COMPLETE_VALID_ONLY_3_SEEDS", "formal_scope": "P1i common task"},
-      {"model": "GINO", "status": "E3_PASS_FORMAL_SEED2_RUNNING_SERIAL", "formal_scope": "P1i common task; Open3D FixedRadiusSearch + torch-scatter"}
+      {"model": "GINO", "status": "COMPLETE_VALID_ONLY_3_SEEDS", "formal_scope": "P1i common task; Open3D FixedRadiusSearch + torch-scatter"}
     ],
     "semiconductor_native": [
       {"model": "DeepOHeat-v1", "status": "COMPLETE_UPSTREAM_SEED42_FROZEN", "formal_scope": "official dense physics-informed protocol"},
@@ -22,7 +22,7 @@
     ]
   },
   "gates": {
-    "GINO": "E3_PASS_FORMAL_SEED2_RUNNING_SERIAL",
+    "GINO": "COMPLETE_VALID_ONLY_3_SEEDS",
     "Transolver": "INDEPENDENT_VALID_ONLY_COMPLETE",
     "Heat3D_on_DeepOHeat_v1": "P13_COHORT_COMPLETE_VALID_ONLY_TEST_SEALED",
     "Therm_FM": "NEEDS_AMENDMENT",
@@ -47,6 +47,8 @@
     "gino_seed1_completion": "docs/v7_g2_p13_gino_seed1_completion_receipt.json",
     "gino_seed2_launch": "docs/v7_g2_p13_gino_seed2_launch_receipt.json",
     "gino_seed01_diagnostic": "docs/v7_g2_p13_gino_seed01_valid_only_diagnostic.json",
+    "gino_seed2_completion": "docs/v7_g2_p13_gino_seed2_completion_receipt.json",
+    "gino_3seed_aggregation": "docs/v7_g2_p13_gino_3seed_valid_only_aggregation.json",
     "transolver": "docs/v7_g2_p11_transolver_3seed_valid_only_aggregation.json",
     "thermfm": "docs/v7_g2_p13_thermfm_compatibility_receipt.json"
   }
