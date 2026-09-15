@@ -1,0 +1,82 @@
+{
+  "schema_version": "heat3d_v7_g2_p14_deepoheat_v1_same_physical_case_budget_contract_v1",
+  "status": "FROZEN_BEFORE_TRAINING",
+  "classification": "SAME_PHYSICAL_CASE_BUDGET",
+  "same_information_budget": false,
+  "upstream": {
+    "repository": "xlyu0127/DeepOHeat-v1",
+    "commit": "3ef3d9c41666a56b5940b39a61166ccaa5aaedb2",
+    "architecture": {
+      "model": "DeepOHeat_v1",
+      "dim": 3,
+      "branch_dim": 10201,
+      "field_dim": 1,
+      "branch_depth": 8,
+      "branch_hidden": 256,
+      "trunk_depth": 3,
+      "trunk_hidden": 64,
+      "rank": 128,
+      "parameter_count": 3303680
+    },
+    "physics": {
+      "mesh": [101, 101, 56],
+      "piecewise_conductivity": true,
+      "volumetric_power_residual": true,
+      "top_bottom_robin": true,
+      "side_adiabatic": true,
+      "objective": "official apply_model_deepoheat_st full PDE/BC mean-square residual",
+      "normalization": "none; nondimensional u with deltaT_K=25*(u-0.2) for evaluation"
+    },
+    "sampling": {
+      "functions_per_iteration": 50,
+      "random_choice": "JAX PRNG key split, replace=False",
+      "pool_order": "frozen manifest train indices, sorted within role"
+    },
+    "optimization": {
+      "optimizer": "Optax Adam",
+      "learning_rate": 0.001,
+      "schedule": "exponential_decay(0.9, transition_steps=1000)",
+      "iterations": 100000
+    }
+  },
+  "data": {
+    "source_file": "fs_train_volume.npy",
+    "source_sha256": "a39a4f51e853f9114d86feb88f74553914b2bfc68ab1c553a3a31df25893fff7",
+    "subset_manifest": "configs/heat3d_v7/g2_deepoheat_v1_volumetric_subset_manifest.json",
+    "subset_manifest_sha256": "e719665176a22213487ee92c1aac993dd01b02a51555c7cd68bf81a13b861558",
+    "train": {
+      "count": 768,
+      "indices_sha256": "2ca5fb6efe152ddbba3da0f8dedcc65737c82e6f8df16f9eeb48092c2c74dd49",
+      "role": "training only"
+    },
+    "valid": {
+      "count": 128,
+      "indices_sha256": "6c04f5188fd83d0ce9ca4689cce526ed36e08a4a21421ed2af93ac7a1b6f20d4",
+      "role": "selection/evaluation only"
+    },
+    "labels": {
+      "expanded_receipt_sha256": "a4bb99638a977b2004a93a88b469166ff7da697e89181e64e04152c7f96fe4fd",
+      "full_reference_domain": [101, 101, 56],
+      "official_test_fields_accessed": false
+    }
+  },
+  "matched_change": "Only the training source pool changes from the official 100000 functions to the frozen 768 train case IDs; architecture, PDE/BC semantics, mesh, optimizer, schedule, sampling rule and 100000-iteration budget remain upstream-faithful.",
+  "selection": {
+    "metric": "sample_first_relative_rmse_pct",
+    "temperature_space": "deltaT_K=25*(u-0.2), full 101x101x56 control-volume weighted field",
+    "split": "valid",
+    "interval_iterations": 10000,
+    "tie_break": "earliest iteration",
+    "train_labels_used_by_deepoheat": false
+  },
+  "seeds": [0, 1, 2],
+  "execution": {
+    "gpu_required": true,
+    "serial_order": [0, 1, 2],
+    "fresh_start": true,
+    "output_root": "/home/xyh/myCodeGitOnly/heat3d-ic-g2/output/heat3d_v7_g2/deepoheat_v1_matched_768_128_p14",
+    "no_overwrite": true
+  },
+  "forbidden": ["fs_test_volume.npy", "u_test_volume.npy", "test_iid", "sealed"],
+  "claim_boundary": "This is a same-physical-case-budget comparison, not a same-information-budget or same-training-budget claim."
+}

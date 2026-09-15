@@ -1,0 +1,66 @@
+{
+  "schema_version": "heat3d_v7_g2_p14_deepoheat_v1_native_reference_audit_v1",
+  "status": "NOT_DIRECTLY_COMPARABLE",
+  "scope": "valid-only provenance and mapping audit; no native DeepOHeat prediction was evaluated on the overlapping rows",
+  "hard_boundaries": {
+    "p1i_test_iid_accessed": false,
+    "sealed_accessed": false,
+    "deepoheat_official100_accessed": false,
+    "g1_modified": false
+  },
+  "native_deepoheat_v1_seed42": {
+    "upstream": "xlyu0127/DeepOHeat-v1@3ef3d9c41666a56b5940b39a61166ccaa5aaedb2",
+    "runner": "scripts/run_v7_g2_p6_deepoheat_v1_formal.py",
+    "runner_sha256": "7027cd5414f5964359f63be20e1a88bef5351730448f848f4234f40a7c1b22d0",
+    "config_manifest": "configs/heat3d_v7/g2_semiconductor_remote_launch_manifest.json",
+    "config_manifest_sha256": "5804c97feca6fcee8052f080505e306d35c26e1836369dc127e2f8b4ab9feb71",
+    "training_receipt_remote": "/home/xyh/myCodeGitOnly/heat3d-ic-g2/output/heat3d_v7_g2/deepoheat_v1/upstream_volumetric_seed42/formal_training_receipt.json",
+    "training_receipt_sha256": "51145d4785657567a1019dafc8102f248d7e4cce343bd9ea44cba68a85e63b56",
+    "final_checkpoint_remote": "/home/xyh/myCodeGitOnly/heat3d-ic-g2/output/heat3d_v7_g2/deepoheat_v1/upstream_volumetric_seed42/DeepOHeat_v1_final.eqx",
+    "final_checkpoint_sha256": "e86ee37b5855b856d68753ae84f484b4d1adac322361df52d576c56d8c050173",
+    "training_log_sha256": "d40a86263c10a63b35a4698ad47718712baed49560eaaed0f66f44a20e319a81",
+    "training_pool": {
+      "file": "fs_train_volume.npy",
+      "sha256": "a39a4f51e853f9114d86feb88f74553914b2bfc68ab1c553a3a31df25893fff7",
+      "function_count": 100000,
+      "official_valid_split": false
+    },
+    "training_semantics": {
+      "iterations": 100000,
+      "functions_per_iteration": 50,
+      "seed": 42,
+      "pde_bc_mesh_changed": false,
+      "checkpoint_policy": "final only; no valid selection"
+    }
+  },
+  "heat3d_frozen_cohort": {
+    "aggregation": "docs/v7_g2_p13_heat3d_v1_3seed_valid_only_aggregation.json",
+    "aggregation_sha256": "7b249e62139e29f4641212a635bf96a15fe2caa47cea9057820a1be541c3f80f",
+    "train_count": 768,
+    "valid_count": 128,
+    "valid_role": "valid_iid derived from the frozen subset manifest",
+    "native1024_selection_mean_pct": 0.779968243124326,
+    "native1024_selection_sample_sd_pct": 0.013936633912468072,
+    "selection_metric": "native-1024 valid sample_first_relative_rmse_pct",
+    "test_or_sealed_access": false
+  },
+  "mapping_audit": {
+    "subset_manifest": "configs/heat3d_v7/g2_deepoheat_v1_volumetric_subset_manifest.json",
+    "subset_manifest_sha256": "e719665176a22213487ee92c1aac993dd01b02a51555c7cd68bf81a13b861558",
+    "train_indices_sha256": "2ca5fb6efe152ddbba3da0f8dedcc65737c82e6f8df16f9eeb48092c2c74dd49",
+    "valid_indices_sha256": "6c04f5188fd83d0ce9ca4689cce526ed36e08a4a21421ed2af93ac7a1b6f20d4",
+    "valid_input_hashes_match_official_training_pool": true,
+    "valid_rows_mapped_to_label_receipt": true,
+    "valid_case_mapping": "source_index and canonical source_input_sha256 agree for all 128 rows",
+    "native_training_pool_contains_all_valid_rows": true,
+    "native_train_eval_overlap_count": 128,
+    "equivalent_temperature_domain_available": "full 101x101x56 reference labels exist for the 128 rows, but using them for native seed42 would evaluate rows already present in its 100000-function training pool",
+    "common_evaluator": "CV-weighted temperature-space sample_first_relative_rmse_pct; RMSE[K] and peak-T error are secondary only when a non-overlapping evaluation split exists"
+  },
+  "decision": {
+    "native_reference_metric": "NOT COMPUTED because native 100000-pool training overlaps all candidate valid rows",
+    "classification": "NOT_DIRECTLY_COMPARABLE",
+    "reason": "No public held-out native DeepOHeat-v1 validation split is available; the official 100 test fields remain sealed and cannot be unlocked in this task",
+    "next_track": "run the separately frozen SAME_PHYSICAL_CASE_BUDGET DeepOHeat-v1 cohort on train768/valid128"
+  }
+}
