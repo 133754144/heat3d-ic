@@ -10,6 +10,7 @@ one valid case and the receipt contains metrics and provenance only.
 from __future__ import annotations
 
 import argparse
+from dataclasses import replace
 import hashlib
 import importlib.util
 import json
@@ -361,6 +362,18 @@ def main() -> int:
         q_full = np.asarray(arrays["features"][:, 3], dtype=np.float64)
         layer_support = np.asarray(mesh["layer_id"])[support_indices]
         native = np.asarray(native_by_id[sample_id], dtype=np.float64)
+        # The compact cache stores coordinates as float32 for transport, while
+        # the frozen U-v2 anchor contract verifies exact membership in the
+        # benchmark mesh.  Rebind only this deterministic geometry view from
+        # the already-frozen support indices; no point, feature, or ordering
+        # information is added.
+        u_anchor = replace(
+            anchor,
+            condition=replace(
+                anchor.condition,
+                coords=np.asarray(mesh["coords"], dtype=np.float64)[support_indices],
+            ),
+        )
         mapping, map_audit = build_reconstruction_map(
             coords=np.asarray(mesh["coords"], dtype=np.float64),
             layer_id=np.asarray(mesh["layer_id"], dtype=np.int32),
@@ -391,7 +404,7 @@ def main() -> int:
         u_started = time.perf_counter()
         try:
             case = runtime.build_case(
-                anchor, MESH_COUNT, support=full_support,
+                u_anchor, MESH_COUNT, support=full_support,
                 native_edge_targets=None, query_edge_targets=None,
             )
             u_output = runtime.apply(case)
