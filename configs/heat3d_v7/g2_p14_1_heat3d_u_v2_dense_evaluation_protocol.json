@@ -1,0 +1,81 @@
+{
+  "schema_version": "heat3d_v7_g2_p14_1_u_v2_dense_evaluation_protocol_v1",
+  "status": "FROZEN_BEFORE_VALID_EVALUATION",
+  "scope": "Heat3D-on-DeepOHeat-v1 e200 frozen checkpoints, valid_iid only",
+  "hard_boundaries": {
+    "p1i_test_iid_accessed": false,
+    "sealed_accessed": false,
+    "deepoheat_official100_accessed": false,
+    "training_started": false,
+    "checkpoint_overwrite": false
+  },
+  "comparison_reference": {
+    "g1_formal_code_sha": "191a7a06a681556f575a1c04e2b61cb13363efe1",
+    "g1_closed_science_tag": "v7-g1-science-sealed-20260903",
+    "g1_close_commit": "89e3149a1916d3441e1b9569f544ba516af4e1d8",
+    "e200_aggregation": "docs/v7_g2_p13_heat3d_v1_3seed_valid_only_aggregation.json",
+    "e200_aggregation_sha256": "7b249e62139e29f4641212a635bf96a15fe2caa47cea9057820a1be541c3f80f"
+  },
+  "data": {
+    "source": "fs_train_volume.npy",
+    "source_sha256": "a39a4f51e853f9114d86feb88f74553914b2bfc68ab1c553a3a31df25893fff7",
+    "subset_manifest": "configs/heat3d_v7/g2_deepoheat_v1_volumetric_subset_manifest.json",
+    "subset_manifest_sha256": "e719665176a22213487ee92c1aac993dd01b02a51555c7cd68bf81a13b861558",
+    "labels_root": "data/g2/deepoheat_v1_volumetric_labels",
+    "label_receipt_sha256": "a4bb99638a977b2004a93a88b469166ff7da697e89181e64e04152c7f96fe4fd",
+    "normalization": "docs/v7_g2_p5_deepoheat_v1_train_normalization.json",
+    "normalization_payload_sha256": "3a0273bb92b8c060df8a214b1e0e7dd0e4b5df6bece86b7dea15197ca56ed0db",
+    "train_count": 768,
+    "valid_iid_count": 128
+  },
+  "checkpoints": {
+    "seed_0": "output/heat3d_v7_g2/heat3d_on_deepoheat_v1_formal_e3_20260915/seed_0/params_best_sample_first.pkl",
+    "seed_0_sha256": "6a24871fb58e50735892a0159fd5d5bface9466de8f8445d5ebe8437e32fa071",
+    "seed_1": "output/heat3d_v7_g2/heat3d_on_deepoheat_v1_formal_e3_20260915/seed_1_retry1/params_best_sample_first.pkl",
+    "seed_1_sha256": "11219c17e3a5920cbe1b466d80ef692244acd3b622b4ad79091b97386536c2fe",
+    "seed_2": "output/heat3d_v7_g2/heat3d_on_deepoheat_v1_formal_e3_20260915/seed_2/params_best_sample_first.pkl",
+    "seed_2_sha256": "780cc15cef16ed66bedd0d49e2646e3259d0f6bf21cb6fe3cbc9b8610643cc9f"
+  },
+  "evaluation_domains": {
+    "native_1024": {
+      "conditioning_count": 1024,
+      "output_count": 1024,
+      "representation": "frozen physics-layout-aware sparse support",
+      "reconstruction": "none"
+    },
+    "idw_dense": {
+      "conditioning_count": 1024,
+      "output_count": 571256,
+      "shape": [101, 101, 56],
+      "algorithm": "layer_interface_knn_inverse_distance_v1"
+    },
+    "u_v2_dense": {
+      "conditioning_count": 1024,
+      "output_count": 571256,
+      "shape": [101, 101, 56],
+      "algorithm": "frozen V6 U-v2 asymmetric direct-query graph",
+      "deterministic_geometry_adaptation": true,
+      "learned_parameter_count_added": 0,
+      "latency_includes_query_graph_and_model_forward": true
+    }
+  },
+  "metrics": {
+    "primary": "sample_first_relative_rmse_pct",
+    "secondary": ["point_global_relative_rmse_pct", "raw_cv_weighted_rmse_K", "MAE_K", "peak_temperature_error_K", "source_region_RMSE_K", "background_RMSE_K", "interface_RMSE_K"],
+    "temperature_space": "deltaT_K",
+    "evaluator": "rigno.heat3d_runtime.evaluation.EvaluationCore",
+    "split": "valid_iid"
+  },
+  "oracle_policy": {
+    "idw": "GT 1024 support values mapped by the frozen layer/interface-aware IDW map; diagnostic lower bound only",
+    "u_v2": "U-v2 is an asymmetric neural direct-query path, not a value-only interpolation map; no label-only U-v2 oracle is defined without introducing a new decoder. The receipt must report this explicitly rather than fabricate an oracle.",
+    "error_decomposition": "forbidden; oracle rows are lower-bound diagnostics only"
+  },
+  "implementation": {
+    "script": "scripts/evaluate_v7_g2_p14_1_heat3d_u_v2.py",
+    "u_v2_runtime": "rigno.heat3d_runtime.u_split.UHighNRuntime",
+    "valid_only_guard": true,
+    "predictions_persisted": false,
+    "large_artifacts_root": "/tmp/g2_p14_1"
+  }
+}
