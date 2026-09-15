@@ -1,0 +1,60 @@
+{
+  "schema_version": "heat3d_v7_g2_p17_deepoheat_full_minus_valid128_frozen_protocol_v1",
+  "status": "FROZEN_BEFORE_TRAINING",
+  "scope": "DeepOHeat-v1 native-recipe held-out-valid128 cohort",
+  "freeze_parent_repo_commit_sha": "088926305e76718097c2a567046807fd2034e572",
+  "objective": "exclude exactly Heat3D valid128 source IDs from the official 100000-function pool and validate only on those excluded cases",
+  "exclusion_manifest": {
+    "path": "configs/heat3d_v7/g2_p17_deepoheat_full_minus_valid128_exclusion_manifest.json",
+    "sha256": "9a0b17913c795fbc80193b763ad2495271bd5886b236dc1ceac8d9319fcf679d",
+    "original_pool_size": 100000,
+    "excluded_valid_count": 128,
+    "resulting_training_pool_count": 99872,
+    "overlap_count": 0,
+    "temperature_or_accuracy_used": false
+  },
+  "upstream_recipe": {
+    "repo": "xlyu0127/DeepOHeat-v1",
+    "commit": "3ef3d9c41666a56b5940b39a61166ccaa5aaedb2",
+    "architecture": "DeepOHeat_v1(dim=3, branch_dim=101^2, field_dim=1, branch_depth=8, branch_hidden=256, trunk_depth=3, trunk_hidden=64, rank=128)",
+    "mesh": [101, 101, 56],
+    "pde_bc_semantics": "official full PDE, top/bottom Robin and side adiabatic BC",
+    "optimizer": "Optax Adam",
+    "learning_rate": 0.001,
+    "schedule": "exponential_decay(0.9 per 1000 iterations)",
+    "iterations": 100000,
+    "functions_per_iteration": 50,
+    "sampled_function_instances_processed": 5000000,
+    "native_input": "fs_train_volume.npy power functions",
+    "training_pool_change": "only source pool exclusion; no architecture/objective/mesh change"
+  },
+  "validation": {
+    "cases": 128,
+    "source": "excluded Heat3D valid128 IDs",
+    "domain": "full 101x101x56=571256 reference field",
+    "metric": "sample_first_relative_rmse_pct in deltaT_K temperature space",
+    "secondary": ["point_global_relative_rmse_pct", "RMSE_K", "MAE_K", "peak_temperature_error_K"],
+    "interval_iterations": 10000,
+    "checkpoint_selection": "minimum valid metric, earliest iteration tie",
+    "retain": ["best-fullfield", "final-100k"]
+  },
+  "seeds": [0, 1, 2],
+  "execution": {
+    "serial_gpu_tasks": true,
+    "fresh_initialization": true,
+    "output_root": "output/heat3d_v7_g2/deepoheat_v1_full_minus_valid128_p17",
+    "no_overwrite": true,
+    "official_test_access": false,
+    "p1i_test_iid_access": false,
+    "sealed_access": false,
+    "multi_htc_started": false,
+    "therm_fm_downloaded": false
+  },
+  "fairness_label": "NATIVE_RECIPE_HELDOUT_VALIDATION",
+  "comparison_labels": {
+    "DeepOHeat_vs_Heat3D_768": "data-regime/physical-case comparison only",
+    "same_information_budget": false,
+    "same_physical_case_budget": false
+  },
+  "hard_stop": "do not extend beyond 100000 iterations; no official100/test unlock in this protocol"
+}
