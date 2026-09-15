@@ -485,7 +485,7 @@ def main() -> int:
     total_seconds = time.perf_counter() - train_started
     receipt = {
         **contract,
-        "status": "COMPLETE_MATCHED_PHYSICAL_CASE_BUDGET_TRAINING",
+        "status": "COMPLETE_NATIVE_RECIPE_HELDOUT_VALIDATION_TRAINING" if args.pool_index_manifest else "COMPLETE_MATCHED_PHYSICAL_CASE_BUDGET_TRAINING",
         "execution": {
             "runner_sha": repo_sha(Path(__file__).resolve().parents[1]),
             "script": "scripts/run_v7_g2_p14_deepoheat_v1_matched.py",
@@ -502,6 +502,7 @@ def main() -> int:
             "labels_root": str(args.labels_root), "label_receipt_sha256": LABEL_RECEIPT_SHA256,
             "train_case_count": int(len(train_indices)), "valid_case_count": 128,
             "train_indices_sha256": contract["source_indices"]["little_endian_int64_sha256"],
+            "pool_manifest_sha256": None if args.pool_index_manifest is None else file_sha256(args.pool_index_manifest),
         },
         "model": {
             "parameter_count": parameter_count,
