@@ -196,8 +196,18 @@ def torch_tree_equal(left: Any, right: Any) -> bool:
     if isinstance(left, torch.Tensor) and isinstance(right, torch.Tensor):
         return left.dtype == right.dtype and left.shape == right.shape and torch.equal(left, right)
     if isinstance(left, dict) and isinstance(right, dict):
-        return list(left.keys()) == list(right.keys()) and all(
-            torch_tree_equal(left[key], right[key]) for key in left
+        # ``state_dict`` is an OrderedDict, but key order and PyTorch's
+        # non-tensor ``_metadata`` bookkeeping entry are not model state.
+        # Compare the named tensor/value content canonically so a valid reload
+        # cannot fail merely because a module rebuilt the ordering/metadata.
+        left_keys = set(left.keys())
+        right_keys = set(right.keys())
+        if "_metadata" in left_keys and "_metadata" not in right_keys:
+            left_keys.remove("_metadata")
+        if "_metadata" in right_keys and "_metadata" not in left_keys:
+            right_keys.remove("_metadata")
+        return left_keys == right_keys and all(
+            torch_tree_equal(left[key], right[key]) for key in left_keys
         )
     if isinstance(left, (list, tuple)) and isinstance(right, (list, tuple)):
         return type(left) is type(right) and len(left) == len(right) and all(
