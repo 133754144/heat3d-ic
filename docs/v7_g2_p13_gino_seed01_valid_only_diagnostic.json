@@ -1,0 +1,88 @@
+{
+  "schema_version": "heat3d_v7_g2_p13_gino_seed01_valid_only_diagnostic_v1",
+  "observed_at": "2026-09-15T14:58:20+08:00",
+  "status": "SEED0_SEED1_COMPLETE_VALID_ONLY_SEED2_RUNNING",
+  "scope": "diagnostic of completed valid_iid histories; no test_iid, sealed, or DeepOHeat official100 access",
+  "contract": {
+    "upstream": "neuraloperator/neuraloperator@00b7d86f8d74ff0af55da53eb585fe26df9c71f0",
+    "backend": "Open3D FixedRadiusSearch + torch-scatter",
+    "input": "coords + 11 physical features",
+    "radius": {"input": 0.15, "output": 0.033},
+    "latent_grid": [32, 32, 32],
+    "optimizer": "AdamW(lr=1e-3, weight_decay=1e-4)",
+    "scheduler": "StepLR(step_size=50, gamma=0.5)",
+    "epochs": 301,
+    "batch_size": 1,
+    "dataset_manifest_sha256": "f19987c659968c2ac14eade1f1ef7e206c8f7eeb94f58fde5897d6e765978514",
+    "normalization_payload_sha256": "554ef44e093e60a2a45cff88e74d488a982fa69d1e227e9f7d43427cf3e0406a",
+    "selection": "minimum valid_iid sample_first_relative_rmse_pct; earliest epoch tie",
+    "forbidden_roles": ["test_iid", "sealed"]
+  },
+  "seeds": {
+    "0": {
+      "status": "COMPLETE_FORMAL_TRAIN_REPAIRED",
+      "integrity": "model/optimizer/scheduler state equality verified by canonical comparator; original exit was a key-order/_metadata false mismatch",
+      "repair_receipt": "docs/v7_g2_p13_gino_seed0_checkpoint_repair_receipt.json",
+      "repo_sha_at_training": "53d8da5ec6691b4e168bdc68a333b31b2ac4221d",
+      "verification_repo_sha": "f9b36ef6ab8f5e775de52f043c696a756aa4be0a",
+      "runner_sha_at_training": "7f93287b6381a977ca3de32b11977a275a9e63171b0587bf1c1d40d4b8ad52da",
+      "best_epoch": 124,
+      "best_selection_metric_sample_first_relative_rmse_pct": 15.495079682086594,
+      "best_primary_metric_point_global_relative_rmse_pct": 18.175179192619314,
+      "final_epoch": 301,
+      "final_selection_metric_sample_first_relative_rmse_pct": 15.949097938318912,
+      "final_primary_metric_point_global_relative_rmse_pct": 18.60704866401783,
+      "selection_degradation_absolute_pct_points": 0.454018256232318,
+      "primary_degradation_absolute_pct_points": 0.431869471398516,
+      "train_objective_first": 0.883515537250787,
+      "train_objective_final": 0.01580651711507623,
+      "all_history_finite": true,
+      "checkpoint_sha256": {
+        "best_valid_iid.pt": "9ae1485065a14c86cc28cfe1d279faddfbeda701b51ef418cf2b0461b83c55e8",
+        "latest_epoch.pt": "b6203c38bae43b3df4ab56c40de81fb9ada16ca0057d0e0eb572638d8c641471",
+        "final_epoch.pt": "5398cf899e5d0a98e469bddc9ea8a9082a20a6208f97caf553a7a1ef1365a301"
+      },
+      "runtime_note": "approximately 2 h 40 min launch-to-final mtime; resource fields absent from the pre-repair receipt and are not inferred",
+      "test_or_sealed_access": false
+    },
+    "1": {
+      "status": "COMPLETE_FORMAL_TRAIN",
+      "completion_receipt": "docs/v7_g2_p13_gino_seed1_completion_receipt.json",
+      "repo_sha": "f9b36ef6ab8f5e775de52f043c696a756aa4be0a",
+      "runner_sha": "cbc634ee1782ba15342b4aa67d2a0ea1e3eb0faf6b9caf508a55068c8b2e5977",
+      "best_epoch": 51,
+      "best_selection_metric_sample_first_relative_rmse_pct": 15.585630016002854,
+      "best_primary_metric_point_global_relative_rmse_pct": 19.119575167209433,
+      "final_epoch": 301,
+      "final_selection_metric_sample_first_relative_rmse_pct": 16.657356617746384,
+      "final_primary_metric_point_global_relative_rmse_pct": 19.5347577910856,
+      "selection_degradation_absolute_pct_points": 1.07172660174353,
+      "primary_degradation_absolute_pct_points": 0.415182623876166,
+      "train_objective_first": 0.8929069715862473,
+      "train_objective_final": 0.021379884166284075,
+      "all_history_finite": true,
+      "observed_walltime_seconds_launch_to_final_mtime": 9635.43,
+      "peak_allocated_bytes": 2246255104,
+      "peak_reserved_bytes": 2833252352,
+      "checkpoint_sha256": {
+        "best_valid_iid.pt": "da0c499609d6ed51c248bba1df0128a39eb64bbb47a58dd9099722dca819b46f",
+        "latest_epoch.pt": "e0e145866e157d0cae43072fd781f5b34527f21f6a1718cab5ef5c21e8acf9e1",
+        "final_epoch.pt": "bd14ef3b687250b4f7b0a9b4614a5eb3c6f92f15d06df55ce6b337110242391e",
+        "run_receipt.json": "edbf6043a7f6afdd0e7f1c4a4bd8ffc32ce192a083b2dbb1625298021fa9983b"
+      },
+      "reload_state_exact": true,
+      "reload_prediction_finite": true,
+      "test_or_sealed_access": false
+    }
+  },
+  "comparison_note": "Both completed histories are finite and follow the frozen valid-only selection rule. Seed0 required a post-hoc integrity repair only; seed1 completed normally. Differences in best epoch/metric are retained as seed variability, not used to alter seed2 configuration.",
+  "seed2": {
+    "status_at_observation": "RUNNING_FORMAL_SEED2",
+    "first_completed_epoch_observed": 1,
+    "updates_observed": 768,
+    "valid_selection_metric_epoch1_sample_first_relative_rmse_pct": 44.337358702239186,
+    "output_path": "/home/xyh/myCodeGitOnly/heat3d-ic-g2/output/heat3d_v7_g2/gino_p13_e3/seed_2",
+    "launch_receipt": "docs/v7_g2_p13_gino_seed2_launch_receipt.json",
+    "test_or_sealed_access": false
+  }
+}

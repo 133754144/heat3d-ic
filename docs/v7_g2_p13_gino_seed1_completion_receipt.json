@@ -1,0 +1,77 @@
+{
+  "schema_version": "heat3d_v7_g2_p13_gino_seed_completion_receipt_v1",
+  "model": "GINO",
+  "seed": 1,
+  "status": "COMPLETE_FORMAL_TRAIN",
+  "scope": "valid_iid-only formal training evidence; no test_iid, sealed, or DeepOHeat official100 access",
+  "remote_host": "devbox WSL2",
+  "launched_at": "2026-09-15T11:56:31+08:00",
+  "completed_at_observed": "2026-09-15T14:37:06+08:00",
+  "observed_walltime_seconds_launch_to_final_mtime": 9635.43,
+  "walltime_note": "lower-bound process walltime from launch receipt to final receipt mtime; no accuracy-based scheduling decision",
+  "repo_sha": "f9b36ef6ab8f5e775de52f043c696a756aa4be0a",
+  "runner": {
+    "path": "scripts/run_v7_g2_p1i_external_formal.py",
+    "sha256": "cbc634ee1782ba15342b4aa67d2a0ea1e3eb0faf6b9caf508a55068c8b2e5977"
+  },
+  "launch_manifest": {
+    "path": "configs/heat3d_v7/g2_p13_gino_formal_launch_manifest.json",
+    "sha256": "bebf116e91b921a4c121d617cb0b6a8e0bb5459c7627204ac977616bda9a1409"
+  },
+  "upstream": "neuraloperator/neuraloperator@00b7d86f8d74ff0af55da53eb585fe26df9c71f0",
+  "dataset": {
+    "manifest_sha256": "f19987c659968c2ac14eade1f1ef7e206c8f7eeb94f58fde5897d6e765978514",
+    "normalization_payload_sha256": "554ef44e093e60a2a45cff88e74d488a982fa69d1e227e9f7d43427cf3e0406a",
+    "train": 768,
+    "valid_iid": 128,
+    "forbidden_roles": ["test_iid", "sealed"]
+  },
+  "scientific_contract": {
+    "backend": "Open3D FixedRadiusSearch + torch-scatter",
+    "input": "coords + 11 physical features",
+    "radius": {"input": 0.15, "output": 0.033},
+    "latent_grid": [32, 32, 32],
+    "optimizer": "AdamW(lr=1e-3, weight_decay=1e-4)",
+    "scheduler": "StepLR(step_size=50, gamma=0.5)",
+    "epochs": 301,
+    "batch_size": 1,
+    "checkpoint_selection": "minimum valid_iid sample_first_relative_rmse_pct; earliest epoch tie",
+    "fresh_start": true
+  },
+  "training": {
+    "optimizer_updates": 231168,
+    "best_epoch": 51,
+    "best_selection_metric_sample_first_relative_rmse_pct": 15.585630016002854,
+    "best_primary_metric_point_global_relative_rmse_pct": 19.119575167209433,
+    "final_epoch": 301,
+    "final_selection_metric_sample_first_relative_rmse_pct": 16.657356617746384,
+    "final_primary_metric_point_global_relative_rmse_pct": 19.5347577910856,
+    "selection_degradation_absolute_pct_points": 1.07172660174353,
+    "primary_degradation_absolute_pct_points": 0.415182623876166,
+    "all_history_finite": true,
+    "train_objective_first": 0.8929069715862473,
+    "train_objective_final": 0.021379884166284075
+  },
+  "resource": {
+    "gpu": "NVIDIA GeForce RTX 5070",
+    "peak_allocated_bytes": 2246255104,
+    "peak_reserved_bytes": 2833252352,
+    "first_train_step_wall_seconds": 0.9807506959768943,
+    "first_valid_forward_wall_seconds": 0.014538535033352673
+  },
+  "checkpoints": {
+    "best_valid_iid_sha256": "da0c499609d6ed51c248bba1df0128a39eb64bbb47a58dd9099722dca819b46f",
+    "latest_epoch_sha256": "e0e145866e157d0cae43072fd781f5b34527f21f6a1718cab5ef5c21e8acf9e1",
+    "final_epoch_sha256": "bd14ef3b687250b4f7b0a9b4614a5eb3c6f92f15d06df55ce6b337110242391e",
+    "run_receipt_sha256": "edbf6043a7f6afdd0e7f1c4a4bd8ffc32ce192a083b2dbb1625298021fa9983b",
+    "reload_state_exact": true,
+    "reload_prediction_finite": true,
+    "prediction_drift": "diagnostic_only_under_upstream_authoritative_policy"
+  },
+  "output_path": "/home/xyh/myCodeGitOnly/heat3d-ic-g2/output/heat3d_v7_g2/gino_p13_e3/seed_1",
+  "log_path": "/tmp/g2_gino_p13_e3_seed1_20260915.log",
+  "run_receipt_status": "COMPLETE_FORMAL_TRAIN",
+  "test_or_sealed_access": false,
+  "scientific_config_changed_after_launch": false,
+  "anomaly_assessment": "none; finite 301-epoch history and exact checkpoint state reload"
+}
