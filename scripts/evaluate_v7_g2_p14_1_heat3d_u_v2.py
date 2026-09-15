@@ -373,6 +373,15 @@ def main() -> int:
                 anchor.condition,
                 coords=np.asarray(mesh["coords"], dtype=np.float64)[support_indices],
             ),
+            meta={
+                **anchor.meta,
+                # The released v1 volumetric contract uses fixed top/bottom
+                # Robin coefficients (0.1/2 and 0.1/40).  The stable V6
+                # helper names these values explicitly; exposing the same
+                # already-present physical inputs is metadata completion only.
+                "top_h_W_m2K": 0.1 / 2.0,
+                "bottom_h_W_m2K": 0.1 / 40.0,
+            },
         )
         mapping, map_audit = build_reconstruction_map(
             coords=np.asarray(mesh["coords"], dtype=np.float64),
