@@ -339,8 +339,15 @@ def _dummy_local_p2r(builder: Heat3DGraphBuilder, metadata: Any) -> Any:
 
 
 def _combined_edge_targets(
-    native: Mapping[str, int | None], query: Mapping[str, int | None]
-) -> dict[str, int | None]:
+    native: Mapping[str, int | None] | None,
+    query: Mapping[str, int | None] | None,
+) -> dict[str, int | None] | None:
+    # A high-resolution query may be evaluated without a pre-registered
+    # padding envelope.  In that case keep the exact variable-size graph
+    # (GroupBuilder will skip padding); this is an execution-only option and
+    # does not alter the radius, edge construction, or model semantics.
+    if native is None or query is None:
+        return None
     return {
         "p2r_edge_indices": native["p2r_edge_indices"],
         "r2r_edge_indices": native["r2r_edge_indices"],
