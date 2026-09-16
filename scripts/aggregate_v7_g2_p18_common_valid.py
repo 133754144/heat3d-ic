@@ -83,6 +83,16 @@ def main() -> int:
     d768agg = d768["aggregate"]
     u14rep = u14["representations"]["u_v2_dense_571256"]["across_seed"]
 
+    # Derive the full-minus-valid training-pool cardinality from the frozen
+    # P17 receipts rather than hard-coding the expected 100000-128 value.
+    p17_case_counts = [
+        int(p17["seeds"][str(seed)]["training_case_count"])
+        for seed in (0, 1, 2)
+    ]
+    if len(set(p17_case_counts)) != 1:
+        raise SystemExit(f"P17 training-pool counts disagree: {p17_case_counts}")
+    p17_training_cases = p17_case_counts[0]
+
     p15_final_u = p15agg["dense_by_epoch"]["600"]["u_v2_dense_571256"]["sample_first_relative_rmse_pct"]
     p15_best_u = p15agg["best_common_scheduled_u_v2_metric"]
     p15_wall = p15agg["training_wall_seconds"]
@@ -90,7 +100,7 @@ def main() -> int:
     rows = [
         {
             "regime": "DeepOHeat-full-minus-valid128",
-            "training_cases": 99872,
+            "training_cases": p17_training_cases,
             "metric": "sample_first_relative_rmse_pct (full 571256)",
             "best_mean": p17agg["best_sample_first_relative_rmse_pct"]["mean"],
             "best_sd": p17agg["best_sample_first_relative_rmse_pct"]["sample_sd"],
