@@ -1,0 +1,82 @@
+{
+  "schema_version": "heat3d_v7_g2_p22_thermfm_seed_audit_v1",
+  "observed_at": "2026-09-17T02:16:50+08:00",
+  "seed": 0,
+  "status": "COMPLETE_VALID_ONLY",
+  "remote_host": "devbox",
+  "repo_commit_sha": "5aad5be9381c19d30ab7a5f71e2b7a9397e5513f",
+  "upstream_commit_sha": "1c338d0fbe0dca25311eb896a9ea136a4f3d3cb1",
+  "runner_sha256": "5865163434f9058ac3acf262b2709e6116c3f7c960b0dbf760970205ff4114ef",
+  "config_sha256": "4be1b0d976142c6dbcb91bfdb5387f6f439e8ca99b7a3320a2c306e1ed600419",
+  "dataset_split_sha256": "87aaa84af4b203d0a8ba93ed33b3757d46adc3143dad970371daa0f893ea491f",
+  "normalization_sha256": "76acbd1a09771f63de5f9ff400127d5d11871e7b702cfa12d70570b037644eec",
+  "output_dir": "/home/xyh/myCodeGitOnly/heat3d-ic-g2/output/g2_p22_thermfm_seed0",
+  "log_path": "/home/xyh/myCodeGitOnly/heat3d-ic-g2/logs/g2_p22_thermfm_seed0_retry1.log",
+  "artifact_bytes": {
+    "best_checkpoint.pt": 258130281,
+    "final_checkpoint.pt": 258133047,
+    "latest_epoch.pt": 258121919,
+    "history.jsonl": 75709,
+    "run_config.json": 2094,
+    "completion_receipt.json": 2080
+  },
+  "artifact_sha256": {
+    "best_checkpoint.pt": "f3d8fb189c4662ecd2f10f8637e2ee34a2d5ec8423d44df5ace302ea2f56cd2b",
+    "final_checkpoint.pt": "23c7585ff53cdc5e7c55ec1e892020ad297e059813c2b7afb38e1e9e2d8a89cd",
+    "latest_epoch.pt": "e712ad7e87e62d00ea3102e55aa2188b812b7877d4b8d4b5ab97251e071fe408",
+    "history.jsonl": "b3ce43cd3621e48a823187100c237c148852096e1ecc1e5df956bce47155f20a",
+    "run_config.json": "4be1b0d976142c6dbcb91bfdb5387f6f439e8ca99b7a3320a2c306e1ed600419",
+    "completion_receipt.json": "7db64e257aac3886d5385e9e682cafc7ecf17ee62e775d3e83a4b9a191f3531b",
+    "log": "3f398a2818bdafd3f613dfecbdc942f35fa2cec80ce5414f3470aa2a5b0d6772"
+  },
+  "history_audit": {
+    "rows": 200,
+    "epochs": "1..200 contiguous",
+    "train_samples": 768,
+    "train_batches": 20,
+    "best_epoch_from_history": 184,
+    "best_epoch_matches_receipt": true,
+    "best_valid_normalized_loss": 0.007783112610923126,
+    "all_valid_losses_finite": true,
+    "final_epoch": 200
+  },
+  "training": {
+    "epochs": 200,
+    "updates_per_epoch": 20,
+    "total_updates": 4000,
+    "batch_size": 40,
+    "training_walltime_seconds": 4812.7417362529995,
+    "peak_memory_allocated_bytes": 5095374848,
+    "peak_memory_reserved_bytes": 6450839552
+  },
+  "best_valid_fullfield_metrics": {
+    "sample_first_relative_rmse_pct": 2.5106709812078796,
+    "point_global_relative_rmse_pct": 3.1423527128258524,
+    "rmse_K": 2.4954549041601,
+    "mae_K": 1.6026628548647266,
+    "peak_abs_error_K_mean": 10.620173644384677,
+    "peak_error_rmse_K": 11.814140203879981,
+    "valid_samples": 128,
+    "nodes_per_sample": 240825,
+    "finite": true
+  },
+  "final_valid_fullfield_metrics": {
+    "sample_first_relative_rmse_pct": 2.509769166226021,
+    "point_global_relative_rmse_pct": 3.1475088438646717,
+    "rmse_K": 2.499549572602251,
+    "mae_K": 1.6033872983270774,
+    "peak_abs_error_K_mean": 10.597733935086689,
+    "peak_error_rmse_K": 11.789372785831004,
+    "valid_samples": 128,
+    "nodes_per_sample": 240825,
+    "finite": true
+  },
+  "integrity": {
+    "checkpoint_reload_state_equal": true,
+    "test_iid_read": false,
+    "sealed_read": false,
+    "official100_read": false,
+    "evaluation_unlock": "not performed; valid-only completion",
+    "process_running_after_completion": false
+  }
+}
