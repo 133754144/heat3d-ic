@@ -7,8 +7,8 @@
 | native reference | DeepOHeat-v1 seed42, official 100000-function pool | 128/128 Heat3D valid rows are in training pool | `NATIVE_REFERENCE`; no held-out ranking |
 | matched physical-case | DeepOHeat-v1 768 train / 128 valid, P14 | 0 within the cohort | `SAME_PHYSICAL_CASE_BUDGET`; not same information budget |
 | Heat3D e200 | 768 train / 128 valid, three frozen seeds | 0 within the cohort | baseline e200; native/IDW/U-v2 views |
-| Heat3D e600 | 768 train / 128 valid, fresh seeds | to be populated after P15 | convergence study; e200 scheduler not reused |
-| full-minus-valid128 | official pool minus 128 valid IDs | 0 by P17 exclusion manifest | native-recipe held-out validation |
+| Heat3D e600 | 768 train / 128 valid, fresh seeds | 0 within the cohort | P15 complete; fresh 600e convergence study, e200 scheduler not reused |
+| full-minus-valid128 | official pool minus 128 valid IDs | 0 by P17 exclusion manifest | P17 native-recipe held-out validation; training in progress/receipt pending |
 
 DeepOHeat uses PDE/BC/mesh physics supervision and native full-field operators; Heat3D uses
 supervised temperature labels on sparse 1024 support. 因此任何跨行结论都只能称
@@ -25,3 +25,9 @@ supervised temperature labels on sparse 1024 support. 因此任何跨行结论�
 
 P15 e600 与 P17 full-minus-valid128 完成后，新增结果只能进入各自预注册行；不得回写
 或重解释上述历史 receipt。
+
+P15 e600 三 seed 已完成（native best `0.68562 ± 0.01167%`; scheduled U-v2
+full-field e600 `0.70989 ± 0.00777%`; all three seeds classified
+`CONVERGED_WITHIN_600`). P17 full-minus-valid128 training is a fresh native-recipe
+cohort on the frozen 99,872-case pool; its validation remains the excluded valid128
+and its official test boundary is closed until P18 completion.
