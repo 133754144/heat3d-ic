@@ -1,0 +1,51 @@
+{
+  "schema_version": "heat3d_v7_g2_p20_governance_amendment_v1",
+  "observed_at": "2026-09-16",
+  "status": "FROZEN_GOVERNANCE_CORRECTION",
+  "scope": "P20 accuracy/generalization baseline closure; no new training or test unlock",
+  "historical_role_correction": {
+    "v6_test_iid": {
+      "role": "legacy_confirmatory_holdout",
+      "count": 128,
+      "opened": true,
+      "opening_context": "V6 corrected E16384/model_seed0 route, after route and checkpoint freeze",
+      "selection_or_tuning_used": false,
+      "evidence": "docs/v6_p1i_publication_evidence_summary.md"
+    },
+    "sealed_iid": {
+      "role": "final_untouched_holdout",
+      "opened": false,
+      "generated": false,
+      "evidence": "docs/v6_p1i_handoff.md"
+    },
+    "current_g2": {
+      "new_test_iid_accessed": false,
+      "sealed_accessed": false,
+      "deepoheat_official100_accessed": false,
+      "interpretation": "P20 receipts describe current-turn access only; they do not erase the historical V6 test_iid opening."
+    }
+  },
+  "documentation_policy": {
+    "test_iid_wording": "Do not describe test_iid as globally unopened. Say that it was opened once in V6 as legacy confirmatory evidence and was not used for selection/tuning.",
+    "sealed_wording": "Describe sealed IID as the current untouched, ungenerated final holdout.",
+    "historical_receipts": "Retain old receipts unchanged; their no-access statements are scoped to the receipt/task, not a global historical claim.",
+    "g1": "G1 remains closed and unmodified; only the closed G1 science tag/commit may be referenced."
+  },
+  "source_evidence": {
+    "v6_closeout_source_branch": "origin/research/v6-p1i-training",
+    "v6_closeout_source_commit_sha": "ade9a7c93a5938b27c27a919caf490939e31e0b1",
+    "v6_closeout_markdown_sha256": "44ff2f36b5073c9cdc83c2bb9de545f4845447c815afa0abcd35066dba096bb8",
+    "v6_checkpoint_metrics_sha256": "9f169de9fcb60ab5289cf043a99e743e68f010d3d31e4009d7a7e48319b641b5",
+    "v6_inference_closeout_sha256": "3f48e7acb287859895f0468692572f54e1a5ba1c83aa5b8a3b4a869762ea7aa2",
+    "v6_artifact_manifest_sha256": "c7bc7f72c95ed2b78fb7113d601f947fb943d3efc5ab208fc06da60509b845a"
+  },
+  "hard_boundaries": {
+    "g1_modified": false,
+    "new_training_started": false,
+    "new_test_iid_access": false,
+    "sealed_access": false,
+    "deepoheat_official100_access": false,
+    "therm_fm_downloaded": false,
+    "multi_htc_started": false
+  }
+}

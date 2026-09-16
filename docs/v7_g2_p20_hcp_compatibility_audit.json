@@ -1,0 +1,79 @@
+{
+  "schema_version": "heat3d_v7_g2_p20_hcp_compatibility_audit_v1",
+  "observed_at": "2026-09-16",
+  "status": "NEEDS_AMENDMENT",
+  "asset_decision": "BLOCKED_BY_UPSTREAM_ASSETS",
+  "formal_scope": "REFERENCE_ONLY until official data/checkpoint/raw outputs and native-input compatibility are demonstrated",
+  "track": "INDEPENDENT_HCP_COMPATIBILITY",
+  "scope": "P20-C official HCP audit only; no training, no P1i adapter, no test/sealed access",
+  "official": {
+    "repo": "https://github.com/LIMIGwenshao/HCP-enhanced-DeepONet",
+    "upstream_commit_sha": "c7d856f9b665e29b64d9faf931f86db1d6a1f26c",
+    "paper": "Hard Constraint Projection Enhanced Neural Operator with Hybrid Sampling for Chiplet System Thermal Analysis",
+    "authors": ["Wentao Ren", "Zhihao Ke", "Qinzhi Xu", "et al."],
+    "venue": "Microelectronics Reliability",
+    "year": 2026,
+    "doi": "10.1016/j.microrel.2026.116207",
+    "readme_sha256": "9e0b7361eed0ea8d002ab58ad4ae42dd077f7879aea77cf89589f2d6ed46c43b",
+    "license": "MIT",
+    "license_sha256": "7e0d5b168b7b4b82248ced5cba834d70a4fe4f14bb5e5d9fe819070b8cca6586"
+  },
+  "official_code_audit": {
+    "repository_tree_entries_at_pinned_commit": 80,
+    "tracked_data_or_checkpoint_files": false,
+    "tracked_training_and_eval_scripts": true,
+    "official_requirements_path": "HCP_enhanced_DeepOHeat/requirements.txt",
+    "official_requirements_sha256": "da0daa02214816129f37ccbd624019eae06fac2a9ea131c3ec225ad8e12f5daa",
+    "official_requirements_highlights": ["python stack pins NumPy 1.24.3 and PyTorch 2.0.0 with CUDA 11.x packages", "meshio/gstools/scipy and Jupyter-era dependencies"],
+    "main_training_script": "HCP_enhanced_DeepOHeat/DeepOHeat/single_htc_bc/train_chiplet-packagepower_hcp.py",
+    "main_training_script_sha256": "1622b9fbc677091456b58a134b5db916513844f9e85e9e57b6e3ebf5a2117f23",
+    "main_eval_script": "HCP_enhanced_DeepOHeat/DeepOHeat/single_htc_bc/eval.py",
+    "main_eval_script_sha256": "2cdc97b0d6c6401a5b0270f3f97cc4d37f4f1b7b51429873087722175ad7bbd3",
+    "dataio_script_sha256": "eb3ab3f713e807106329436242652c6e1ae5e195e3b91ca0ac34756a9212aa01",
+    "hcp_projection_script_sha256": "8bdbb4f6acdb0eb70144492ad211bbe8c98b822aef2edb50cc4166a5e619218b"
+  },
+  "upstream_method_contract": {
+    "method": "DeepONet with hard constraint projection (HCP) and hybrid structured-mesh plus Latin-hypercube sampling",
+    "physics": "PDE residual plus boundary/interface treatment; HCP enforces boundary values through projection",
+    "geometry_representation": "inline structured cuboidal domains with explicit starts/ends/num_intervals",
+    "mesh_requirement": "uniform structured 3D mesh; projection code rejects a nonuniform or incomplete full grid",
+    "source_representation": "inline volumetric power maps with grid-index locations and scalar values",
+    "bc_representation": "inline per-face adiabatic/HTC/interface declarations; one parameterized bottom HTC in the official single-HTC script",
+    "material_representation": "conductivity distribution is configured per domain; official example uses fixed background conductivity and fixed k values",
+    "example_geometry": {"domain_extent": [1.0, 1.0, 0.55], "root_intervals": [20, 20, 11], "root_pde_points": 4000, "root_bc_points": 500},
+    "example_model": {"trunk_in_features": 3, "trunk_hidden_features": 128, "branch_in_features": 1, "branch_hidden_features": 20, "inner_product_features": 50, "branch_hidden_layers": 3},
+    "training_device": "single CUDA GPU recommended by README",
+    "checkpoint_contract": "eval.py loads model_epoch_<epoch>.pth; trained checkpoints/raw outputs are not committed and are available on request"
+  },
+  "p1i_compatibility": {
+    "p1i_input": "variable geometry/material/source/dual-Robin BC encoded at irregular 1024 support points",
+    "native_acceptance": false,
+    "reason": ["official scripts define geometry, power maps and BC inline rather than consume a per-case P1i tensor", "HCP projection requires a complete uniform structured grid", "no official P1i variable-geometry/material/source/BC loader or checkpoint was found"],
+    "large_rewrite_allowed": false,
+    "same_domain_adapter": "not implemented",
+    "recommended_path": "HCP native benchmark plus separately scoped Heat3D same-domain adaptation, only after assets are obtained"
+  },
+  "asset_audit": {
+    "local_checkout": false,
+    "official_data_available_in_worktree": false,
+    "official_checkpoint_available_in_worktree": false,
+    "official_raw_outputs_available_in_worktree": false,
+    "readme_note": "README states trained checkpoints and raw experiment outputs (~326 MB of NPZ/NPY/PTH files and figures) are not included and are available on request",
+    "data_or_checkpoint_downloaded": false,
+    "upstream_asset_blocker": true
+  },
+  "decision_and_next_action": {
+    "decision": "BLOCKED_BY_UPSTREAM_ASSETS",
+    "minimum_next_step": "Obtain official benchmark data, checkpoint and raw-output bundle; reproduce one native single-HTC evaluation in an isolated environment before considering any P1i mapping",
+    "failure_scope": "HCP only; does not block Therm-FM or existing G2 common-task evidence",
+    "no_common_task_claim": true
+  },
+  "hard_boundaries": {
+    "g1_modified": false,
+    "new_training_started": false,
+    "p1i_test_iid_accessed": false,
+    "sealed_accessed": false,
+    "deepoheat_official100_accessed": false,
+    "multi_htc_started": false
+  }
+}

@@ -1,0 +1,148 @@
+{
+  "schema_version": "heat3d_v7_g2_p20_benchmark_matrix_v1",
+  "observed_at": "2026-09-16",
+  "status": "PROPOSED_ACCURACY_FIRST_MATRIX_VALID_ONLY",
+  "scope": "P20 accuracy/generalization closure; no new training and no test/sealed unlock",
+  "metric_policy": {
+    "primary": "relative RMSE in temperature space; sample-first aggregation within a case, reported with mean and sample SD across seeds",
+    "secondary": ["point-global relative RMSE", "RMSE_K", "MAE_K", "peak-temperature error_K", "full-field error statistics"],
+    "resolution_rule": "Only compare rows sharing the identical physical query domain and temperature units",
+    "checkpoint_rule": "Report validation-selected best and fixed final endpoint only when the source protocol defines both; never call different policies best-to-best without an explicit label",
+    "runtime": "supplementary characterization, not the accuracy closure gate"
+  },
+  "tables": {
+    "p1i_common_task_native_1024": {
+      "domain": "frozen P1i native 1024 support",
+      "directly_comparable_rows": [
+        {
+          "model": "Heat3D-V6-canonical",
+          "status": "READY_VALID_ONLY",
+          "checkpoint_policy": "V6 point_global_best family; sample_first view retained",
+          "train_cases": 768,
+          "valid_cases": 128,
+          "input": "1024 coords + k/q/dual-Robin BC features",
+          "primary_sample_first_mean_pct": 1.6294017339551512,
+          "primary_sample_first_sample_sd_pct": 0.013132262946893854,
+          "point_global_mean_pct": 2.027348369966488,
+          "point_global_sample_sd_pct": 0.09473836759761606,
+          "evidence": "docs/v7_g2_p20_p1i_heat3d_v6_canonical_audit.json"
+        },
+        {
+          "model": "GINO",
+          "status": "READY_VALID_ONLY_E3_PASS_PRIOR",
+          "checkpoint_policy": "minimum valid_iid sample-first; earliest tie",
+          "train_cases": 768,
+          "valid_cases": 128,
+          "input": "coords + 11 physical features; Open3D FixedRadiusSearch + torch-scatter",
+          "primary_sample_first_mean_pct": 15.013874063483147,
+          "primary_sample_first_sample_sd_pct": 0.9130147279423757,
+          "point_global_mean_pct": 17.731491553570415,
+          "point_global_sample_sd_pct": 1.65514663423997,
+          "evidence": "docs/v7_g2_p13_gino_3seed_valid_only_aggregation.json"
+        },
+        {
+          "model": "Transolver",
+          "status": "READY_VALID_ONLY_COMPLETE",
+          "checkpoint_policy": "minimum valid_iid sample-first; earliest tie",
+          "train_cases": 768,
+          "valid_cases": 128,
+          "input": "coords + 11 physical features",
+          "primary_sample_first_mean_pct": 16.00282153065008,
+          "primary_sample_first_sample_sd_pct": 1.0310203737418193,
+          "point_global_mean_pct": 18.556495541017526,
+          "point_global_sample_sd_pct": 0.9265542554331201,
+          "evidence": "docs/v7_g2_p11_transolver_3seed_valid_only_aggregation.json"
+        }
+      ],
+      "comparison_boundary": "These native-1024 rows share physical cases and metric units, but not necessarily identical implementation/backend or training information; do not call this same-information-budget. Full-field V6 metrics belong in a separate resolution table."
+    },
+    "semiconductor_native_full_field": {
+      "domain": "DeepOHeat-v1 official volumetric 101x101x56 = 571256 points",
+      "rows": [
+        {
+          "model": "DeepOHeat-v1-native-full",
+          "status": "NATIVE_REFERENCE_NOT_RANKABLE",
+          "training_cases": 100000,
+          "valid_cases": 128,
+          "metric": "not computed for valid ranking because native pool contains the 128 candidate valid rows",
+          "evidence": "docs/v7_g2_p14_deepoheat_v1_native_reference_audit.json"
+        },
+        {
+          "model": "DeepOHeat-v1-768",
+          "status": "READY_VALID_ONLY_SAME_PHYSICAL_CASE_BUDGET",
+          "training_cases": 768,
+          "valid_cases": 128,
+          "best_sample_first_mean_pct": 1.3051668254914464,
+          "best_sample_first_sample_sd_pct": 0.26832110323450936,
+          "final_sample_first_mean_pct": 1.4368067559474278,
+          "final_sample_first_sample_sd_pct": 0.3094757303674489,
+          "evidence": "docs/v7_g2_p14_deepoheat_v1_matched_aggregation.json"
+        },
+        {
+          "model": "DeepOHeat-v1-full-minus-valid128",
+          "status": "READY_VALID_ONLY_HELDOUT_NATIVE_RECIPE",
+          "training_cases": 99872,
+          "valid_cases": 128,
+          "best_sample_first_mean_pct": 1.1466878888156613,
+          "best_sample_first_sample_sd_pct": 0.0383230550622063,
+          "final_sample_first_mean_pct": 1.5079187607774105,
+          "final_sample_first_sample_sd_pct": 0.21835435606159476,
+          "evidence": "docs/v7_g2_p17_deepoheat_full_minus_valid128_aggregation.json"
+        },
+        {
+          "model": "Heat3D-on-DeepOHeat-v1-e600-U-v2",
+          "status": "READY_VALID_ONLY_METHOD_NATIVE_CROSS_BENCHMARK",
+          "training_cases": 768,
+          "valid_cases": 128,
+          "input": "1024 sparse physical conditioning points",
+          "best_or_fixed_e600_sample_first_mean_pct": 0.7098883030963314,
+          "sample_first_sample_sd_pct": 0.007765142811416873,
+          "inference_domain": "571256 full-field U-v2 direct-query dense output",
+          "evidence": "docs/v7_g2_p15_heat3d_e600_aggregation.json"
+        }
+      ],
+      "comparison_boundary": "DeepOHeat-768 versus Heat3D-768 is same physical-case/data-regime evidence, not same information or compute budget. Native-full is a reference only unless a non-overlapping validation split is used."
+    },
+    "transfer_and_related_work": {
+      "rows": [
+        {
+          "model": "Therm-FM",
+          "status": "NEEDS_AMENDMENT",
+          "asset_decision": "BLOCKED_BY_UPSTREAM_ASSETS",
+          "formal_scope": "pretrained transfer/foundation-model track; not common-task scratch baseline",
+          "evidence": "docs/v7_g2_p20_thermfm_compatibility_audit.json"
+        },
+        {
+          "model": "HCP-enhanced DeepONet",
+          "status": "NEEDS_AMENDMENT",
+          "asset_decision": "BLOCKED_BY_UPSTREAM_ASSETS",
+          "formal_scope": "REFERENCE_ONLY until native assets and contract are reproduced",
+          "evidence": "docs/v7_g2_p20_hcp_compatibility_audit.json"
+        }
+      ],
+      "comparison_boundary": "Do not place transfer/native-domain rows in the P1i common-task accuracy ranking."
+    }
+  },
+  "fairness_axes": {
+    "same_physical_cases": "Only the explicitly labelled P1i native-1024 and DeepOHeat-v1 valid128 tables share physical cases.",
+    "same_information_budget": false,
+    "same_training_budget": false,
+    "supervision_modalities": "Heat3D uses supervised temperature labels; DeepOHeat/HCP use PDE/BC/mesh physics; Therm-FM uses external PDE pretraining and dense-grid inputs.",
+    "runtime_and_memory": "supplementary; compare only after matching hardware and timing boundaries"
+  },
+  "proposed_benchmark_matrix": [
+    {"matrix": "P1i_common_task", "models": ["Heat3D-V6-canonical", "GINO", "Transolver"], "metric_domain": "native 1024", "status": "VALID_ONLY_ROWS_AVAILABLE"},
+    {"matrix": "DeepOHeat_native_full_field", "models": ["DeepOHeat-v1-full-minus-valid128", "DeepOHeat-v1-768", "Heat3D-on-DeepOHeat-v1-e600-U-v2"], "metric_domain": "571256 full field", "status": "VALID_ONLY_ROWS_AVAILABLE_WITH_MODALITY_QUALIFIERS"},
+    {"matrix": "native_reference_only", "models": ["DeepOHeat-v1-native-full"], "metric_domain": "official protocol", "status": "NOT_RANKABLE_ON_VALID128"},
+    {"matrix": "transfer_related_work", "models": ["Therm-FM", "HCP-enhanced DeepONet"], "metric_domain": "native domains until assets/conversion are frozen", "status": "BLOCKED_OR_REFERENCE_ONLY"}
+  ],
+  "hard_boundaries": {
+    "g1_modified": false,
+    "new_training_started": false,
+    "p1i_test_iid_new_access": false,
+    "sealed_accessed": false,
+    "deepoheat_official100_accessed": false,
+    "therm_fm_downloaded": false,
+    "multi_htc_started": false
+  }
+}

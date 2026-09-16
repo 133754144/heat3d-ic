@@ -1,0 +1,57 @@
+{
+  "schema_version": "heat3d_v7_g2_p20_baseline_closure_status_v1",
+  "observed_at": "2026-09-16",
+  "status": "P20_AUDIT_COMPLETE_VALID_ONLY_NO_NEW_TRAINING",
+  "branch": "research/v7-g2-baselines",
+  "audit_worktree_branch": "codex/v7-g2-baselines-finalize",
+  "audit_base_repo_commit_sha": "2ed1ac937757c2763a1aea1a886153aa87293393",
+  "tracks": {
+    "Heat3D_P1i_V6_canonical": {
+      "status": "READY_VALID_ONLY_CANONICAL",
+      "evidence": "docs/v7_g2_p20_p1i_heat3d_v6_canonical_audit.json",
+      "action": "Use V6_06/07/08 only for P1i canonical accuracy; do not retrain"
+    },
+    "DeepOHeat_v1_native_full": {
+      "status": "NATIVE_REFERENCE_NOT_DIRECTLY_COMPARABLE",
+      "evidence": "docs/v7_g2_p14_deepoheat_v1_native_reference_audit.json",
+      "reason": "native 100000-function pool overlaps the candidate valid128"
+    },
+    "Therm_FM": {
+      "status": "NEEDS_AMENDMENT",
+      "asset_decision": "BLOCKED_BY_UPSTREAM_ASSETS",
+      "evidence": "docs/v7_g2_p20_thermfm_compatibility_audit.json",
+      "action": "obtain selective model_T/config/stats and freeze deterministic point-grid conversion"
+    },
+    "HCP": {
+      "status": "NEEDS_AMENDMENT",
+      "asset_decision": "BLOCKED_BY_UPSTREAM_ASSETS",
+      "formal_scope": "REFERENCE_ONLY",
+      "evidence": "docs/v7_g2_p20_hcp_compatibility_audit.json",
+      "action": "obtain official native benchmark bundle and reproduce one native evaluation"
+    }
+  },
+  "comparison_matrix": "docs/v7_g2_p20_benchmark_matrix.json",
+  "governance_amendment": "docs/v7_g2_p20_governance_amendment.json",
+  "test_policy": {
+    "v6_test_iid_historical_status": "opened once as legacy confirmatory evidence after route/checkpoint freeze; not used for selection or tuning",
+    "current_sealed_iid": "untouched and ungenerated",
+    "p20_new_test_iid_access": false,
+    "p20_sealed_access": false,
+    "deepoheat_official100_access": false
+  },
+  "execution": {
+    "new_training_started": false,
+    "new_evaluation_started": false,
+    "devbox_probe": "SSH timeout; no remote state changed",
+    "g1_modified": false,
+    "multi_htc_started": false,
+    "therm_fm_large_archive_downloaded": false,
+    "hcp_assets_downloaded": false
+  },
+  "next_actions": [
+    "Keep V6 Heat3D checkpoint family as P1i canonical valid-only evidence",
+    "Keep native-domain rows in separate tables with supervision/information qualifiers",
+    "Do not unlock sealed IID without a separately approved evaluation-only protocol",
+    "Resolve Therm-FM/HCP asset blockers independently if those tracks are needed"
+  ]
+}

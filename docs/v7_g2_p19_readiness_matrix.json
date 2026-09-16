@@ -1,8 +1,9 @@
 {
-  "schema_version": "heat3d_v7_g2_p19_readiness_matrix_v1",
+  "schema_version": "heat3d_v7_g2_p19_readiness_matrix_v2",
   "status": "P19_VALIDATION_CLOSURE_COMPLETE_TESTS_LOCKED",
   "branch": "research/v7-g2-baselines",
-  "scope": "valid-only closure and inference profiling; no new training",
+  "scope": "valid-only closure and inference profiling; no new training; current-turn access only",
+  "governance_note": "P1i test_iid was opened once in V6 as corrected legacy confirmatory evidence; sealed IID remains the untouched final holdout. P19 itself accessed neither.",
   "closed_gates": [
     {
       "gate": "P14.1_valid_only_evaluator",
@@ -69,7 +70,8 @@
     {
       "gate": "P20_evaluation_only_unlock",
       "status": "OPEN_NOT_AUTHORIZED",
-      "locked_splits": ["P1i_test_iid", "sealed", "DeepOHeat_official100"]
+      "not_authorized_in_current_phase": ["P1i_test_iid", "sealed", "DeepOHeat_official100"],
+      "historical_test_iid_note": "V6 legacy test_iid was already opened once; this gate concerns no new access"
     },
     {
       "gate": "same_hardware_latency_review",
@@ -93,7 +95,8 @@
   "hard_boundaries": {
     "g1_modified": false,
     "training_started_in_p19": false,
-    "p1i_test_iid_accessed": false,
+    "p1i_test_iid_accessed_current_turn": false,
+    "historical_v6_test_iid_opened_once": true,
     "sealed_accessed": false,
     "deepoheat_official100_accessed": false,
     "therm_fm_downloaded": false,

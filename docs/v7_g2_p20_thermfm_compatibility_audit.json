@@ -1,0 +1,83 @@
+{
+  "schema_version": "heat3d_v7_g2_p20_thermfm_compatibility_audit_v1",
+  "observed_at": "2026-09-16",
+  "status": "NEEDS_AMENDMENT",
+  "asset_decision": "BLOCKED_BY_UPSTREAM_ASSETS",
+  "track": "PRETRAINED_TRANSFER_FOUNDATION_MODEL_BASELINE",
+  "scope": "P20-B compatibility/data audit only; no training, no large archive download, no test/sealed access",
+  "official": {
+    "paper": "Therm-FM: Foundation Model is ALL YOU NEED for 3D-ICs Thermal Simulation",
+    "paper_arxiv": "2605.22663",
+    "authors": ["Zhen Huang", "Haiyang Xin", "Wenkai Yang", "Yangbo Wei", "Zhiping Yu", "Yu Zhang", "Wei W. Xing", "Ting-Jung Lin", "Lei He"],
+    "year": 2026,
+    "venue": "arXiv preprint; DAC 2026 preliminary conference version noted by authors",
+    "repo": "https://github.com/haiyangxin/Therm-FM",
+    "upstream_commit_sha": "1c338d0fbe0dca25311eb896a9ea136a4f3d3cb1",
+    "license": "Apache-2.0",
+    "readme_sha256": "0d31b5458d96f7f9141e6bf9cb7e5ca8e3d1c83c46a78c863832f38cc5812d47",
+    "license_sha256": "77b18a1628c498407f3f25403f8958b5f7a700a3f6cc60e2e0b78a33060c3e9a"
+  },
+  "upstream_model_contract": {
+    "backbone": "Poseidon/scOT model_T",
+    "approximate_parameter_count": 21000000,
+    "input_representation": "dense grid tensor (N,P,L,H,W), flattened layer-major to (N,L*P,H,W)",
+    "output_representation": "dense temperature grid (N,L_out,H,W)",
+    "example_release_shapes": {"input": [5000, 4, 2, 87, 87], "output": [5000, 2, 87, 87]},
+    "required_model_files": ["config.json", "pytorch_model.bin", "normalization_constants.json"],
+    "normalization": "per flattened input channel and output layer mean/std; released stats_json is required for faithful evaluation",
+    "official_evaluation": "scOT/evaluate.py native denormalized thermal metrics; retain separately from V7 common metrics"
+  },
+  "p1i_label_audit": {
+    "dataset_id": "heat3d_v6_p1i_continuous_physics1024_v1",
+    "source_manifest_path": "configs/heat3d_v6_p1i/v6_p1i_formal1024_v1_manifest.json",
+    "source_manifest_sha256": "f19987c659968c2ac14eade1f1ef7e206c8f7eeb94f58fde5897d6e765978514",
+    "full_field_sidecar_path": "configs/heat3d_v6_p1i/v6_p1i_formal1024_v1_full_field_sidecar_manifest.json",
+    "full_field_sidecar_sha256": "4dc526c75aff4de702482f87c969ed3e427cf882c42444fb976917ab88a1a130",
+    "full_field_archive_sha256": "49023ac1205b8e7cf7c5bf782b89fcdb34997704b3f9aa2fb2d46cf1a59163cb",
+    "full_field_archive_size_bytes": 916402712,
+    "solver_node_count": 240825,
+    "sample_count": 1024,
+    "role_counts": {"train": 768, "valid_iid": 128, "test_iid": 128},
+    "train_dense_label_manifest_evidence": "sidecar status=complete with one temperature and deltaT SHA per sample; 768 train entries are represented",
+    "byte_mount_verified_this_turn": false,
+    "interpretation": "The tracked sidecar proves a frozen 240825-node label manifest for the train768 population, but the archive bytes are not mounted in this worktree; no new labels were read or generated."
+  },
+  "v7_encoding_audit": {
+    "v7_input": "irregular coordinates + k + q + dual-Robin BC features",
+    "direct_drop_in": false,
+    "deterministic_conversion_required": [
+      "point-to-grid rasterization of coordinates/material/source/BC",
+      "explicit channel and layer ordering",
+      "unit conversion and train-only normalization",
+      "grid-to-common-physical-domain extraction"
+    ],
+    "backbone_change_allowed": false,
+    "learned_encoder_allowed": false,
+    "extra_solver_or_temperature_prior_allowed": false,
+    "information_budget": "Therm-FM dense grid channels expose a different and generally richer spatial representation than Heat3D sparse support; not same information budget",
+    "adapter_status": "NOT_IMPLEMENTED; blocked until selective model_T/config/stats assets are obtained"
+  },
+  "resources_and_leakage": {
+    "checkpoint_archive_bytes": 24100784430,
+    "steady_dataset_archive_bytes": 4467245278,
+    "large_archive_downloaded": false,
+    "selective_model_T_artifact_available": false,
+    "pretraining_overlap_audit": "NOT_COMPLETED; required before any V7 result",
+    "pretrained_prior_vs_scratch": "pretrained external PDE prior; cannot be treated as same from-scratch budget",
+    "resource_estimate": "not claimable before selective model_T/config/stats and deterministic conversion are available"
+  },
+  "decision_and_next_action": {
+    "decision": "BLOCKED_BY_UPSTREAM_ASSETS",
+    "why_not_ready": ["no verified selective model_T checkpoint", "no verified matching config and normalization constants", "point-to-grid information contract is not yet frozen", "pretraining overlap audit is outstanding"],
+    "minimum_next_step": "Obtain explicitly authorized selective model_T plus config/stats, verify checksums in an isolated environment, freeze deterministic point/grid conversion, then run valid-only P1i evaluation without touching test/sealed",
+    "failure_scope": "Therm-FM only; does not block HCP or existing common-task evidence"
+  },
+  "hard_boundaries": {
+    "g1_modified": false,
+    "new_training_started": false,
+    "p1i_test_iid_accessed": false,
+    "sealed_accessed": false,
+    "deepoheat_official100_accessed": false,
+    "therm_fm_large_archive_downloaded": false
+  }
+}

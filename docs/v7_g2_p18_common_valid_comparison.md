@@ -1,6 +1,6 @@
 # V7 G2-P18：common-valid comparison
 
-仅使用 Heat3D valid128；test_iid、sealed 与 DeepOHeat official100 均保持锁定。
+仅使用 Heat3D valid128；本 P18 comparison 未访问 test_iid、sealed 或 DeepOHeat official100。治理上，V6 的 test_iid 已于历史路线中打开过一次作 legacy confirmatory holdout；当前 untouched final holdout 是 sealed IID。
 指标为 full 571256-point temperature-space sample-first relative RMSE [%]。
 表中 Heat3D 的 best 列是固定 e600 endpoint 的占位显示，并非 validation-selected best；DeepOHeat 的 best/final 列分别对应 validation-selected best 与固定 100000-iteration endpoint。
 
@@ -28,4 +28,3 @@ P14.1 e200 U-v2 direct-query dense mean = 0.814137%；IDW 与 oracle 仅作历�
 | Heat3D-768-e600 | 892,776 | 600 epochs; B24; 768 supervised cases | not measured | 1008.137 ± 11.025 s |
 
 Latency must be remeasured on the same hardware before Pareto claims. Heat3D U-v2 direct-query dense end-to-end timing includes full-query graph construction and direct-query forward; DeepOHeat P14/P17 receipts do not contain a directly comparable dense latency measurement.
-
