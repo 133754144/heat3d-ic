@@ -1,0 +1,106 @@
+{
+  "schema_version": "heat3d_v7_g2_p22_thermfm_real_target_qualification_v1",
+  "status": "PASS_T4_REAL_TARGET_NATIVE65",
+  "scope": "bounded one-seed qualification; not formal accuracy evidence",
+  "seed": 0,
+  "train_fixture_ids": [
+    "v6p1if1_0000",
+    "v6p1if1_0002"
+  ],
+  "valid_fixture_ids": [
+    "v6p1if1_0003"
+  ],
+  "authorized_train_count": 768,
+  "authorized_valid_count": 128,
+  "train_ids_sha256": "50bb00822295c904791310a2b0a7d0549e3d54d968e4e756b1ae66b12ad53d28",
+  "valid_ids_sha256": "4eb3e04ae0fec707951fc6c82100a9e4158bdb904344fa66e7fcbc4b47029a86",
+  "split_manifest_sha256": "87aaa84af4b203d0a8ba93ed33b3757d46adc3143dad970371daa0f893ea491f",
+  "adapter_path": "scripts/v7_g2_p22_thermfm_adapter.py",
+  "adapter_sha256": "b0f1333e58098f47a15f4ec093a6c167620c21c4a2c943e92641e5929d4c2a53",
+  "full_field_archive_sha256": "49023ac1205b8e7cf7c5bf782b89fcdb34997704b3f9aa2fb2d46cf1a59163cb",
+  "stats_path": "configs/heat3d_v7/thermfm/native65_train_only_normalization.json",
+  "stats_sha256": "76acbd1a09771f63de5f9ff400127d5d11871e7b702cfa12d70570b037644eec",
+  "thermfm_repo_commit_sha": "1c338d0fbe0dca25311eb896a9ea136a4f3d3cb1",
+  "poseidon_revision": "93adcbf10f75b45ac3bca3939cc3d3f239e1e663",
+  "poseidon_config_sha256": "1fd7b545aedf0b46d180352df6b755354771e606185ee98dd4579ff7d2fa7048",
+  "poseidon_weights_sha256": "a363f7317fbc3a900a318fc63cc53197705d95fce0e0ce28dd3c8844a89112e2",
+  "native_input_shape": [
+    2,
+    741,
+    65,
+    65
+  ],
+  "native_target_shape": [
+    2,
+    57,
+    65,
+    65
+  ],
+  "native_output_shape": [
+    1,
+    57,
+    65,
+    65
+  ],
+  "parameter_count": 21435546,
+  "external_padding": false,
+  "external_resampling": false,
+  "padding_pixels_in_loss": 0,
+  "target": "real deltaT_K",
+  "losses": [
+    1.198571801185608,
+    1.0873193740844727,
+    0.9114969372749329
+  ],
+  "loss_decrease": true,
+  "loss_trend": "decreasing_or_flat",
+  "finite_flags": [
+    true,
+    true,
+    true
+  ],
+  "forward_seconds": [
+    1.4231028079993848,
+    0.039044902001478476,
+    0.0202232070005266
+  ],
+  "optimizer_update_seconds": [
+    0.1230125340007362,
+    0.007051925997075159,
+    0.00674210299985134
+  ],
+  "valid_metrics": {
+    "sample_id": "v6p1if1_0003",
+    "nodes": 240825,
+    "sample_first_relative_rmse_pct": 45.33267815475134,
+    "point_global_relative_rmse_pct": 45.33267815475135,
+    "rmse_K": 68.1402194584472,
+    "mae_K": 67.41159806794941,
+    "peak_abs_error_K": 109.8749383239242,
+    "pred_range_K": [
+      34.44733769555205,
+      122.23303724504149
+    ],
+    "target_range_K": [
+      127.36005919849595,
+      160.7494044845539
+    ],
+    "finite": true
+  },
+  "model_finite": true,
+  "checkpoint_path": "/tmp/g2_p22_thermfm_real_target_qualification/state.pt",
+  "checkpoint_sha256": "6f5d3e22928c712e8e62e66db79f7fae25eb49e1d47b40244d48e41c79e4edba",
+  "checkpoint_reload_state_equal": true,
+  "checkpoint_reload_optimizer_equal": true,
+  "load_seconds": 2.587136672998895,
+  "device": "cuda",
+  "torch_version": "2.9.0+cu128",
+  "cuda_version": "12.8",
+  "transformers_version": "4.57.1",
+  "gpu_name": "NVIDIA GeForce RTX 5070",
+  "peak_memory_allocated_bytes": 772342784,
+  "peak_memory_reserved_bytes": 857735168,
+  "test_iid_accessed": false,
+  "sealed_accessed": false,
+  "deepoheat_official100_accessed": false
+}

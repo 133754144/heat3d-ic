@@ -1,6 +1,6 @@
 {
   "schema_version": "heat3d_v7_g2_p22_thermfm_native65_protocol_v1",
-  "status": "FROZEN_P22_NATIVE65_REAL_TARGET",
+  "status": "T4_PASS_FORMAL_PROTOCOL_FROZEN",
   "purpose": "P1i Therm-FM transfer-track qualification and, only after all gates pass, a valid-only formal run",
   "upstream": {
     "thermfm_repo": "https://github.com/haiyangxin/Therm-FM",
@@ -79,7 +79,9 @@
   "qualification": {
     "required": ["Poseidon-T load", "replacement embedding/recovery", "exact train/valid split", "native 65x65 forward/backward", "real normalized target finite", "full-field 240825-node evaluator", "checkpoint save/reload"],
     "formal_accuracy_claim": false,
-    "status_before_t4": "NEEDS_TRAIN_ONLY_NORMALIZATION_AND_REAL_TARGET_QUALIFICATION"
+    "status_before_t4": "NEEDS_TRAIN_ONLY_NORMALIZATION_AND_REAL_TARGET_QUALIFICATION",
+    "t4_receipt": "docs/v7_g2_p22_thermfm_real_target_qualification.json",
+    "t4_status": "PASS_T4_REAL_TARGET_NATIVE65"
   },
   "fairness": {
     "track": "PRETRAINED_TRANSFER_FOUNDATION_MODEL_BASELINE",

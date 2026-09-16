@@ -15,7 +15,7 @@ checkpoint save/reload 的 model 与 optimizer state 均通过严格 state equal
 
 | 项目 | 结果 |
 |---|---:|
-| 参数量 | receipt JSON 中记录 |
+| 参数量 | `21,435,546` |
 | native input / target | `[2,741,65,65]` / `[2,57,65,65]` |
 | native output | `[1,57,65,65]` |
 | peak allocated / reserved | `772,342,784` / `857,735,168` bytes |
@@ -25,3 +25,4 @@ checkpoint save/reload 的 model 与 optimizer state 均通过严格 state equal
 | test/sealed | 未访问 |
 
 完整 machine-readable receipt：`docs/v7_g2_p22_thermfm_real_target_qualification.json`。
+receipt SHA256：`e511fa475b08ef93f9b8f7b3ff929fc35fc820bcd3d58b7a931f5df1bc171215`。

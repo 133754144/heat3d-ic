@@ -1,0 +1,75 @@
+{
+  "schema_version": "heat3d_v7_g2_p22_thermfm_formal_launch_contract_v1",
+  "status": "T4_PASS_SEED0_RELEASED",
+  "protocol_path": "configs/heat3d_v7/g2_p22_thermfm_native65_protocol.json",
+  "protocol_sha256": "e79a8eb84c7c0f369fd7903d8f2843ca5d76f19379db0768f62cb55a5612a746",
+  "runner": {
+    "qualification_runner": "scripts/run_v7_g2_p22_thermfm_real_target_qualification.py",
+    "formal_runner": "scripts/run_v7_g2_p22_thermfm_formal.py",
+    "formal_runner_sha256": "5865163434f9058ac3acf262b2709e6116c3f7c960b0dbf760970205ff4114ef",
+    "adapter": "scripts/v7_g2_p22_thermfm_adapter.py",
+    "adapter_sha256": "b0f1333e58098f47a15f4ec093a6c167620c21c4a2c943e92641e5929d4c2a53"
+  },
+  "upstream": {
+    "thermfm_repo_commit_sha": "1c338d0fbe0dca25311eb896a9ea136a4f3d3cb1",
+    "poseidon_hub_id": "camlab-ethz/Poseidon-T",
+    "poseidon_revision": "93adcbf10f75b45ac3bca3939cc3d3f239e1e663",
+    "poseidon_config_sha256": "1fd7b545aedf0b46d180352df6b755354771e606185ee98dd4579ff7d2fa7048",
+    "poseidon_weights_sha256": "a363f7317fbc3a900a318fc63cc53197705d95fce0e0ce28dd3c8844a89112e2"
+  },
+  "data": {
+    "split_manifest": "configs/heat3d_v6_p1i/v6_p1i_formal1024_v1_split_manifest.json",
+    "split_manifest_sha256": "87aaa84af4b203d0a8ba93ed33b3757d46adc3143dad970371daa0f893ea491f",
+    "full_field_archive_sha256": "49023ac1205b8e7cf7c5bf782b89fcdb34997704b3f9aa2fb2d46cf1a59163cb",
+    "train_count": 768,
+    "valid_count": 128,
+    "train_ids_sha256": "50bb00822295c904791310a2b0a7d0549e3d54d968e4e756b1ae66b12ad53d28",
+    "valid_ids_sha256": "4eb3e04ae0fec707951fc6c82100a9e4158bdb904344fa66e7fcbc4b47029a86",
+    "normalization_sha256": "76acbd1a09771f63de5f9ff400127d5d11871e7b702cfa12d70570b037644eec",
+    "test_iid_read": false,
+    "sealed_read": false,
+    "official100_read": false
+  },
+  "model": {
+    "image_size": 65,
+    "patch_size": 4,
+    "num_channels": 741,
+    "num_out_channels": 57,
+    "embed_dim": 48,
+    "depths": [4, 4, 4, 4],
+    "num_heads": [3, 6, 12, 24],
+    "skip_connections": [2, 2, 2, 0],
+    "window_size": 16,
+    "residual_model": "convnext",
+    "replace_embedding_recovery": true,
+    "parameter_count": 21435546
+  },
+  "training": {
+    "fresh_initialization": true,
+    "epochs": 200,
+    "batch_size": 40,
+    "validation_batch_size": 40,
+    "optimizer": "AdamW",
+    "learning_rate": 0.00005,
+    "learning_rate_embedding_recovery": 0.0005,
+    "weight_decay": 0.000001,
+    "scheduler": "cosine",
+    "warmup_ratio": 0.0,
+    "max_grad_norm": 5.0,
+    "loss": "upstream ScOT normalized p=2 over [0,57]",
+    "checkpoint_selection": "minimum valid normalized loss, lower is better",
+    "seed_order": [0, 1, 2],
+    "execution": "serial GPU; seed1/2 only after seed0 completion audit"
+  },
+  "output": {
+    "seed0_path": "/home/xyh/myCodeGitOnly/heat3d-ic-g2/output/g2_p22_thermfm_seed0",
+    "artifacts": ["run_config.json", "history.jsonl", "best_checkpoint.pt", "final_checkpoint.pt", "completion_receipt.json"],
+    "overwrite_existing": false,
+    "test_unlock": false
+  },
+  "gate": {
+    "t4_receipt": "docs/v7_g2_p22_thermfm_real_target_qualification.json",
+    "t4_status": "PASS_T4_REAL_TARGET_NATIVE65",
+    "formal_accuracy_claim_before_completion": false
+  }
+}
