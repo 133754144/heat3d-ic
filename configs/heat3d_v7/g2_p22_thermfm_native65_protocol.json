@@ -1,0 +1,98 @@
+{
+  "schema_version": "heat3d_v7_g2_p22_thermfm_native65_protocol_v1",
+  "status": "FROZEN_P22_NATIVE65_REAL_TARGET",
+  "purpose": "P1i Therm-FM transfer-track qualification and, only after all gates pass, a valid-only formal run",
+  "upstream": {
+    "thermfm_repo": "https://github.com/haiyangxin/Therm-FM",
+    "thermfm_repo_commit_sha": "1c338d0fbe0dca25311eb896a9ea136a4f3d3cb1",
+    "thermfm_license": "Apache-2.0",
+    "poseidon_hub_id": "camlab-ethz/Poseidon-T",
+    "poseidon_revision": "93adcbf10f75b45ac3bca3939cc3d3f239e1e663",
+    "poseidon_config_sha256": "1fd7b545aedf0b46d180352df6b755354771e606185ee98dd4579ff7d2fa7048",
+    "poseidon_weights_sha256": "a363f7317fbc3a900a318fc63cc53197705d95fce0e0ce28dd3c8844a89112e2",
+    "initialization": "Poseidon-T pretrained checkpoint with replacement input embedding and patch recovery; not released Therm-FM model_T"
+  },
+  "dataset": {
+    "dataset_id": "heat3d_v6_p1i_continuous_physics1024_v1",
+    "split_manifest": "configs/heat3d_v6_p1i/v6_p1i_formal1024_v1_split_manifest.json",
+    "split_manifest_sha256": "87aaa84af4b203d0a8ba93ed33b3757d46adc3143dad970371daa0f893ea491f",
+    "full_field_archive": "heat3d_v6_p1i_continuous_physics1024_v1_full_fields/full_fields.h5",
+    "full_field_archive_sha256": "49023ac1205b8e7cf7c5bf782b89fcdb34997704b3f9aa2fb2d46cf1a59163cb",
+    "roles": {"train": 768, "valid_iid": 128, "test_iid": 128},
+    "train_ids_sha256": "50bb00822295c904791310a2b0a7d0549e3d54d968e4e756b1ae66b12ad53d28",
+    "valid_ids_sha256": "4eb3e04ae0fec707951fc6c82100a9e4158bdb904344fa66e7fcbc4b47029a86",
+    "test_access": {"test_iid_read": false, "sealed_read": false, "official100_read": false}
+  },
+  "adapter": {
+    "contract": "case definition -> deterministic dense rasterization",
+    "sparse_interpolation": false,
+    "physical_grid_xyz": [65, 65, 57],
+    "input_layout": "layer-major [z0:(13 channels), z1:(13 channels), ...]",
+    "input_channels": 741,
+    "output_channels": 57,
+    "channel_order_per_layer": ["x_norm", "y_norm", "z_norm", "kx", "ky", "kz", "q", "boundary_front", "boundary_back", "boundary_left", "boundary_right", "h_top", "h_bottom"],
+    "units": {"coordinates": "x/0.01m, y/0.01m, z/z_max", "k": "W/m/K", "q": "W/m^3", "boundary_flags": "dimensionless", "h": "W/m^2/K", "target": "deltaT_K"},
+    "external_padding": false,
+    "external_resampling": false,
+    "upstream_padding": "ScOT patch/window padding is internal; recovery crops to image_size=65",
+    "supervised_domain": "65x65 physical pixels for each of 57 layers; no artificial padding pixels enter loss"
+  },
+  "normalization": {
+    "fit_roles": ["train"],
+    "input": "741 channel-wise mean/std over real 65x65 pixels only",
+    "target": "57 channel-wise mean/std over real 65x65 pixels only",
+    "valid_fit": false,
+    "test_fit": false,
+    "artifact": "native65_train_only_normalization.json",
+    "sha256": "PENDING_DEVBOX_MATERIALIZATION"
+  },
+  "model": {
+    "family": "Therm-FM/scOT initialized from Poseidon-T",
+    "image_size": 65,
+    "patch_size": 4,
+    "embed_dim": 48,
+    "depths": [4, 4, 4, 4],
+    "num_heads": [3, 6, 12, 24],
+    "skip_connections": [2, 2, 2, 0],
+    "window_size": 16,
+    "residual_model": "convnext",
+    "use_conditioning": false,
+    "replace_embedding_recovery": true,
+    "p": 2,
+    "channel_slice_list_normalized_loss": [0, 57]
+  },
+  "optimization": {
+    "optimizer": "AdamW",
+    "learning_rate": 0.00005,
+    "learning_rate_embedding_recovery": 0.0005,
+    "weight_decay": 0.000001,
+    "scheduler": "cosine",
+    "warmup_ratio": 0.0,
+    "max_grad_norm": 5.0,
+    "batch_size": 40,
+    "epochs": 200,
+    "selection": "minimum valid normalized p=2 loss; lower is better",
+    "formal_seed_policy": "seed0 first, then seed1 and seed2 only after seed0 audit; serial GPU execution"
+  },
+  "qualification": {
+    "required": ["Poseidon-T load", "replacement embedding/recovery", "exact train/valid split", "native 65x65 forward/backward", "real normalized target finite", "full-field 240825-node evaluator", "checkpoint save/reload"],
+    "formal_accuracy_claim": false,
+    "status_before_t4": "NEEDS_TRAIN_ONLY_NORMALIZATION_AND_REAL_TARGET_QUALIFICATION"
+  },
+  "fairness": {
+    "track": "PRETRAINED_TRANSFER_FOUNDATION_MODEL_BASELINE",
+    "information_budget": "dense 741-channel field; richer and different from Heat3D sparse support",
+    "training_budget": "external Poseidon PDE pretraining plus transfer; not same from-scratch budget",
+    "comparison_domain": "240825-node P1i full field",
+    "heat3d_reference": "V6 frozen full-field canonical results; not native-1024-only comparison"
+  },
+  "hard_boundaries": {
+    "do_not_read_test_iid": true,
+    "do_not_read_sealed": true,
+    "do_not_read_deepoheat_official100": true,
+    "do_not_download_thermfm_large_archive": true,
+    "do_not_download_thermfm_full_dataset": true,
+    "do_not_change_backbone": true,
+    "do_not_add_learned_adapter": true
+  }
+}
