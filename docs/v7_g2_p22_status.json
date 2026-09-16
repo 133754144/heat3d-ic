@@ -1,0 +1,53 @@
+{
+  "schema_version": "heat3d_v7_g2_p22_thermfm_protocol_closure_status_v1",
+  "observed_at": "2026-09-16",
+  "branch": "research/v7-g2-baselines",
+  "local_audit_branch": "codex/v7-g2-baselines-finalize",
+  "scope": "Therm-FM native-65 P1i transfer track; HCP provenance-only",
+  "boundaries": {
+    "p1i_test_iid_read": false,
+    "sealed_read": false,
+    "deepoheat_official100_read": false,
+    "thermfm_large_checkpoint_downloaded": false,
+    "thermfm_full_dataset_downloaded": false,
+    "hcp_formal_training_started": false,
+    "multi_htc_started": false,
+    "g1_modified": false
+  },
+  "thermfm": {
+    "classification": "PRETRAINED_TRANSFER_FOUNDATION_MODEL_BASELINE",
+    "upstream_commit_sha": "1c338d0fbe0dca25311eb896a9ea136a4f3d3cb1",
+    "poseidon_revision": "93adcbf10f75b45ac3bca3939cc3d3f239e1e663",
+    "native_adapter": "docs/v7_g2_p22_thermfm_native65_adapter_contract.md",
+    "native_grid": [65, 65, 57],
+    "input_channels": 741,
+    "output_channels": 57,
+    "normalization_sha256": "76acbd1a09771f63de5f9ff400127d5d11871e7b702cfa12d70570b037644eec",
+    "split": {"train": 768, "valid_iid": 128, "test_iid": 128},
+    "t3_provenance": "PASS_METADATA_LEVEL_NO_SAMPLE_OVERLAP_EVIDENCE",
+    "t4_real_target_qualification": "PASS_T4_REAL_TARGET_NATIVE65",
+    "formal_contract": "configs/heat3d_v7/g2_p22_thermfm_formal_launch_contract.json",
+    "seed0": {
+      "status": "RUNNING_VALID_ONLY",
+      "tmux_session": "g2_p22_thermfm_seed0_retry1",
+      "output_dir": "/home/xyh/myCodeGitOnly/heat3d-ic-g2/output/g2_p22_thermfm_seed0",
+      "log_path": "/home/xyh/myCodeGitOnly/heat3d-ic-g2/logs/g2_p22_thermfm_seed0_retry1.log",
+      "first_observed_epoch": 1,
+      "first_observed_epoch_seconds": 29.23586090200115,
+      "latest_observed_epoch": 9,
+      "latest_observed_epoch_seconds": 24.47934400399754,
+      "test_iid_read": false,
+      "sealed_read": false
+    },
+    "seed1": "NOT_STARTED",
+    "seed2": "NOT_STARTED"
+  },
+  "hcp": {
+    "status": "REFERENCE_ONLY_OFFICIAL_ACCURACY_ASSETS_BLOCKED",
+    "upstream_commit_sha": "c7d856f9b665e29b64d9faf931f86db1d6a1f26c",
+    "provenance_audit": "docs/v7_g2_p22_hcp_provenance_audit.json",
+    "native_training_smoke": "PASS_NATIVE_TRAINING_STEP_HCP_PROJECTION_CHECKPOINT_RELOAD",
+    "formal_training": "NOT_STARTED"
+  },
+  "next_gate": "Complete Therm-FM seed0 and audit completion receipt before serial seed1; no automatic test unlock."
+}

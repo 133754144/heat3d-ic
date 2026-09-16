@@ -1,0 +1,35 @@
+{
+  "schema_version": "heat3d_v7_g2_p22_hcp_provenance_audit_v1",
+  "status": "REFERENCE_ONLY_OFFICIAL_ACCURACY_ASSETS_BLOCKED",
+  "audited_at": "2026-09-16",
+  "upstream": {
+    "repo": "https://github.com/LIMIGwenshao/HCP-enhanced-DeepONet",
+    "commit_sha": "c7d856f9b665e29b64d9faf931f86db1d6a1f26c",
+    "native_train": "HCP_enhanced_DeepOHeat/DeepOHeat/single_htc_bc/train_chiplet-packagepower_hcp.py",
+    "native_eval": "HCP_enhanced_DeepOHeat/DeepOHeat/single_htc_bc/eval.py"
+  },
+  "native_chain_audit": {
+    "training_script_defines_domain_inline": true,
+    "eval_script_defines_a_different_inline_domain": true,
+    "training_checkpoint_bundle_in_repository": false,
+    "raw_reference_outputs_in_repository": false,
+    "official_bundle_required_for_published_accuracy": true,
+    "native_smoke_receipt": "docs/v7_g2_p21_hcp_native_smoke_receipt.json",
+    "native_smoke_status": "PASS_NATIVE_TRAINING_STEP_HCP_PROJECTION_CHECKPOINT_RELOAD"
+  },
+  "compatibility": {
+    "p1i_variable_geometry_material_source_bc_native_support": false,
+    "reason": "official HCP path fixes cuboidal domains, structured mesh/LHS sampling, and inline source/BC/material semantics",
+    "reconstructed_p1i_benchmark_created": false,
+    "formal_p1i_training_started": false
+  },
+  "decision": "Keep HCP as a low-priority native/reference track. Do not claim official accuracy or add it to the common P1i table without the official bundle or a separately approved reconstructed HCP-domain benchmark.",
+  "hard_boundaries": {
+    "p1i_test_iid_read": false,
+    "sealed_read": false,
+    "deepoheat_official100_read": false,
+    "thermfm_large_archive_downloaded": false,
+    "multi_htc_started": false,
+    "g1_modified": false
+  }
+}
