@@ -9,6 +9,7 @@ receipts contain phase timings and provenance, not accuracy claims.
 from __future__ import annotations
 
 import argparse
+from dataclasses import replace
 import hashlib
 import importlib.util
 import json
@@ -300,10 +301,25 @@ def profile_heat3d(args: argparse.Namespace) -> dict[str, Any]:
         support_weights, support_indices = p14.support_from_compact(compact_row, mesh)
         power = np.asarray(valid_data.fs_train[int(compact["source_index"])], dtype=np.float32)
         full_support = p14.full_support_artifact(power=power, converter=converter, mesh=mesh)
+        # Compact transport coordinates are float32.  Rebind only the already
+        # frozen support coordinates to the exact benchmark mesh before the
+        # U-v2 membership check; no input feature or support index changes.
+        u_anchor = replace(
+            anchor,
+            condition=replace(
+                anchor.condition,
+                coords=np.asarray(mesh["coords"], dtype=np.float64)[support_indices],
+            ),
+            meta={
+                **anchor.meta,
+                "top_h_W_m2K": 0.1 / 2.0,
+                "bottom_h_W_m2K": 0.1 / 40.0,
+            },
+        )
         before = memory_stats()
         e2e_started = time.perf_counter()
         graph_started = time.perf_counter()
-        case = runtime.build_case(anchor, MESH_COUNT, support=full_support, native_edge_targets=None, query_edge_targets=None)
+        case = runtime.build_case(u_anchor, MESH_COUNT, support=full_support, native_edge_targets=None, query_edge_targets=None)
         graph_seconds = time.perf_counter() - graph_started
         forward_started = time.perf_counter()
         output = runtime.apply(case)
