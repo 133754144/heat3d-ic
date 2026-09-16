@@ -1,0 +1,36 @@
+{
+  "schema_version": "heat3d_v7_g2_p22_thermfm_poseidon_provenance_audit_v1",
+  "status": "PASS_METADATA_LEVEL_NO_SAMPLE_OVERLAP_EVIDENCE",
+  "audited_at": "2026-09-16",
+  "official_material": {
+    "thermfm_repo": "https://github.com/haiyangxin/Therm-FM",
+    "thermfm_repo_commit_sha": "1c338d0fbe0dca25311eb896a9ea136a4f3d3cb1",
+    "poseidon_model_card": "https://huggingface.co/camlab-ethz/Poseidon-T",
+    "poseidon_hub_id": "camlab-ethz/Poseidon-T",
+    "poseidon_revision": "93adcbf10f75b45ac3bca3939cc3d3f239e1e663",
+    "asset_receipt": "docs/v7_g2_p21_thermfm_asset_receipt.json"
+  },
+  "initialization_contract": {
+    "formal_initialization": "Poseidon-T pretrained checkpoint",
+    "released_thermal_model_T_used": false,
+    "replace_embedding_recovery": true,
+    "backbone_modified": false,
+    "large_thermfm_checkpoint_archive_downloaded": false,
+    "full_thermal_dataset_downloaded": false
+  },
+  "pretraining": {
+    "prior_type": "external PDE pretraining / foundation-model prior",
+    "poseidon_model_card_declares": "general PDE operator pretraining; model card metadata is the authoritative available description",
+    "p1i_sample_level_overlap_evidence": "none found in official metadata/documentation inspected",
+    "claim_scope": "absence of evidence in published metadata, not a cryptographic proof of non-overlap"
+  },
+  "v7_p1i": {
+    "split_manifest_sha256": "87aaa84af4b203d0a8ba93ed33b3757d46adc3143dad970371daa0f893ea491f",
+    "train_count": 768,
+    "valid_iid_count": 128,
+    "test_iid_read": false,
+    "sealed_read": false,
+    "official100_read": false
+  },
+  "decision": "Use as PRETRAINED_TRANSFER_FOUNDATION_MODEL_BASELINE; do not describe as same from-scratch training budget or same-information baseline. The metadata-level provenance gate is sufficient for bounded qualification, while the limitation above must remain in the formal report."
+}
