@@ -1,0 +1,101 @@
+{
+  "schema_version": "heat3d_v7_g2_p19_validation_closure_inference_profile_protocol_v1",
+  "status": "FROZEN_BEFORE_PROFILE",
+  "scope": "valid-only inference profiling and P18 validation-closure amendment; no training",
+  "freeze_parent_repo_commit_sha": "6661af572ab83df98de2cb1e54d437398c1beba7",
+  "hard_boundaries": {
+    "training_started": false,
+    "p1i_test_iid_accessed": false,
+    "sealed_accessed": false,
+    "deepoheat_official100_accessed": false,
+    "therm_fm_downloaded": false,
+    "multi_htc_started": false,
+    "existing_checkpoint_overwritten": false
+  },
+  "data": {
+    "source_file": "/home/xyh/myData/DeepOHeat-v1-main/data/fs_train_volume.npy",
+    "source_sha256": "a39a4f51e853f9114d86feb88f74553914b2bfc68ab1c553a3a31df25893fff7",
+    "labels_root": "data/g2/deepoheat_v1_volumetric_labels",
+    "label_receipt_sha256": "a4bb99638a977b2004a93a88b469166ff7da697e89181e64e04152c7f96fe4fd",
+    "subset_manifest": "configs/heat3d_v7/g2_deepoheat_v1_volumetric_subset_manifest.json",
+    "subset_manifest_sha256": "e719665176a22213487ee92c1aac993dd01b02a51555c7cd68bf81a13b861558",
+    "normalization": "docs/v7_g2_p5_deepoheat_v1_train_normalization.json",
+    "normalization_payload_sha256": "3a0273bb92b8c060df8a214b1e0e7dd0e4b5df6bece86b7dea15197ca56ed0db",
+    "split": "valid_iid",
+    "valid_count": 128,
+    "truth_or_accuracy_read": false
+  },
+  "checkpoints": {
+    "heat3d": {
+      "regime": "Heat3D-on-DeepOHeat-v1 e600",
+      "seed": 0,
+      "role": "fixed_e600_endpoint",
+      "path": "output/heat3d_v7_g2/heat3d_on_deepoheat_v1_e600_p15/seed_0/params_final.pkl",
+      "epoch": 600,
+      "selection_policy": "fixed endpoint; no profiling-time selection"
+    },
+    "deepoheat": [
+      {
+        "regime": "DeepOHeat-full-minus-valid128",
+        "seed": 0,
+        "role": "validation_selected_best",
+        "path": "output/heat3d_v7_g2/deepoheat_v1_full_minus_valid128_p17/seed_0/DeepOHeat_v1_best.eqx",
+        "selection_policy": "minimum valid full-field metric from frozen P17 receipt"
+      },
+      {
+        "regime": "DeepOHeat-full-minus-valid128",
+        "seed": 0,
+        "role": "final_endpoint",
+        "path": "output/heat3d_v7_g2/deepoheat_v1_full_minus_valid128_p17/seed_0/DeepOHeat_v1_final.eqx",
+        "selection_policy": "fixed 100000-iteration endpoint"
+      }
+    ]
+  },
+  "representation": {
+    "heat3d": {
+      "conditioning_count": 1024,
+      "query_count": 571256,
+      "query_shape": [101, 101, 56],
+      "query_strategy": "U-v2 direct-query dense inference",
+      "support_selector": "frozen physics-layout-aware 1024 selector"
+    },
+    "deepoheat": {
+      "function_input_shape": [101, 101],
+      "function_batch": 4,
+      "output_shape": [101, 101, 56, 1],
+      "output_count": 571256,
+      "path": "upstream DeepOHeat-v1 direct dense model output"
+    }
+  },
+  "timing": {
+    "hardware": "one devbox GPU, serial execution",
+    "synchronization": "jax.block_until_ready before stopping each timed device phase; host conversion included only in E2E/postprocess",
+    "heat3d_batch": 1,
+    "deepoheat_batch": 4,
+    "cold_pass": "first valid batch/case, compile-inclusive",
+    "steady_state": "remaining full valid128 pass after cold phase",
+    "cached_fixture_repeats": 3,
+    "cache_fixture": "first valid case for Heat3D built case; first valid batch for DeepOHeat",
+    "accuracy_used_for_timing_decision": false
+  },
+  "required_outputs": [
+    "cold_e2e_seconds",
+    "query_graph_construction_seconds",
+    "model_forward_seconds",
+    "postprocess_seconds",
+    "warm_or_cached_e2e_seconds",
+    "model_only_seconds_for_deepoheat",
+    "peak_gpu_memory",
+    "software_and_hardware_environment",
+    "checkpoint_reload_provenance_check"
+  ],
+  "no_write_zones": [
+    "data/",
+    "output/",
+    "checkpoints/",
+    "logs/",
+    "test_iid",
+    "sealed",
+    "DeepOHeat official100"
+  ]
+}
