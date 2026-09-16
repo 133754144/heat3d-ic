@@ -1,0 +1,25 @@
+{
+  "schema_version": "heat3d_v7_g2_p22_thermfm_reconstructed_environment_v1",
+  "host": "XYH-Desktop/devbox",
+  "environment_name": "PDEFormer",
+  "environment_kind": "reconstructed compatibility environment, not official pinned Therm-FM environment",
+  "python": "3.13.9",
+  "torch": "2.9.0+cu128",
+  "cuda_runtime": "12.8",
+  "transformers": "4.57.1",
+  "accelerate": "1.11.0",
+  "h5py": "3.15.1",
+  "numpy": "2.3.4",
+  "pyyaml": "6.0.2",
+  "gpu": "NVIDIA GeForce RTX 5070",
+  "compute_capability": "sm_120",
+  "gpu_total_memory_bytes": 12820480000,
+  "thermfm_repo_commit_sha": "1c338d0fbe0dca25311eb896a9ea136a4f3d3cb1",
+  "thermfm_model_sha256": "49de334a185a49f899f0aace92cdc5824a981ecd0e458108dee6486681a3c931",
+  "thermfm_trainer_sha256": "e3e03bce9b909b0c264b23b7786b6c9c0171431b731970f82f0b0959f3c364ec",
+  "official_T_config_sha256": "720c54818b5d96171bc68769da2ddb96aaee99a760e5cdcb294c0673166b3e2d",
+  "notes": [
+    "The g2-baselines environment has CUDA PyTorch but no Transformers; Therm-FM qualification/formal uses the isolated PDEFormer environment.",
+    "No CUDA driver nvidia-smi binary is on PATH; CUDA availability and GPU identity were verified through torch.cuda."
+  ]
+}
