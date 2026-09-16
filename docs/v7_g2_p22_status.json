@@ -1,6 +1,6 @@
 {
   "schema_version": "heat3d_v7_g2_p22_thermfm_protocol_closure_status_v1",
-  "observed_at": "2026-09-16",
+  "observed_at": "2026-09-17T02:37:07+08:00",
   "branch": "research/v7-g2-baselines",
   "local_audit_branch": "codex/v7-g2-baselines-finalize",
   "scope": "Therm-FM native-65 P1i transfer track; HCP provenance-only",
@@ -28,19 +28,37 @@
     "t4_real_target_qualification": "PASS_T4_REAL_TARGET_NATIVE65",
     "formal_contract": "configs/heat3d_v7/g2_p22_thermfm_formal_launch_contract.json",
     "seed0": {
-      "status": "RUNNING_VALID_ONLY",
-      "tmux_session": "g2_p22_thermfm_seed0_retry1",
+      "status": "COMPLETE_VALID_ONLY",
+      "tmux_session": null,
       "output_dir": "/home/xyh/myCodeGitOnly/heat3d-ic-g2/output/g2_p22_thermfm_seed0",
       "log_path": "/home/xyh/myCodeGitOnly/heat3d-ic-g2/logs/g2_p22_thermfm_seed0_retry1.log",
-      "first_observed_epoch": 1,
-      "first_observed_epoch_seconds": 29.23586090200115,
-      "latest_observed_epoch": 9,
-      "latest_observed_epoch_seconds": 24.47934400399754,
+      "completion_receipt": "docs/v7_g2_p22_thermfm_seed0_audit.json",
+      "best_epoch": 184,
       "test_iid_read": false,
-      "sealed_read": false
+      "sealed_read": false,
+      "official100_read": false
     },
-    "seed1": "NOT_STARTED",
-    "seed2": "NOT_STARTED"
+    "seed1": {
+      "status": "RUNNING_VALID_ONLY",
+      "tmux_session": "g2_p22_thermfm_seed1_retry1",
+      "output_dir": "/home/xyh/myCodeGitOnly/heat3d-ic-g2/output/g2_p22_thermfm_seed1",
+      "log_path": "/home/xyh/myCodeGitOnly/heat3d-ic-g2/logs/g2_p22_thermfm_seed1_retry1.log",
+      "attempt1_failure": "docs/v7_g2_p22_thermfm_seed1_attempt1_failure.json",
+      "latest_observed_epoch": 35,
+      "test_iid_read": false,
+      "sealed_read": false,
+      "official100_read": false
+    },
+    "seed2": {
+      "status": "QUEUED_AFTER_SEED1_COMPLETION",
+      "tmux_gate": "g2_p22_thermfm_seed2_gate",
+      "output_dir": "/home/xyh/myCodeGitOnly/heat3d-ic-g2/output/g2_p22_thermfm_seed2",
+      "log_path": "/home/xyh/myCodeGitOnly/heat3d-ic-g2/logs/g2_p22_thermfm_seed2_retry1.log",
+      "preflight": "absolute sample/full-field paths and empty output/log checks before launch",
+      "test_iid_read": false,
+      "sealed_read": false,
+      "official100_read": false
+    }
   },
   "hcp": {
     "status": "REFERENCE_ONLY_OFFICIAL_ACCURACY_ASSETS_BLOCKED",
