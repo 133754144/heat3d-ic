@@ -1,5 +1,5 @@
 {
-  "schema_version": "heat3d_v7_g2_p20_thermfm_compatibility_audit_v1",
+  "schema_version": "heat3d_v7_g2_p20_thermfm_compatibility_audit_v2",
   "observed_at": "2026-09-16",
   "status": "NEEDS_AMENDMENT",
   "asset_decision": "BLOCKED_BY_UPSTREAM_ASSETS",
@@ -65,6 +65,21 @@
     "pretraining_overlap_audit": "NOT_COMPLETED; required before any V7 result",
     "pretrained_prior_vs_scratch": "pretrained external PDE prior; cannot be treated as same from-scratch budget",
     "resource_estimate": "not claimable before selective model_T/config/stats and deterministic conversion are available"
+  },
+  "devbox_recheck": {
+    "observed_at": "2026-09-16T18:26:52+08:00",
+    "host": "XYH-Desktop",
+    "labels_root": "/home/xyh/myCodeGitOnly/heat3d-ic-g2/data/g2/deepoheat_v1_volumetric_labels",
+    "labels_root_total_bytes": 2094469815,
+    "train_case_directories": 768,
+    "valid_case_directories": 128,
+    "label_generation_receipt_sha256": "a4bb99638a977b2004a93a88b469166ff7da697e89181e64e04152c7f96fe4fd",
+    "normalization_payload_sha256": "3a0273bb92b8c060df8a214b1e0e7dd0e4b5df6bece86b7dea15197ca56ed0db",
+    "selective_thermfm_model_assets_found": false,
+    "thermfm_large_archive_downloaded": false,
+    "pretraining_overlap_audit": "not started because model_T/config/stats assets remain unavailable",
+    "test_or_sealed_read": false,
+    "interpretation": "P1i train/valid dense labels are available on devbox, but upstream Therm-FM assets remain the blocking dependency; no local copy or evaluation was started."
   },
   "decision_and_next_action": {
     "decision": "BLOCKED_BY_UPSTREAM_ASSETS",

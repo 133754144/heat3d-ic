@@ -62,6 +62,16 @@
       }
     ]
   },
+  "full_resolution_policy": {
+    "default_cross_resolution_strategy": "U-v2 direct-query dense inference",
+    "policy_file": "configs/heat3d_v7/g2_full_resolution_u_v2_policy.json",
+    "formal_domain": "DeepOHeat-v1 full field 101x101x56=571256",
+    "conditioning_count": 1024,
+    "native_1024_is_separate_view": true,
+    "idw_role": "historical diagnostic only; excluded from formal rows and main conclusions",
+    "latency_includes": ["query-graph construction", "direct-query model forward", "required dense postprocess"],
+    "no_new_learned_parameters": true
+  },
   "evaluation": {
     "cases": 128,
     "deepoheat_official100": "not accessed in P18; future evaluation-only governance applies",

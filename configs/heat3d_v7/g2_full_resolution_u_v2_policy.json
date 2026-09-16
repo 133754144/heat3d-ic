@@ -1,0 +1,65 @@
+{
+  "schema_version": "heat3d_v7_g2_full_resolution_u_v2_policy_v1",
+  "status": "FROZEN_DEFAULT_FOR_CROSS_RESOLUTION_INFERENCE",
+  "observed_at": "2026-09-16",
+  "scope": [
+    "DeepOHeat-v1 cross-benchmark full-field evaluation",
+    "P14.1/P15/P18/P19/P20 valid-only evidence",
+    "future evaluation-only unlocks on the same physical domain"
+  ],
+  "default_full_resolution_strategy": {
+    "name": "U-v2 direct-query dense inference",
+    "input_conditioning_count": 1024,
+    "support_selector": "frozen physics-layout-aware 1024 selector",
+    "query_domain": {
+      "shape": [101, 101, 56],
+      "count": 571256,
+      "description": "DeepOHeat-v1 complete volumetric output grid"
+    },
+    "query_generation": "direct queries on the frozen high-resolution coordinate domain",
+    "temperature_space": "deltaT_K",
+    "learned_parameter_count_added": 0,
+    "deterministic_geometry_and_query_contract": true,
+    "model_execution_determinism": "inherits the frozen Heat3D execution/backend policy",
+    "latency_boundary": "end-to-end includes query-graph construction, direct-query model forward, and required postprocess"
+  },
+  "other_views": {
+    "native_1024": {
+      "role": "separate native sparse output; no cross-resolution conversion"
+    },
+    "u_source_slice_10201": {
+      "role": "secondary slice view",
+      "domain": "101x101 at z=0.15",
+      "count": 10201,
+      "same_strategy": "U-v2 direct-query dense inference"
+    },
+    "idw": {
+      "role": "historical diagnostic only",
+      "formal_default": false,
+      "can_enter_main_comparison": false,
+      "provenance": "Heat3D V6/P1h full-field utility"
+    }
+  },
+  "governance": {
+    "no_new_decoder_or_learned_parameters": true,
+    "no_new_training": true,
+    "do_not_call_u_v2_reconstruction": true,
+    "formal_name": "U-v2 direct-query dense inference",
+    "historical_e200_and_idw_excluded_from_formal_rows": true,
+    "v6_p1i_240825_domain": "frozen legacy canonical evaluator remains unchanged; this policy governs the 571256-point DeepOHeat-v1 cross-benchmark domain"
+  },
+  "evidence": {
+    "p14_1_aggregate": "docs/v7_g2_p14_1_u_v2_aggregate.json",
+    "p15_aggregation": "docs/v7_g2_p15_heat3d_e600_aggregation.json",
+    "p18_comparison": "docs/v7_g2_p18_common_valid_comparison.json",
+    "p19_profile": "docs/v7_g2_p19_inference_profile_aggregation.json"
+  },
+  "hard_boundaries": {
+    "new_training": false,
+    "test_iid_accessed": false,
+    "sealed_accessed": false,
+    "deepoheat_official100_accessed": false,
+    "therm_fm_downloaded": false,
+    "multi_htc_started": false
+  }
+}

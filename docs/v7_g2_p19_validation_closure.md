@@ -12,6 +12,12 @@ P18 checkpoint policy 已冻结：Heat3D 使用固定 e600 endpoint；DeepOHeat
 full-minus-valid128 与 matched-768 均同时报告 validation-selected best 和
 fixed final-100000 endpoint；不使用模糊的 best-to-best 主比较。
 
+P20 继续沿用并正式封板：full-resolution cross-benchmark 的默认跨分辨率策略是
+**U-v2 direct-query dense inference**，即 1024 个冻结 conditioning points 在
+`101×101×56=571,256` 个目标坐标上直接查询。该名称和 latency boundary 不再使用
+“reconstruction”表述；IDW 只保留历史诊断，V6 P1i 的 240,825-node canonical
+结果不被回写或改名。
+
 ## IDW provenance
 
 历史 IDW 来自 Heat3D V6/P1h full-field utility，而非 DeepOHeat-v1：

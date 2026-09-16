@@ -1,8 +1,13 @@
 {
-  "schema_version": "heat3d_v7_g2_p20_p1i_heat3d_v6_canonical_audit_v1",
+  "schema_version": "heat3d_v7_g2_p20_p1i_heat3d_v6_canonical_audit_v2",
   "observed_at": "2026-09-16",
   "status": "PASS_AUDIT_VALID_ONLY_THREE_SEED_RELOAD_EVIDENCE",
   "scope": "P20-A canonical P1i checkpoint audit; no retraining and no new test evaluation",
+  "resolution_scope_note": {
+    "default_cross_resolution_policy": "U-v2 direct-query dense inference applies to the DeepOHeat-v1 571256-point cross-benchmark domain",
+    "v6_canonical_full_field": "240825-node V6 P1i evaluator remains frozen and unchanged",
+    "policy_file": "configs/heat3d_v7/g2_full_resolution_u_v2_policy.json"
+  },
   "canonical_decision": {
     "checkpoint_family": "V6_FROZEN_CANONICAL_P1I_CHECKPOINT_FAMILY",
     "members": [

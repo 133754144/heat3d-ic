@@ -1,8 +1,18 @@
 {
-  "schema_version": "heat3d_v7_g2_p20_benchmark_matrix_v1",
+  "schema_version": "heat3d_v7_g2_p20_benchmark_matrix_v2",
   "observed_at": "2026-09-16",
   "status": "PROPOSED_ACCURACY_FIRST_MATRIX_VALID_ONLY",
   "scope": "P20 accuracy/generalization closure; no new training and no test/sealed unlock",
+  "full_resolution_policy": {
+    "default_cross_resolution_strategy": "U-v2 direct-query dense inference",
+    "policy_file": "configs/heat3d_v7/g2_full_resolution_u_v2_policy.json",
+    "primary_domain": "DeepOHeat-v1 101x101x56=571256",
+    "conditioning_count": 1024,
+    "native_1024_role": "separate sparse-output view",
+    "idw_role": "historical diagnostic only; not a formal comparator",
+    "formal_latency_boundary": "query-graph construction + direct-query model forward + required postprocess",
+    "formal_training_or_decoder_change": false
+  },
   "metric_policy": {
     "primary": "relative RMSE in temperature space; sample-first aggregation within a case, reported with mean and sample SD across seeds",
     "secondary": ["point-global relative RMSE", "RMSE_K", "MAE_K", "peak-temperature error_K", "full-field error statistics"],

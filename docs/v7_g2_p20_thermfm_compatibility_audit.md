@@ -4,7 +4,7 @@
 
 ## P1i labels
 
-V6 tracked full-field sidecar 的 `status=complete`、`sample_count=1024`、`solver_node_count=240825`，并为每个样本记录 temperature/deltaT SHA；角色计数为 train 768、valid_iid 128、test_iid 128。因此已有 manifest 足以证明 train768 具有冻结的 240,825-node dense-label contract。压缩 archive bytes 未挂载到本 worktree，本轮没有读 labels、生成 labels 或触碰 test role；详情与 SHA 见 JSON。
+V6 tracked full-field sidecar 的 `status=complete`、`sample_count=1024`、`solver_node_count=240825`，并为每个样本记录 temperature/deltaT SHA；角色计数为 train 768、valid_iid 128、test_iid 128。因此已有 manifest 足以证明 train768 具有冻结的 240,825-node dense-label contract。devbox 只读 recheck 进一步确认 `/home/xyh/myCodeGitOnly/heat3d-ic-g2/data/g2/deepoheat_v1_volumetric_labels` 已有 768 train + 128 valid 目录（约 2.09 GB），label receipt SHA 为 `a4bb9963…fe4fd`，normalization payload SHA 为 `3a0273bb…ed0db`。本地 worktree 仍不复制该大目录，本轮没有生成新 labels 或触碰 test role；详情与 SHA 见 JSON 及 [`v7_g2_p20_devbox_recheck.json`](v7_g2_p20_devbox_recheck.json)。
 
 ## Interface
 

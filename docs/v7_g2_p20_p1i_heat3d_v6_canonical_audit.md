@@ -2,6 +2,8 @@
 
 状态：`PASS_AUDIT_VALID_ONLY_THREE_SEED_RELOAD_EVIDENCE`。本轮没有重训，也没有新打开任何测试角色；内容复用远端 Git 已关闭的 V6 valid-only 三 seed evaluator/重载证据。
 
+分辨率治理补充：DeepOHeat-v1 `101×101×56=571,256` cross-benchmark full-field 的默认跨分辨率策略为 **U-v2 direct-query dense inference**。这不回写 V6 P1i 的冻结 `240,825`-node canonical evaluator；后者继续使用既有 V6 语义。策略文件为 [`g2_full_resolution_u_v2_policy.json`](../configs/heat3d_v7/g2_full_resolution_u_v2_policy.json)。
+
 ## Canonical identity
 
 P1i 主结果只使用 `V6_06_V5best_P1i_seed0_reliable_B24`、`V6_07...seed1`、`V6_08...seed2`。V7 e200/e600 是后续 cross-benchmark/运行研究，不替代 V6 P1i canonical family。三份配置的 SHA、训练 commit、数据 manifest、split manifest、full-field sidecar 和 checkpoint SHA 见同名 JSON。

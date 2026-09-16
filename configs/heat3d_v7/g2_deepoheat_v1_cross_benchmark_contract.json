@@ -39,8 +39,8 @@
     "checkpoint": "minimum valid sample-first relative RMSE percent, earliest epoch tie; retain final epoch",
     "outputs": {
       "native_sparse": {"conditioning_count": 1024, "query_count": 1024, "domain": "frozen physics-layout-aware support"},
-      "U_source_slice": {"conditioning_count": 1024, "query_count": 10201, "algorithm": "frozen label-independent layer/interface-aware inverse-distance reconstruction", "domain": "101x101 z=0.15 source-layer top slice"},
-      "U_full_field": {"conditioning_count": 1024, "query_count": 571256, "shape": [101, 101, 56], "algorithm": "same frozen U reconstruction", "domain": "official complete volumetric output", "primary_high_resolution_comparison": true}
+      "U_source_slice": {"conditioning_count": 1024, "query_count": 10201, "algorithm": "frozen U-v2 direct-query dense inference on the layer/interface-aware target coordinates", "domain": "101x101 z=0.15 source-layer top slice"},
+      "U_full_field": {"conditioning_count": 1024, "query_count": 571256, "shape": [101, 101, 56], "algorithm": "frozen U-v2 direct-query dense inference", "domain": "official complete volumetric output", "primary_high_resolution_comparison": true}
     }
   },
   "comparison_rules": {
@@ -50,7 +50,7 @@
     "official_full_field_direct_comparison": "primary high-resolution comparison; both methods on all 571256 official query points",
     "U_10201_direct_comparison": "slice-only; both methods must be evaluated on z=0.15 before numerical comparison",
     "required_accounting": ["conditioning point/function count", "temperature-label count", "solver calls", "training walltime", "parameter count", "peak memory", "inference latency", "accuracy"],
-    "runtime": "direct runtime comparison only after remeasurement on identical hardware; Heat3D-U latency includes reconstruction cost"
+    "runtime": "direct runtime comparison only after remeasurement on identical hardware; Heat3D U-v2 latency includes query-graph construction, direct-query forward and required postprocess"
   },
   "test_unlock": "only after G1 and all preregistered training/checkpoint/config freezes; evaluation-only with no retraining",
   "formal_training_started": false

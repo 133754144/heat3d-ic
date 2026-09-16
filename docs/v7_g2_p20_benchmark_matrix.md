@@ -2,6 +2,12 @@
 
 状态：`PROPOSED_ACCURACY_FIRST_MATRIX_VALID_ONLY`。P20 没有启动训练或新评估；所有数字来自已关闭的 valid-only receipts。训练时间、显存和 latency 只作 supplementary characterization。
 
+分辨率策略已封板：DeepOHeat-v1 `571,256`-point full-field 的默认跨分辨率方案为
+**U-v2 direct-query dense inference**（1024 frozen conditioning points →
+`101×101×56` direct queries）。native-1024 单独列示；IDW 仅作 V6/P1h historical
+diagnostic，不进入正式 accuracy 表。端到端 latency 必须包括 query graph、direct-query
+forward 与必要 postprocess。详见 [`g2_full_resolution_u_v2_policy.json`](../configs/heat3d_v7/g2_full_resolution_u_v2_policy.json)。
+
 ## P1i common-task（native 1024）
 
 | model | valid sample-first relative RMSE [%] mean ± sample SD | point-global [%] mean ± sample SD | status |

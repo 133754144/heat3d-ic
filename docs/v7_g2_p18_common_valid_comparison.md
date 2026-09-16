@@ -2,6 +2,15 @@
 
 仅使用 Heat3D valid128；本 P18 comparison 未访问 test_iid、sealed 或 DeepOHeat official100。治理上，V6 的 test_iid 已于历史路线中打开过一次作 legacy confirmatory holdout；当前 untouched final holdout 是 sealed IID。
 指标为 full 571256-point temperature-space sample-first relative RMSE [%]。
+
+## Full-resolution policy
+
+正式跨分辨率 full-field 默认采用 **U-v2 direct-query dense inference**：冻结的
+1024 conditioning points 直接查询 `101×101×56=571,256` 个 DeepOHeat-v1 官方
+坐标，端到端计时包含 query-graph construction、direct-query forward 和必要
+postprocess。native-1024 是独立输出视图；IDW 仅为 V6/P1h historical diagnostic，
+不进入正式比较。冻结配置见
+[`g2_full_resolution_u_v2_policy.json`](../configs/heat3d_v7/g2_full_resolution_u_v2_policy.json)。
 表中 Heat3D 的 best 列是固定 e600 endpoint 的占位显示，并非 validation-selected best；DeepOHeat 的 best/final 列分别对应 validation-selected best 与固定 100000-iteration endpoint。
 
 | regime | training cases | metric | best mean ± SD | final mean ± SD | wall h | peak GiB |

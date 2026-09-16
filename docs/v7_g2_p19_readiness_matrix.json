@@ -3,6 +3,15 @@
   "status": "P19_VALIDATION_CLOSURE_COMPLETE_TESTS_LOCKED",
   "branch": "research/v7-g2-baselines",
   "scope": "valid-only closure and inference profiling; no new training; current-turn access only",
+  "full_resolution_policy": {
+    "default_cross_resolution_strategy": "U-v2 direct-query dense inference",
+    "policy_file": "configs/heat3d_v7/g2_full_resolution_u_v2_policy.json",
+    "domain": "DeepOHeat-v1 101x101x56=571256",
+    "conditioning_count": 1024,
+    "idw": "historical diagnostic only",
+    "native_1024": "reported separately; not a substitute for the full-domain query",
+    "latency_boundary": "query graph + direct-query forward + required postprocess"
+  },
   "governance_note": "P1i test_iid was opened once in V6 as corrected legacy confirmatory evidence; sealed IID remains the untouched final holdout. P19 itself accessed neither.",
   "closed_gates": [
     {

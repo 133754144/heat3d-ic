@@ -1,0 +1,68 @@
+{
+  "schema_version": "heat3d_v7_g2_p20_devbox_recheck_v1",
+  "observed_at": "2026-09-16T18:26:52+08:00",
+  "scope": "read-only devbox recheck for P20 continuation; no training or evaluation unlock",
+  "branch": "research/v7-g2-baselines",
+  "remote": {
+    "host": "XYH-Desktop",
+    "repo_path": "/home/xyh/myCodeGitOnly/heat3d-ic-g2",
+    "repo_commit_sha": "2ed1ac937757c2763a1aea1a886153aa87293393",
+    "worktree_status": "clean",
+    "note": "The devbox checkout is behind the pushed audit branch; no pull or mutation was performed."
+  },
+  "deepoheat_v1_label_cache": {
+    "root": "/home/xyh/myCodeGitOnly/heat3d-ic-g2/data/g2/deepoheat_v1_volumetric_labels",
+    "total_bytes": 2094469815,
+    "train_case_directories": 768,
+    "valid_case_directories": 128,
+    "label_generation_receipt_sha256": "a4bb99638a977b2004a93a88b469166ff7da697e89181e64e04152c7f96fe4fd",
+    "remote_normalization_file_sha256": "15ddd50b9584a8faae7ad6b41f850aa71cb983a4980dace68322f00d01c2ea03",
+    "normalization_payload_sha256": "3a0273bb92b8c060df8a214b1e0e7dd0e4b5df6bece86b7dea15197ca56ed0db",
+    "subset_manifest_sha256": "e719665176a22213487ee92c1aac993dd01b02a51555c7cd68bf81a13b861558",
+    "support_manifest_sha256": "bb1261f5007cb85e1759f4e4bf1316aeb8a04d56cc1152d5e715949c130a8017",
+    "receipt_status": "PASS_COMPLETE_768_128",
+    "solver": {
+      "implementation": "official_hybrid_solver_notebook_matrix_CPU_port",
+      "mesh": [101, 101, 56],
+      "python": "3.12.3",
+      "numpy": "2.5.2",
+      "scipy": "1.18.1",
+      "pyamg": "5.3.0",
+      "rtol": 1e-10,
+      "peak_process_rss_bytes": 640909312
+    },
+    "test_or_sealed_read": false,
+    "official100_read": false,
+    "large_local_copy_created": false
+  },
+  "heat3d_e600_status": {
+    "root": "output/heat3d_v7_g2/heat3d_on_deepoheat_v1_e600_p15",
+    "seed_0": {"status": "COMPLETE", "epoch": 600, "best_epoch": 574, "best_metric": 0.6865097290178216},
+    "seed_1": {"status": "COMPLETE", "epoch": 600, "best_epoch": 593, "best_metric": 0.6968207684075501},
+    "seed_2": {"status": "COMPLETE", "epoch": 600, "best_epoch": 581, "best_metric": 0.6735266929501492},
+    "test_or_sealed_read": false,
+    "new_training_started": false
+  },
+  "thermfm_hcp_asset_probe": {
+    "thermfm_selective_model_assets_found": false,
+    "thermfm_large_archive_downloaded": false,
+    "hf_cache_models": ["models--thuerey-group--pde-transformer"],
+    "hcp_native_bundle_found": false,
+    "decision": "BLOCKED_BY_UPSTREAM_ASSETS"
+  },
+  "active_processes": {
+    "g2_training_or_evaluation": false,
+    "tmux_g2_session": false,
+    "gpu_command_available_in_noninteractive_shell": false,
+    "note": "No process was started, stopped, or attached."
+  },
+  "hard_boundaries": {
+    "g1_modified": false,
+    "test_iid_accessed": false,
+    "sealed_accessed": false,
+    "deepoheat_official100_accessed": false,
+    "therm_fm_downloaded": false,
+    "multi_htc_started": false,
+    "existing_output_overwritten": false
+  }
+}
