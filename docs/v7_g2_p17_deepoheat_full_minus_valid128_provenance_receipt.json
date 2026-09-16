@@ -1,0 +1,93 @@
+{
+  "schema_version": "heat3d_v7_g2_p17_deepoheat_full_minus_valid128_provenance_receipt_v1",
+  "status": "COMPLETE_VALID_ONLY_THREE_SEEDS",
+  "scope": "DeepOHeat-v1 native recipe with frozen Heat3D valid128 excluded from the source pool",
+  "repo_commit_sha": "1f51a36b81494215a77a21f9151c27913719d23c",
+  "runner": {
+    "path": "scripts/run_v7_g2_p14_deepoheat_v1_matched.py",
+    "runner_sha256": "e291732be73b8fc8a182448cfa8e2c71e50bc68941da28303d6aaaa400670a99",
+    "protocol_path": "configs/heat3d_v7/g2_p17_deepoheat_full_minus_valid128_frozen_protocol.json",
+    "protocol_sha256": "c6ca4f6cd5ce1e329ea5e09760033842b39dde558a91719e4912836c50b70dd5",
+    "exclusion_manifest_path": "configs/heat3d_v7/g2_p17_deepoheat_full_minus_valid128_exclusion_manifest.json",
+    "exclusion_manifest_sha256": "9a0b17913c795fbc80193b763ad2495271bd5886b236dc1ceac8d9319fcf679d"
+  },
+  "upstream": {
+    "repo": "xlyu0127/DeepOHeat-v1",
+    "commit_sha": "3ef3d9c41666a56b5940b39a61166ccaa5aaedb2",
+    "architecture": "DeepOHeat_v1(dim=3, branch_dim=101^2, field_dim=1, branch_depth=8, branch_hidden=256, trunk_depth=3, trunk_hidden=64, rank=128)",
+    "mesh": [101, 101, 56],
+    "optimizer": "Optax Adam",
+    "learning_rate": 0.001,
+    "schedule": "exponential_decay(0.9 per 1000 iterations)",
+    "iterations": 100000,
+    "functions_per_iteration": 50,
+    "sampled_function_instances_processed": 5000000,
+    "normalization": "none; native nondimensional u",
+    "pde_bc_semantics": "official full PDE, top/bottom Robin and side adiabatic BC"
+  },
+  "data": {
+    "source_file": "fs_train_volume.npy",
+    "source_sha256": "a39a4f51e853f9114d86feb88f74553914b2bfc68ab1c553a3a31df25893fff7",
+    "subset_manifest_sha256": "e719665176a22213487ee92c1aac993dd01b02a51555c7cd68bf81a13b861558",
+    "pool_manifest_sha256": "9a0b17913c795fbc80193b763ad2495271bd5886b236dc1ceac8d9319fcf679d",
+    "training_pool_count": 99872,
+    "training_pool_indices_int64_sha256": "febe7565363d509723dd228962fd90a65d10cebc9c8e4c6e10d775c963221747",
+    "excluded_valid_count": 128,
+    "valid_overlap_count": 0,
+    "labels_root": "data/g2/deepoheat_v1_volumetric_labels",
+    "label_receipt_sha256": "a4bb99638a977b2004a93a88b469166ff7da697e89181e64e04152c7f96fe4fd"
+  },
+  "environment": {
+    "host": "devbox",
+    "python": "3.14.3",
+    "jax": "0.9.1",
+    "jaxlib": "0.9.1",
+    "equinox": "0.13.8",
+    "optax": "0.2.6",
+    "numpy": "2.4.2",
+    "GPUtil": "1.4.0",
+    "gpu": "NVIDIA GeForce RTX 5070",
+    "driver": "591.86",
+    "cuda_toolkit": "nvcc unavailable; JAX CUDA backend",
+    "xla_flags": "--xla_gpu_deterministic_ops=false"
+  },
+  "seeds": {
+    "0": {
+      "output_path": "output/heat3d_v7_g2/deepoheat_v1_full_minus_valid128_p17/seed_0",
+      "receipt_sha256": "f57c0da7f0b8e891f24b35277376ade15b94becfef0e6d65a56a9ef934d728fe",
+      "best_iteration": 40000,
+      "best_sample_first_relative_rmse_pct": 1.1207128090054994,
+      "final_sample_first_relative_rmse_pct": 1.5056938824116066,
+      "wall_seconds": 2073.2787986050243,
+      "peak_device_bytes": 687160576,
+      "checkpoint_reload": "PASS"
+    },
+    "1": {
+      "output_path": "output/heat3d_v7_g2/deepoheat_v1_full_minus_valid128_p17/seed_1",
+      "receipt_sha256": "425a529c19edc71ec1603a18230d2666d11644b34e255cc7b4a88350f418085e",
+      "best_iteration": 40000,
+      "best_sample_first_relative_rmse_pct": 1.190701675205657,
+      "final_sample_first_relative_rmse_pct": 1.7273770546227418,
+      "wall_seconds": 2101.0584600609727,
+      "peak_device_bytes": 687160576,
+      "checkpoint_reload": "PASS"
+    },
+    "2": {
+      "output_path": "output/heat3d_v7_g2/deepoheat_v1_full_minus_valid128_p17/seed_2",
+      "receipt_sha256": "dff3c961c6b579fa08cc1bcac03e6a8cdf4c1c74cb2460e6fd5e81b574abc0c1",
+      "best_iteration": 60000,
+      "best_sample_first_relative_rmse_pct": 1.1286491822358273,
+      "final_sample_first_relative_rmse_pct": 1.290685345297883,
+      "wall_seconds": 2089.5550451799645,
+      "peak_device_bytes": 687160576,
+      "checkpoint_reload": "PASS"
+    }
+  },
+  "hard_boundaries": {
+    "p1i_test_iid_accessed": false,
+    "sealed_accessed": false,
+    "deepoheat_official100_accessed": false,
+    "multi_htc_started": false,
+    "therm_fm_downloaded": false
+  }
+}
