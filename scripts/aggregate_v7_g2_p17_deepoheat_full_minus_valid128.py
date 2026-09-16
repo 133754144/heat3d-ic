@@ -35,6 +35,7 @@ def main() -> int:
     ap = argparse.ArgumentParser()
     ap.add_argument("--receipt", action="append", required=True, help="SEED=PATH")
     ap.add_argument("--output", type=Path, required=True)
+    ap.add_argument("--markdown", type=Path, help="optional human-readable valid-only summary")
     args = ap.parse_args()
     if len(args.receipt) != 3:
         raise SystemExit("three receipts are required")
@@ -119,6 +120,36 @@ def main() -> int:
     }
     args.output.parent.mkdir(parents=True, exist_ok=True)
     args.output.write_text(json.dumps(out, indent=2, sort_keys=True) + "\n", encoding="utf-8")
+    if args.markdown is not None:
+        lines = [
+            "# V7 G2-P17：DeepOHeat full-minus-valid128 valid-only cohort",
+            "",
+            "训练池为 frozen official pool 减去 Heat3D valid128；仅在被排除的 128 个 valid cases 上做 temperature-space validation。",
+            "",
+            "| seed | train cases | best iter | best [%] | final [%] | wall h | peak device GiB |",
+            "|---:|---:|---:|---:|---:|---:|---:|",
+        ]
+        for seed in (0, 1, 2):
+            row = out["seeds"][str(seed)]
+            lines.append(
+                f"| {seed} | {row['training_case_count']} | {row['best_iteration']} | "
+                f"{row['best_metrics']['sample_first_relative_rmse_pct']:.6f} | "
+                f"{row['final_metrics']['sample_first_relative_rmse_pct']:.6f} | "
+                f"{row['training_wall_seconds'] / 3600.0:.3f} | "
+                f"{row['peak_device_bytes'] / (1024**3):.3f} |"
+            )
+        lines.extend([
+            "",
+            "## Across seeds",
+            "",
+            f"best = {out['aggregate']['best_sample_first_relative_rmse_pct']['mean']:.6f} ± {out['aggregate']['best_sample_first_relative_rmse_pct']['sample_sd']:.6f}% (sample SD); ",
+            f"final = {out['aggregate']['final_sample_first_relative_rmse_pct']['mean']:.6f} ± {out['aggregate']['final_sample_first_relative_rmse_pct']['sample_sd']:.6f}%; ",
+            f"wall = {out['aggregate']['training_wall_seconds']['mean'] / 3600.0:.3f} h/seed.",
+            "",
+            "No test_iid, sealed, or DeepOHeat official100 data were accessed; this is not a same-information-budget comparison with Heat3D.",
+        ])
+        args.markdown.parent.mkdir(parents=True, exist_ok=True)
+        args.markdown.write_text("\n".join(lines) + "\n", encoding="utf-8")
     print(json.dumps({"status": out["status"], "output": str(args.output)}, sort_keys=True))
     return 0
 
