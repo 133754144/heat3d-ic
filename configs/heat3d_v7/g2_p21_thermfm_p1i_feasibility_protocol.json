@@ -1,0 +1,68 @@
+{
+  "schema_version": "heat3d_v7_g2_p21_thermfm_p1i_feasibility_protocol_v1",
+  "status": "FROZEN_FOR_FEASIBILITY_ONLY",
+  "scope": "Therm-FM/Poseidon-T P1i train/valid adapter and one-seed smoke; no formal training",
+  "thermfm_repo": "https://github.com/haiyangxin/Therm-FM",
+  "thermfm_repo_commit_sha": "1c338d0fbe0dca25311eb896a9ea136a4f3d3cb1",
+  "thermfm_license": "Apache-2.0",
+  "poseidon_model": "camlab-ethz/Poseidon-T",
+  "poseidon_revision": "93adcbf10f75b45ac3bca3939cc3d3f239e1e663",
+  "poseidon_config_sha256": "1fd7b545aedf0b46d180352df6b755354771e606185ee98dd4579ff7d2fa7048",
+  "poseidon_weights_sha256": "a363f7317fbc3a900a318fc63cc53197705d95fce0e0ce28dd3c8844a89112e2",
+  "official_entry_semantics": {
+    "backbone": "Poseidon/scOT model_T",
+    "finetune_from": "Poseidon-T",
+    "replace_embedding_recovery": true,
+    "backbone_modified": false,
+    "official_config": "configs/run_thermal_steady_T.yaml",
+    "official_config_sha256": "720c54818b5d96171bc68769da2ddb96aaee99a760e5cdcb294c0673166b3e2d",
+    "optimizer": "AdamW (official scOT trainer)",
+    "lr": 0.00005,
+    "lr_embedding_recovery": 0.0005,
+    "weight_decay": 0.000001,
+    "lr_scheduler": "cosine",
+    "batch_size": 40,
+    "max_grad_norm": 5.0,
+    "loss": "p=2 normalized channel-slice MSE as implemented by scOT",
+    "test_evaluation": "disabled for V7 adapter; valid-only smoke"
+  },
+  "p1i_source": {
+    "dataset_id": "heat3d_v6_p1i_continuous_physics1024_v1",
+    "manifest_path": "configs/heat3d_v6_p1i/v6_p1i_formal1024_v1_manifest.json",
+    "manifest_sha256": "f19987c659968c2ac14eade1f1ef7e206c8f7eeb94f58fde5897d6e765978514",
+    "roles": {"train": 768, "valid_iid": 128, "test_iid": 128},
+    "authorized_roles": ["train", "valid_iid"],
+    "test_iid_read": false,
+    "sealed_read": false
+  },
+  "dense_adapter": {
+    "construction": "case-definition metadata + frozen shared mesh; no sparse interpolation",
+    "coordinate_order_verification": "C-order x,y,z exactly; verified 65x65x57 unique grid",
+    "physical_grid": [65, 65, 57],
+    "model_image_size": 128,
+    "spatial_padding": "deterministic zero padding from 65x65 to 128x128; no resampling",
+    "channels_per_layer": 13,
+    "channel_order": ["x_norm", "y_norm", "z_norm", "kx", "ky", "kz", "q", "boundary_front", "boundary_back", "boundary_left", "boundary_right", "h_top", "h_bottom"],
+    "flattened_input_channels": 741,
+    "output_layers": 57,
+    "units": {"coordinates": "normalized by footprint and z extent", "k": "W/m/K", "q": "W/m^3", "h": "W/m^2/K", "output": "temperature/deltaT in K after train-only denormalization"},
+    "normalization": "train-only statistics over authorized train rows; not yet materialized for formal run",
+    "temperature_labels_used_for_input": false,
+    "learned_adapter": false,
+    "extra_prior_or_solver": false
+  },
+  "qualification": {
+    "max_formal_seeds": 1,
+    "max_training_epochs": 0,
+    "smoke": "pretrained load + embedding/recovery replacement + forward/backward + finite loss + valid forward + checkpoint reload",
+    "accuracy_claim": false
+  },
+  "hard_boundaries": {
+    "g1_modified": false,
+    "p1i_test_iid_accessed": false,
+    "sealed_accessed": false,
+    "deepoheat_official100_accessed": false,
+    "thermfm_large_archive_downloaded": false,
+    "new_formal_training_started": false
+  }
+}

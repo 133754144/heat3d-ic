@@ -1,0 +1,46 @@
+{
+  "schema_version": "heat3d_v7_g2_p21_hcp_native_feasibility_v1",
+  "observed_at": "2026-09-16",
+  "status": "TRAINING_READY",
+  "upstream": {
+    "repo": "https://github.com/LIMIGwenshao/HCP-enhanced-DeepONet",
+    "commit_sha": "c7d856f9b665e29b64d9faf931f86db1d6a1f26c",
+    "native_training_script_sha256": "1622b9fbc677091456b58a134b5db916513844f9e85e9e57b6e3ebf5a2117f23"
+  },
+  "native_smoke": {
+    "receipt": "docs/v7_g2_p21_hcp_native_smoke_receipt.json",
+    "receipt_sha256": "3a645fe0d91e29d7cc54c3508e6c5b70fdb0d18c6ba7cb9603d7ca601df0faac",
+    "status": "PASS_NATIVE_TRAINING_STEP_HCP_PROJECTION_CHECKPOINT_RELOAD",
+    "domains": 5,
+    "parameter_count": 75042,
+    "one_epoch_walltime_seconds": 2.536020040512085,
+    "physics_loss_finite": true,
+    "checkpoint_reload": true
+  },
+  "official_accuracy_assets": {
+    "status": "OFFICIAL_ACCURACY_ASSETS_BLOCKED",
+    "data_bundle": false,
+    "checkpoint_bundle": false,
+    "raw_reference_outputs": false,
+    "readme_note": "official checkpoints/raw outputs are available on request but are not tracked",
+    "accuracy_reproduction": "not claimable"
+  },
+  "p1i_compatibility": {
+    "status": "NOT_NATIVE_P1I_COMPATIBLE",
+    "reason": ["official script defines fixed cuboidal domains and inline source/BC", "hard-constraint projection requires complete uniform structured mesh", "no approved native variable-geometry/material/source/BC P1i loader"],
+    "recommended_route": "HCP native benchmark plus separately scoped Heat3D same-domain adaptation"
+  },
+  "decisions": {
+    "native_training": "TRAINING_READY",
+    "official_accuracy_reproduction": "OFFICIAL_ACCURACY_ASSETS_BLOCKED",
+    "formal_p1i_training": "NOT_STARTED",
+    "reference_only_until_bundle": true
+  },
+  "hard_boundaries": {
+    "p1i_test_iid_accessed": false,
+    "sealed_accessed": false,
+    "deepoheat_official100_accessed": false,
+    "multi_htc_started": false,
+    "g1_modified": false
+  }
+}

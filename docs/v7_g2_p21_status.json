@@ -1,0 +1,81 @@
+{
+  "schema_version": "heat3d_v7_g2_p21_competitor_execution_status_v1",
+  "observed_at": "2026-09-16",
+  "status": "P21_COMPETITOR_EXECUTION_QUALIFICATION_COMPLETE_VALID_ONLY",
+  "branch": "research/v7-g2-baselines",
+  "audit_worktree_branch": "codex/v7-g2-baselines-finalize",
+  "base_repo_commit_sha": "7bbb11c61cf12bac38609bedd4ae2d0a14d855dd",
+  "p20_amendments": {
+    "seed_dispersion_wording": "SD across training seeds; historical machine-readable sample_sd field names are retained for schema compatibility",
+    "p1i_dense_label_domain": "V6 full_fields.h5, 240825 nodes",
+    "deepoheat_v1_label_domain": "G2 DeepOHeat-v1 volumetric cache, 571256 nodes",
+    "domain_provenance_mixing": false,
+    "default_cross_resolution_strategy": "U-v2 direct-query dense inference"
+  },
+  "therm_fm": {
+    "p21_status": "READY_FOR_P1I_FEASIBILITY",
+    "qualification_status": "READY_FOR_FORMAL_TRAINING_AFTER_STATS_AND_OVERLAP_AUDIT",
+    "classification": "PRETRAINED_TRANSFER_FOUNDATION_MODEL_BASELINE",
+    "upstream_repo": "https://github.com/haiyangxin/Therm-FM",
+    "upstream_commit_sha": "1c338d0fbe0dca25311eb896a9ea136a4f3d3cb1",
+    "poseidon_revision": "93adcbf10f75b45ac3bca3939cc3d3f239e1e663",
+    "poseidon_config_sha256": "1fd7b545aedf0b46d180352df6b755354771e606185ee98dd4579ff7d2fa7048",
+    "poseidon_weights_sha256": "a363f7317fbc3a900a318fc63cc53197705d95fce0e0ce28dd3c8844a89112e2",
+    "asset_receipt": "docs/v7_g2_p21_thermfm_asset_receipt.json",
+    "asset_receipt_sha256": "f60d79e6a5e1015b6066b941ecab4daa67c4fb6904be3b74a154d0de9d5f51d6",
+    "adapter_contract": "docs/v7_g2_p21_thermfm_p1i_adapter_contract.json",
+    "adapter_contract_sha256": "3a01136117401fd2e13c4f2812bea1849a0dc58a8a4f56cc77ce5e134128de6e",
+    "smoke_receipt": "docs/v7_g2_p21_thermfm_smoke_receipt.json",
+    "smoke_receipt_sha256": "f227098f20ec78f71c9a241a89ef7266a0714ae63b4eebacfe82a56d9354299e",
+    "smoke_status": "PASS_BOUNDED_SMOKE_NOT_FORMAL_ACCURACY",
+    "representation": "deterministic case-definition dense rasterization on verified 65x65x57 grid; right/bottom pad to 128x128; 741 flattened input channels; no sparse interpolation",
+    "formal_prerequisites": [
+      "materialize train-only P1i channel/output normalization constants",
+      "complete pretraining-overlap/data-leakage audit",
+      "freeze valid-only launch JSON and independent environment"
+    ],
+    "large_archive_downloaded": false,
+    "local_retry": {
+      "result": "FAILED_CLOSED",
+      "method": "hf CLI via hf-mirror, single worker, 20s metadata timeout",
+      "partial_artifact_retained": false,
+      "verified_existing_copy_unchanged": true
+    }
+  },
+  "hcp": {
+    "native_training_status": "TRAINING_READY",
+    "official_accuracy_status": "OFFICIAL_ACCURACY_ASSETS_BLOCKED",
+    "p1i_status": "NOT_NATIVE_P1I_COMPATIBLE",
+    "classification": "INDEPENDENT_RELATED_WORK_REFERENCE_ONLY",
+    "upstream_repo": "https://github.com/LIMIGwenshao/HCP-enhanced-DeepONet",
+    "upstream_commit_sha": "c7d856f9b665e29b64d9faf931f86db1d6a1f26c",
+    "protocol": "configs/heat3d_v7/g2_p21_hcp_native_smoke_protocol.json",
+    "protocol_sha256": "15989cc32ce5bc0b6c746b3597097900782f1b7ef393c785a9d1c6e5662f6e01",
+    "feasibility": "docs/v7_g2_p21_hcp_native_feasibility.json",
+    "feasibility_sha256": "05e97ca106d2c6337678f60f6cab7fa60a617c7b23db7443fe28a7369814591c",
+    "smoke_receipt": "docs/v7_g2_p21_hcp_native_smoke_receipt.json",
+    "smoke_receipt_sha256": "3a645fe0d91e29d7cc54c3508e6c5b70fdb0d18c6ba7cb9603d7ca601df0faac",
+    "smoke_status": "PASS_NATIVE_TRAINING_STEP_HCP_PROJECTION_CHECKPOINT_RELOAD",
+    "next_action": "obtain official native data/checkpoint/raw-output bundle for accuracy; otherwise retain native training smoke as reference only",
+    "assets_downloaded": false
+  },
+  "execution": {
+    "host": "XYH-Desktop/devbox",
+    "gpu_formal_training_started": false,
+    "active_long_gpu_processes_at_closeout": false,
+    "p1i_test_iid_read": false,
+    "sealed_read": false,
+    "deepoheat_official100_read": false,
+    "g1_modified": false,
+    "multi_htc_started": false,
+    "thermfm_large_archive_downloaded": false,
+    "hcp_large_bundle_downloaded": false
+  },
+  "evidence_files": {
+    "thermfm_protocol": "configs/heat3d_v7/g2_p21_thermfm_p1i_feasibility_protocol.json",
+    "thermfm_smoke_markdown": "docs/v7_g2_p21_thermfm_smoke_receipt.md",
+    "hcp_feasibility_markdown": "docs/v7_g2_p21_hcp_native_feasibility.md",
+    "p20_matrix": "docs/v7_g2_p20_benchmark_matrix.json"
+  },
+  "next_recommended_action": "If Therm-FM is needed, materialize train-only statistics and run a separate valid-only feasibility pass; keep HCP reference-only until its official bundle is obtained. Do not mix either track into the P1i common-task ranking."
+}

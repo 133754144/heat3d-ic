@@ -1,7 +1,7 @@
 {
-  "schema_version": "heat3d_v7_g2_p20_baseline_taxonomy_status_v2",
+  "schema_version": "heat3d_v7_g2_p21_baseline_taxonomy_status_v3",
   "observed_at": "2026-09-16",
-  "scope": "P20 accuracy/generalization baseline closure; current-turn test/sealed evaluation remains locked",
+  "scope": "P21 competitor execution qualification and P20 accuracy/generalization baseline closure; test/sealed evaluation remains locked",
   "full_resolution_policy": "configs/heat3d_v7/g2_full_resolution_u_v2_policy.json",
   "taxonomy": {
     "common_task_supervised": [
@@ -16,10 +16,10 @@
     ,{"model": "DeepOHeat-v1 matched 768/128", "status": "COMPLETE_VALID_ONLY_SAME_PHYSICAL_CASE_BUDGET", "formal_scope": "upstream-faithful physics-informed matched cohort; not same information budget"}
     ],
     "pretrained_foundation": [
-      {"model": "Therm-FM", "status": "NEEDS_AMENDMENT_BLOCKED_BY_UPSTREAM_ASSETS", "formal_scope": "pretrained transfer only; no same-budget supervised claim"}
+      {"model": "Therm-FM", "status": "READY_FOR_P1I_FEASIBILITY", "formal_scope": "pretrained transfer only; no same-budget supervised claim"}
     ],
     "independent_related_work": [
-      {"model": "HCP-enhanced DeepONet", "status": "NEEDS_AMENDMENT_BLOCKED_BY_UPSTREAM_ASSETS", "formal_scope": "reference-only native benchmark until official assets and input contract are reproduced"}
+      {"model": "HCP-enhanced DeepONet", "status": "TRAINING_READY__OFFICIAL_ACCURACY_ASSETS_BLOCKED", "formal_scope": "native training smoke ready; reference-only accuracy until official assets and input contract are reproduced"}
     ],
     "excluded": [
       {"model": "multi-HTC", "status": "NOT_STARTED_BY_POLICY"},
@@ -33,8 +33,8 @@
     "Heat3D_on_DeepOHeat_v1": "P15_E600_COMPLETE_VALID_ONLY_TEST_SEALED",
     "DeepOHeat_v1_full_minus_valid128": "P17_COMPLETE_VALID_ONLY_TEST_SEALED",
     "DeepOHeat_v1_matched_768_128": "P14_COMPLETE_VALID_ONLY_SAME_PHYSICAL_CASE_BUDGET",
-    "Therm_FM": "NEEDS_AMENDMENT_BLOCKED_BY_UPSTREAM_ASSETS",
-    "HCP": "NEEDS_AMENDMENT_BLOCKED_BY_UPSTREAM_ASSETS_REFERENCE_ONLY",
+    "Therm_FM": "READY_FOR_P1I_FEASIBILITY",
+    "HCP": "TRAINING_READY__OFFICIAL_ACCURACY_ASSETS_BLOCKED_REFERENCE_ONLY",
     "test_unlock": "NOT_AUTHORIZED"
   },
   "hard_boundaries": {
@@ -61,7 +61,7 @@
     "gino_seed2_completion": "docs/v7_g2_p13_gino_seed2_completion_receipt.json",
     "gino_3seed_aggregation": "docs/v7_g2_p13_gino_3seed_valid_only_aggregation.json",
     "transolver": "docs/v7_g2_p11_transolver_3seed_valid_only_aggregation.json",
-    "thermfm": "docs/v7_g2_p13_thermfm_compatibility_receipt.json",
+    "thermfm": "docs/v7_g2_p21_status.json",
     "deepoheat_v1_native_audit": "docs/v7_g2_p14_deepoheat_v1_native_reference_audit.json",
     "deepoheat_v1_matched_aggregation": "docs/v7_g2_p14_deepoheat_v1_matched_aggregation.json",
     "heat3d_v1_fullfield_valid_aggregation": "docs/v7_g2_p14_heat3d_v1_fullfield_valid_aggregation.json",
@@ -89,6 +89,12 @@
     ,"g2_p20_hcp": "docs/v7_g2_p20_hcp_compatibility_audit.json"
     ,"g2_p20_benchmark_matrix": "docs/v7_g2_p20_benchmark_matrix.json"
     ,"g2_p20_devbox_recheck": "docs/v7_g2_p20_devbox_recheck.json"
+    ,"g2_p21_thermfm_smoke": "docs/v7_g2_p21_thermfm_smoke_receipt.json"
+    ,"g2_p21_thermfm_assets": "docs/v7_g2_p21_thermfm_asset_receipt.json"
+    ,"g2_p21_thermfm_adapter": "docs/v7_g2_p21_thermfm_p1i_adapter_contract.json"
+    ,"g2_p21_hcp_smoke": "docs/v7_g2_p21_hcp_native_smoke_receipt.json"
+    ,"g2_p21_hcp_feasibility": "docs/v7_g2_p21_hcp_native_feasibility.json"
+    ,"g2_p21_status": "docs/v7_g2_p21_status.json"
     ,"g2_full_resolution_u_v2_policy": "configs/heat3d_v7/g2_full_resolution_u_v2_policy.json"
   }
 }

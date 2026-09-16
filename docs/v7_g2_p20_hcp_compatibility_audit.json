@@ -1,8 +1,8 @@
 {
-  "schema_version": "heat3d_v7_g2_p20_hcp_compatibility_audit_v1",
+  "schema_version": "heat3d_v7_g2_p20_hcp_compatibility_audit_v2_p21_amended",
   "observed_at": "2026-09-16",
-  "status": "NEEDS_AMENDMENT",
-  "asset_decision": "BLOCKED_BY_UPSTREAM_ASSETS",
+  "status": "TRAINING_READY",
+  "asset_decision": "OFFICIAL_ACCURACY_ASSETS_BLOCKED",
   "formal_scope": "REFERENCE_ONLY until official data/checkpoint/raw outputs and native-input compatibility are demonstrated",
   "track": "INDEPENDENT_HCP_COMPATIBILITY",
   "scope": "P20-C official HCP audit only; no training, no P1i adapter, no test/sealed access",
@@ -63,7 +63,7 @@
     "upstream_asset_blocker": true
   },
   "decision_and_next_action": {
-    "decision": "BLOCKED_BY_UPSTREAM_ASSETS",
+    "decision": "TRAINING_READY_NATIVE; OFFICIAL_ACCURACY_ASSETS_BLOCKED",
     "minimum_next_step": "Obtain official benchmark data, checkpoint and raw-output bundle; reproduce one native single-HTC evaluation in an isolated environment before considering any P1i mapping",
     "failure_scope": "HCP only; does not block Therm-FM or existing G2 common-task evidence",
     "no_common_task_claim": true

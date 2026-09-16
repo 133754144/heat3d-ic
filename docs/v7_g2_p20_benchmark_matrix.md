@@ -10,13 +10,13 @@ forward 与必要 postprocess。详见 [`g2_full_resolution_u_v2_policy.json`](.
 
 ## P1i common-task（native 1024）
 
-| model | valid sample-first relative RMSE [%] mean ± sample SD | point-global [%] mean ± sample SD | status |
+| model | valid sample-first relative RMSE [%] mean ± SD across training seeds | point-global [%] mean ± SD across training seeds | status |
 |---|---:|---:|---|
 | Heat3D V6 canonical | 1.629402 ± 0.013132 | 2.027348 ± 0.094738 | READY_VALID_ONLY |
 | GINO | 15.013874 ± 0.913015 | 17.731492 ± 1.655147 | READY_VALID_ONLY_E3_PASS_PRIOR |
 | Transolver | 16.002822 ± 1.031020 | 18.556496 ± 0.926554 | READY_VALID_ONLY_COMPLETE |
 
-这张表仅在 native 1024 query domain 和温度单位一致时使用；它不是 same-information-budget 表。GINO 既有 seed0→seed1→seed2 结果和 Heat3D V6 结果均只用于 valid-only 证据，不能推导 test/general-domain 结论。:codex-annotation{index="1"}
+这张表仅在 native 1024 query domain 和温度单位一致时使用；它不是 same-information-budget 表。GINO 既有 seed0→seed1→seed2 结果和 Heat3D V6 结果均只用于 valid-only 证据，不能推导 test/general-domain 结论。
 
 ## DeepOHeat-v1 native volumetric domain（571,256 points）
 
@@ -30,7 +30,7 @@ forward 与必要 postprocess。详见 [`g2_full_resolution_u_v2_policy.json`](.
 
 ## Transfer / related work
 
-- Therm-FM：`NEEDS_AMENDMENT / BLOCKED_BY_UPSTREAM_ASSETS`。P1i dense-label manifest 完整，但 selective `model_T`、config/stats 和 deterministic point-to-grid contract 尚未可校验；保持 pretrained transfer track。
-- HCP-enhanced DeepONet：`NEEDS_AMENDMENT / BLOCKED_BY_UPSTREAM_ASSETS / REFERENCE_ONLY`。官方仓库没有提交 benchmark data/checkpoint/raw outputs，且原实现要求 inline structured uniform mesh；未证明可原生接收 P1i variable geometry/material/source/BC。
+- Therm-FM：`READY_FOR_P1I_FEASIBILITY`。Selective Poseidon-T 已核验并通过 bounded dense-adapter smoke；完整 train-only stats、pretraining-overlap audit 与正式 launch 仍是前置条件，保持 pretrained transfer track。
+- HCP-enhanced DeepONet：`TRAINING_READY / OFFICIAL_ACCURACY_ASSETS_BLOCKED / REFERENCE_ONLY`。官方仓库没有提交 benchmark data/checkpoint/raw outputs，且原实现要求 inline structured uniform mesh；未证明可原生接收 P1i variable geometry/material/source/BC。
 
 因此不建立跨 capability envelope 的单一 efficiency/accuracy 总排名。所有 runtime 结果需在同硬件、同计时边界重新测量后才可进入 supplementary Pareto 描述。

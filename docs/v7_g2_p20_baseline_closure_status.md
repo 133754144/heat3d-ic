@@ -23,11 +23,12 @@ IDW 只保留为 Heat3D V6/P1h 的 historical diagnostic，不是 full-resolutio
 
 ## 独立未闭合
 
-- Therm-FM：`NEEDS_AMENDMENT / BLOCKED_BY_UPSTREAM_ASSETS`。P1i full-field sidecar 已证明 768 train rows 的 240,825-node label contract，但 selective model_T/config/stats、point-to-grid contract 与预训练重叠审计仍缺失。
-- HCP：`NEEDS_AMENDMENT / BLOCKED_BY_UPSTREAM_ASSETS / REFERENCE_ONLY`。官方代码使用 inline structured uniform mesh、power/BC 配置；Git 仓库不含 benchmark data/checkpoint/raw outputs，未证明原实现原生接收 P1i variable geometry/material/source/BC。
+- Therm-FM：已取得并核验 selective Poseidon-T（不下载大型 Therm-FM archive），状态更新为 `READY_FOR_P1I_FEASIBILITY`。P1i 的 `240,825-node full_fields.h5` 是 V6 P1i dense-label contract；它与 DeepOHeat-v1 的 `571,256-node` label cache 是两个不同数据源，不能混写。正式运行仍需 materialize train-only stats 和完成 pretraining-overlap audit。
+- HCP：native source smoke 已通过，状态拆分为 `TRAINING_READY` 与 `OFFICIAL_ACCURACY_ASSETS_BLOCKED / REFERENCE_ONLY`。官方代码使用 inline structured uniform mesh、power/BC 配置；Git 仓库不含 benchmark data/checkpoint/raw outputs，且未证明原实现原生接收 P1i variable geometry/material/source/BC。
 
-devbox 已恢复可访问；只读 recheck 证明远端已有 768 train + 128 valid 的完整标签目录，
-但未启动新任务、未生成本地大副本、未发现 Therm-FM/HCP 所需上游资产。详见
+devbox 已恢复可访问；P20 时点只读 recheck 证明远端已有 768 train + 128 valid 的完整标签目录，
+且当时未启动新任务、未生成本地大副本、未发现 Therm-FM/HCP 所需上游资产；P21 的
+selective Poseidon-T 与 HCP native smoke 更新见 `docs/v7_g2_p21_*`。详见
 [`v7_g2_p20_devbox_recheck.json`](v7_g2_p20_devbox_recheck.json)。
 
 ## 治理修正
@@ -41,3 +42,5 @@ V6 `test_iid=128` 已于历史路线中打开一次作为 corrected legacy confi
 - `docs/v7_g2_p20_hcp_compatibility_audit.json`
 - `docs/v7_g2_p20_benchmark_matrix.json`
 - `docs/v7_g2_p20_governance_amendment.json`
+
+P21 独立 smoke、资产和 adapter 证据见 `docs/v7_g2_p21_*`。

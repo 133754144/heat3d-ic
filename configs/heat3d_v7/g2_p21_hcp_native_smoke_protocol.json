@@ -1,0 +1,52 @@
+{
+  "schema_version": "heat3d_v7_g2_p21_hcp_native_smoke_protocol_v1",
+  "status": "FROZEN_NATIVE_SMOKE_ONLY",
+  "scope": "HCP-enhanced DeepONet native single-HTC source smoke; no P1i adaptation and no accuracy claim",
+  "upstream": {
+    "repo": "https://github.com/LIMIGwenshao/HCP-enhanced-DeepONet",
+    "commit_sha": "c7d856f9b665e29b64d9faf931f86db1d6a1f26c",
+    "license": "MIT",
+    "requirements_sha256": "da0daa02214816129f37ccbd624019eae06fac2a9ea131c3ec225ad8e12f5daa",
+    "native_script": "HCP_enhanced_DeepOHeat/DeepOHeat/single_htc_bc/train_chiplet-packagepower_hcp.py",
+    "native_script_sha256": "1622b9fbc677091456b58a134b5db916513844f9e85e9e57b6e3ebf5a2117f23"
+  },
+  "native_contract": {
+    "method": "DeepONet + hard constraint projection + structured mesh/LHS hybrid sampling",
+    "domains": 5,
+    "root_mesh_intervals": [20, 20, 11],
+    "root_pde_points": 4000,
+    "root_single_bc_points": 500,
+    "model": {"trunk_in_features": 3, "trunk_hidden_features": 128, "branch_in_features": 1, "branch_hidden_features": 20, "inner_product_features": 50, "branch_hidden_layers": 3, "trunk_hidden_layers": 3, "nonlinearity": "silu"},
+    "hcp_percent": 1.0,
+    "loss": "official PDE/BC/interface loss",
+    "optimizer": "Adam lr=1e-3",
+    "sampling": "official SMT LHS path; temporary Python3.12 imp-import compatibility only",
+    "formal_training": false
+  },
+  "qualification": {
+    "one_epoch": true,
+    "forward_backward": true,
+    "physics_loss_finite": true,
+    "hcp_projection_exercised": true,
+    "checkpoint_save_reload": true,
+    "output_root": "/tmp/g2_p21_hcp_smoke_out",
+    "runner_script_sha256": "a6d5f4eaa9e8fb116b86e094841a80c35660aa92461bb12f82f2ca126a48dfea",
+    "receipt_sha256": "cd6a8f16ca0b7ba974abf0bc4a852b8cbd6b6981e38ac16530e8dd1e8d95316b"
+  },
+  "environment": {
+    "python": "3.12.12",
+    "torch": "2.9.0+cu130",
+    "cuda": "13.0",
+    "gpu": "NVIDIA GeForce RTX 5070",
+    "isolated_packages": "temporary /tmp/g2_p21_hcp_pkgs; smt 1.3.0, pyDOE2 1.3.0, ordered-set 4.1.0; gstools import stub unused by native path",
+    "official_dependency_environment": false,
+    "environment_interpretation": "reconstructed compatibility smoke, not official pinned environment"
+  },
+  "hard_boundaries": {
+    "p1i_adaptation": false,
+    "p1i_test_iid_accessed": false,
+    "sealed_accessed": false,
+    "deepoheat_official100_accessed": false,
+    "formal_training_started": false
+  }
+}

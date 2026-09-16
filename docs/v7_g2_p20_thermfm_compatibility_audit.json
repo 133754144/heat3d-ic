@@ -1,8 +1,8 @@
 {
-  "schema_version": "heat3d_v7_g2_p20_thermfm_compatibility_audit_v2",
+  "schema_version": "heat3d_v7_g2_p20_thermfm_compatibility_audit_v3_p21_amended",
   "observed_at": "2026-09-16",
-  "status": "NEEDS_AMENDMENT",
-  "asset_decision": "BLOCKED_BY_UPSTREAM_ASSETS",
+  "status": "READY_FOR_P1I_FEASIBILITY",
+  "asset_decision": "SELECTIVE_POSEIDON_T_VERIFIED; THERMAL_MODEL_T_ARCHIVE_NOT_REQUIRED_FOR_SMOKE",
   "track": "PRETRAINED_TRANSFER_FOUNDATION_MODEL_BASELINE",
   "scope": "P20-B compatibility/data audit only; no training, no large archive download, no test/sealed access",
   "official": {
@@ -36,6 +36,7 @@
     "full_field_archive_sha256": "49023ac1205b8e7cf7c5bf782b89fcdb34997704b3f9aa2fb2d46cf1a59163cb",
     "full_field_archive_size_bytes": 916402712,
     "solver_node_count": 240825,
+    "provenance_note": "This is the V6 P1i full_fields.h5 dense-label contract; it is distinct from the DeepOHeat-v1 571256-node label cache.",
     "sample_count": 1024,
     "role_counts": {"train": 768, "valid_iid": 128, "test_iid": 128},
     "train_dense_label_manifest_evidence": "sidecar status=complete with one temperature and deltaT SHA per sample; 768 train entries are represented",
@@ -55,13 +56,14 @@
     "learned_encoder_allowed": false,
     "extra_solver_or_temperature_prior_allowed": false,
     "information_budget": "Therm-FM dense grid channels expose a different and generally richer spatial representation than Heat3D sparse support; not same information budget",
-    "adapter_status": "NOT_IMPLEMENTED; blocked until selective model_T/config/stats assets are obtained"
+    "adapter_status": "SMOKE_VERIFIED; formal train-only statistics and launch manifest remain pending"
   },
   "resources_and_leakage": {
     "checkpoint_archive_bytes": 24100784430,
     "steady_dataset_archive_bytes": 4467245278,
     "large_archive_downloaded": false,
     "selective_model_T_artifact_available": false,
+    "selective_poseidon_T_artifact_available": true,
     "pretraining_overlap_audit": "NOT_COMPLETED; required before any V7 result",
     "pretrained_prior_vs_scratch": "pretrained external PDE prior; cannot be treated as same from-scratch budget",
     "resource_estimate": "not claimable before selective model_T/config/stats and deterministic conversion are available"
@@ -79,12 +81,12 @@
     "thermfm_large_archive_downloaded": false,
     "pretraining_overlap_audit": "not started because model_T/config/stats assets remain unavailable",
     "test_or_sealed_read": false,
-    "interpretation": "P1i train/valid dense labels are available on devbox, but upstream Therm-FM assets remain the blocking dependency; no local copy or evaluation was started."
+    "interpretation": "Historical P20 devbox snapshot: P1i train/valid dense labels were available, while upstream Therm-FM assets were then the blocking dependency. P21 supersedes this snapshot with selective Poseidon-T verification and bounded smoke; no formal accuracy result is implied."
   },
   "decision_and_next_action": {
-    "decision": "BLOCKED_BY_UPSTREAM_ASSETS",
-    "why_not_ready": ["no verified selective model_T checkpoint", "no verified matching config and normalization constants", "point-to-grid information contract is not yet frozen", "pretraining overlap audit is outstanding"],
-    "minimum_next_step": "Obtain explicitly authorized selective model_T plus config/stats, verify checksums in an isolated environment, freeze deterministic point/grid conversion, then run valid-only P1i evaluation without touching test/sealed",
+    "decision": "READY_FOR_P1I_FEASIBILITY",
+    "why_not_formal": ["Therm-FM thermal model_T checkpoint/normalization archive is not downloaded", "full train-only P1i statistics still need materialization", "pretraining overlap audit remains required before accuracy claims"],
+    "minimum_next_step": "Use verified Poseidon-T with replacement layers, materialize train-only P1i dense statistics, freeze launch JSON, then run valid-only feasibility without touching test/sealed",
     "failure_scope": "Therm-FM only; does not block HCP or existing common-task evidence"
   },
   "hard_boundaries": {

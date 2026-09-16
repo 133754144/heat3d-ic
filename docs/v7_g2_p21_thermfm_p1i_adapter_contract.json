@@ -1,0 +1,54 @@
+{
+  "schema_version": "heat3d_v7_g2_p21_thermfm_p1i_adapter_contract_v1",
+  "status": "READY_FOR_P1I_FEASIBILITY",
+  "contract": "deterministic dense case-definition rasterization; no sparse-1024 interpolation",
+  "source_geometry": {
+    "p1i_archive": "heat3d_v6_p1i_continuous_physics1024_v1_full_fields/full_fields.h5",
+    "shared_geometry_only": true,
+    "node_count": 240825,
+    "verified_grid": [65, 65, 57],
+    "ordering": "C-order x,y,z; exact meshgrid comparison on authorized train/valid fixture",
+    "temperature_source_for_input": "none"
+  },
+  "input_channels": {
+    "per_layer": 13,
+    "order": ["x_norm", "y_norm", "z_norm", "kx", "ky", "kz", "q", "boundary_front", "boundary_back", "boundary_left", "boundary_right", "h_top", "h_bottom"],
+    "flattened_scot_channels": 741,
+    "units": {"x_norm": "x/0.01m", "y_norm": "y/0.01m", "z_norm": "z/z_max", "k": "W/m/K", "q": "W/m^3", "boundary_flags": "dimensionless", "h": "W/m^2/K"}
+  },
+  "spatial_policy": {
+    "model_image_size": 128,
+    "native_physical_slice": "65x65 per z layer",
+    "padding": "right/bottom deterministic zero padding to 128x128",
+    "resampling": false,
+    "output": "57 temperature layers; crop to 65x65 for physical evaluation"
+  },
+  "normalization": {
+    "fit_roles": ["train"],
+    "statistics": "channel-wise train-only mean/std",
+    "valid_fit": false,
+    "test_fit": false,
+    "status": "PENDING_FULL_TRAIN_STATS_MATERIALIZATION"
+  },
+  "smoke": {
+    "train_fixture": "v6p1if1_0000",
+    "valid_fixture": "v6p1if1_0003",
+    "train_receipt": "docs/v7_g2_p21_thermfm_smoke_receipt.json#/train",
+    "valid_receipt": "docs/v7_g2_p21_thermfm_smoke_receipt.json#/valid",
+    "backbone": "Poseidon-T -> scOT/ScOT with --replace_embedding_recovery",
+    "backbone_unchanged": true,
+    "accuracy_claim": false
+  },
+  "fairness": {
+    "information_budget": "dense 13-channel per-layer representation; richer/different from Heat3D sparse support",
+    "training_budget": "pretrained Poseidon prior; not same-budget supervised scratch",
+    "valid_only_for_future_evaluation": true
+  },
+  "hard_boundaries": {
+    "p1i_test_iid_accessed": false,
+    "sealed_accessed": false,
+    "deepoheat_official100_accessed": false,
+    "sparse_interpolation_used": false,
+    "learned_adapter_added": false
+  }
+}

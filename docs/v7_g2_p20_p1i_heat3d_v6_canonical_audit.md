@@ -19,7 +19,7 @@ V6 closeout 已用同一 evaluator 对 support 与 full-field temperature-space 
 | 0 | 559 | 3.459884 | 3.964290 | 2.985701 | `51567afe…b90e` |
 | 1 | 455 | 3.490488 | 3.963523 | 2.970243 | `71971579…e71f` |
 | 2 | 587 | 3.377505 | 3.947065 | 2.947569 | `d67e0dac…2ab49` |
-| mean ± sample SD | — | **3.442626 ± 0.058435** | **3.958293 ± 0.009731** | **2.967838 ± 0.019180** | — |
+| mean ± SD across training seeds | — | **3.442626 ± 0.058435** | **3.958293 ± 0.009731** | **2.967838 ± 0.019180** | — |
 
 按 P20 要求，`sample-first relative RMSE` 同时作为当前 native-1024 primary view 报告：support 为 `1.629402 ± 0.013132%`，full-field 为 `3.958293 ± 0.009731%`。这里的 sample-first 数值来自同一 V6 family 的既有 evaluator rows；V6 canonical checkpoint identity 仍保留 point-global-best 选择语义，避免把不同历史选择规则混写。
 

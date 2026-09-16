@@ -1,10 +1,10 @@
 # V7 G2 P20-B：Therm-FM compatibility/data audit
 
-状态：`NEEDS_AMENDMENT`；资产决策：`BLOCKED_BY_UPSTREAM_ASSETS`。本轮只做接口和 provenance 审计，没有训练、没有下载 24 GB checkpoint archive，也没有访问任何 test/sealed。
+状态：`READY_FOR_P1I_FEASIBILITY`（P21 selective Poseidon-T smoke 已通过）；大型 Therm-FM archive 仍未下载。本轮只做接口/provenance 与 bounded smoke，没有正式训练，也没有访问任何 test/sealed。
 
 ## P1i labels
 
-V6 tracked full-field sidecar 的 `status=complete`、`sample_count=1024`、`solver_node_count=240825`，并为每个样本记录 temperature/deltaT SHA；角色计数为 train 768、valid_iid 128、test_iid 128。因此已有 manifest 足以证明 train768 具有冻结的 240,825-node dense-label contract。devbox 只读 recheck 进一步确认 `/home/xyh/myCodeGitOnly/heat3d-ic-g2/data/g2/deepoheat_v1_volumetric_labels` 已有 768 train + 128 valid 目录（约 2.09 GB），label receipt SHA 为 `a4bb9963…fe4fd`，normalization payload SHA 为 `3a0273bb…ed0db`。本地 worktree 仍不复制该大目录，本轮没有生成新 labels 或触碰 test role；详情与 SHA 见 JSON 及 [`v7_g2_p20_devbox_recheck.json`](v7_g2_p20_devbox_recheck.json)。
+V6 tracked full-field sidecar 的 `status=complete`、`sample_count=1024`、`solver_node_count=240825`，并为每个样本记录 temperature/deltaT SHA；角色计数为 train 768、valid_iid 128、test_iid 128。因此已有 manifest 足以证明 train768 具有冻结的 **240,825-node `full_fields.h5`** dense-label contract。它不是 DeepOHeat-v1 **571,256-node** label cache；两者 provenance 始终分开。devbox 只读 recheck 进一步确认后者目录已有 768 train + 128 valid（约 2.09 GB），label receipt SHA 为 `a4bb9963…fe4fd`，normalization payload SHA 为 `3a0273bb…ed0db`。本地 worktree 仍不复制该大目录。
 
 ## Interface
 
@@ -12,6 +12,6 @@ Therm-FM 官方 `model_T` 是约 21M 参数的 Poseidon/scOT dense-grid operator
 
 ## Asset and fairness decision
 
-官方代码在 [Therm-FM repository](https://github.com/haiyangxin/Therm-FM) 已冻结到 commit `1c338d0…`（Apache-2.0），但当前没有可校验的 selective `model_T`、匹配 config/stats 或 V7-compatible conversion artifact。公开 archive 约 24.1 GB，steady dataset archive 约 4.47 GB，本轮不下载。预训练 Poseidon/scOT 数据与 V7 分布的重叠也尚未审计，所以不能把它写成 same-budget supervised baseline。
+官方代码在 [Therm-FM repository](https://github.com/haiyangxin/Therm-FM) 已冻结到 commit `1c338d0…`（Apache-2.0）。P21 已取得并核验 Poseidon-T config/weights（83.4 MB），并在授权 train/valid fixture 上验证 direct dense rasterization 与 replacement-layer smoke；公开 Therm-FM archive（约 24.1 GB）和 steady dataset archive（约 4.47 GB）仍不下载。匹配 thermal `model_T`/stats 和预训练重叠审计仍是正式 accuracy 前置条件，因此不能把它写成 same-budget supervised baseline。
 
-结论是 Therm-FM 独立 `BLOCKED_BY_UPSTREAM_ASSETS`，不阻塞其他 workstream。取得最小 model_T/config/stats 后，先在不含 test/sealed 的 benchmark 上冻结转换和泄漏审计，再考虑 valid-only transfer 结果。
+结论是 Therm-FM 独立 `READY_FOR_P1I_FEASIBILITY`，不阻塞其他 workstream。下一步是在不含 test/sealed 的 benchmark 上物化 train-only stats、完成预训练泄漏审计，并在独立环境中冻结 valid-only transfer 运行；若 thermal `model_T`/stats 无法获得，则回退为明确的 upstream-asset blocker。

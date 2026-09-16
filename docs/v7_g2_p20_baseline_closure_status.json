@@ -1,5 +1,5 @@
 {
-  "schema_version": "heat3d_v7_g2_p20_baseline_closure_status_v2",
+  "schema_version": "heat3d_v7_g2_p20_baseline_closure_status_v3_p21_amended",
   "observed_at": "2026-09-16",
   "status": "P20_AUDIT_COMPLETE_VALID_ONLY_NO_NEW_TRAINING",
   "branch": "research/v7-g2-baselines",
@@ -27,17 +27,17 @@
       "reason": "native 100000-function pool overlaps the candidate valid128"
     },
     "Therm_FM": {
-      "status": "NEEDS_AMENDMENT",
-      "asset_decision": "BLOCKED_BY_UPSTREAM_ASSETS",
-      "evidence": "docs/v7_g2_p20_thermfm_compatibility_audit.json",
-      "action": "obtain selective model_T/config/stats and freeze deterministic point-grid conversion"
+      "status": "READY_FOR_P1I_FEASIBILITY",
+      "asset_decision": "SELECTIVE_POSEIDON_T_VERIFIED",
+      "evidence": "docs/v7_g2_p21_thermfm_smoke_receipt.json",
+      "action": "materialize train-only P1i dense statistics and freeze formal launch; no large archive download"
     },
     "HCP": {
-      "status": "NEEDS_AMENDMENT",
-      "asset_decision": "BLOCKED_BY_UPSTREAM_ASSETS",
+      "status": "TRAINING_READY",
+      "asset_decision": "OFFICIAL_ACCURACY_ASSETS_BLOCKED",
       "formal_scope": "REFERENCE_ONLY",
-      "evidence": "docs/v7_g2_p20_hcp_compatibility_audit.json",
-      "action": "obtain official native benchmark bundle and reproduce one native evaluation"
+      "evidence": "docs/v7_g2_p21_hcp_native_feasibility.json",
+      "action": "obtain official native bundle for accuracy; keep P1i direct adaptation closed"
     }
   },
   "comparison_matrix": "docs/v7_g2_p20_benchmark_matrix.json",
@@ -57,12 +57,16 @@
     "g1_modified": false,
     "multi_htc_started": false,
     "therm_fm_large_archive_downloaded": false,
-    "hcp_assets_downloaded": false
+    "hcp_assets_downloaded": false,
+    "thermfm_poseidon_t_selective_asset_verified": true,
+    "p21_native_smoke_started": true,
+    "p21_formal_training_started": false
   },
   "next_actions": [
     "Keep V6 Heat3D checkpoint family as P1i canonical valid-only evidence",
     "Keep native-domain rows in separate tables with supervision/information qualifiers",
     "Do not unlock sealed IID without a separately approved evaluation-only protocol",
-    "Resolve Therm-FM/HCP asset blockers independently if those tracks are needed"
+    "For Therm-FM, materialize train-only statistics and complete overlap audit before any valid-only feasibility run",
+    "For HCP, obtain the official native bundle before claiming accuracy; keep P1i direct adaptation closed"
   ]
 }

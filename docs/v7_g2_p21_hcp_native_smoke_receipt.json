@@ -1,0 +1,22 @@
+{
+  "schema_version": "heat3d_v7_g2_p21_hcp_native_smoke_receipt_v1",
+  "status": "PASS_NATIVE_TRAINING_STEP_HCP_PROJECTION_CHECKPOINT_RELOAD",
+  "scope": "official native single-HTC script domain; one epoch only; no P1i adaptation; no accuracy claim",
+  "host": "XYH-Desktop/devbox",
+  "upstream_commit_sha": "c7d856f9b665e29b64d9faf931f86db1d6a1f26c",
+  "command_class": "temporary AST-extracted official native single-HTC smoke runner; one epoch; no formal trainer",
+  "runner_script_path": "/tmp/g2_p21_hcp_smoke.py",
+  "runner_script_sha256": "a6d5f4eaa9e8fb116b86e094841a80c35660aa92461bb12f82f2ca126a48dfea",
+  "log_path": "/tmp/g2_p21_hcp_smoke.log",
+  "log_sha256": "fc34d0176e5968456b1805caa8b3b4b1d8c221076b4b8f01fc0aa1135bc75223",
+  "environment": {"python": "3.12.12", "torch": "2.9.0+cu130", "cuda": "13.0", "gpu": "NVIDIA GeForce RTX 5070", "environment_kind": "reconstructed compatibility smoke"},
+  "native_contract": {"domain_count": 5, "root_mesh_intervals": [20, 20, 11], "root_pde_points": 4000, "root_single_bc_points": 500, "hcp_percent": 1.0, "optimizer": "Adam lr=1e-3", "parameter_count": 75042},
+  "result": {"elapsed_seconds": 2.536020040512085, "physics_loss_finite": true, "forward_backward": true, "hcp_projection_exercised": true, "checkpoint_save_reload": true, "checkpoint_model_finite": true, "checkpoint_sha256": "not retained (temporary output only)"},
+  "dependency_compatibility": {"imp_import_shim": true, "smt_lhs": "official smt 1.3.0 path", "pydoe2": "official pyDOE2 1.3.0 path", "gstools": "import stub; native smoke path does not call GRF", "scientific_semantics_changed": false},
+  "p1i_adaptation": false,
+  "accuracy_claim": false,
+  "p1i_test_iid_accessed": false,
+  "sealed_accessed": false,
+  "deepoheat_official100_accessed": false,
+  "formal_training_started": false
+}

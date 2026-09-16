@@ -14,7 +14,7 @@
     "formal_training_or_decoder_change": false
   },
   "metric_policy": {
-    "primary": "relative RMSE in temperature space; sample-first aggregation within a case, reported with mean and sample SD across seeds",
+    "primary": "relative RMSE in temperature space; sample-first aggregation within a case, reported with mean and SD across training seeds",
     "secondary": ["point-global relative RMSE", "RMSE_K", "MAE_K", "peak-temperature error_K", "full-field error statistics"],
     "resolution_rule": "Only compare rows sharing the identical physical query domain and temperature units",
     "checkpoint_rule": "Report validation-selected best and fixed final endpoint only when the source protocol defines both; never call different policies best-to-best without an explicit label",
@@ -117,17 +117,17 @@
       "rows": [
         {
           "model": "Therm-FM",
-          "status": "NEEDS_AMENDMENT",
-          "asset_decision": "BLOCKED_BY_UPSTREAM_ASSETS",
+          "status": "READY_FOR_P1I_FEASIBILITY",
+          "asset_decision": "SELECTIVE_POSEIDON_T_VERIFIED; THERMAL_MODEL_T_ARCHIVE_NOT_REQUIRED_FOR_SMOKE",
           "formal_scope": "pretrained transfer/foundation-model track; not common-task scratch baseline",
-          "evidence": "docs/v7_g2_p20_thermfm_compatibility_audit.json"
+          "evidence": "docs/v7_g2_p21_thermfm_smoke_receipt.json"
         },
         {
           "model": "HCP-enhanced DeepONet",
-          "status": "NEEDS_AMENDMENT",
-          "asset_decision": "BLOCKED_BY_UPSTREAM_ASSETS",
+          "status": "TRAINING_READY",
+          "asset_decision": "OFFICIAL_ACCURACY_ASSETS_BLOCKED",
           "formal_scope": "REFERENCE_ONLY until native assets and contract are reproduced",
-          "evidence": "docs/v7_g2_p20_hcp_compatibility_audit.json"
+          "evidence": "docs/v7_g2_p21_hcp_native_feasibility.json"
         }
       ],
       "comparison_boundary": "Do not place transfer/native-domain rows in the P1i common-task accuracy ranking."

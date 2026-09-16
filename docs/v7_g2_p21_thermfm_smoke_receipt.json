@@ -1,0 +1,70 @@
+{
+  "schema_version": "heat3d_v7_g2_p21_thermfm_smoke_receipt_v1",
+  "status": "PASS_BOUNDED_SMOKE_NOT_FORMAL_ACCURACY",
+  "execution": {
+    "host": "XYH-Desktop/devbox",
+    "environment": "PDEFormer conda environment (torch 2.9.0+cu128, transformers 4.57.1, accelerate 1.11.0)",
+    "command_class": "temporary Python smoke runner; one train fixture and one valid fixture; no formal trainer",
+    "runner_script_path": "/tmp/g2_p21_thermfm_smoke.py",
+    "runner_script_sha256": "3be7dd5274a8c81ed41558b35df501dd5cd2f9313b88261a6676973c4843bbc5",
+    "train_log_path": "/tmp/g2_p21_thermfm_smoke.log",
+    "train_log_sha256": "0967c9472b7342eb28520fcf7bbacaa82bf36acb2e2e4f57be7dbd41f353b7a9",
+    "valid_log_path": "/tmp/g2_p21_thermfm_smoke_valid.log",
+    "valid_log_sha256": "28686df183973b2f67ec36bd8c6505892842e7638fabcaec80850e4cf4e1caa3",
+    "device": "NVIDIA GeForce RTX 5070",
+    "cuda": "12.8 (PDEFormer environment; no formal training)",
+    "peak_allocated_bytes": 838099968,
+    "peak_reserved_bytes": 1207959552
+  },
+  "backbone": {
+    "thermfm_commit_sha": "1c338d0fbe0dca25311eb896a9ea136a4f3d3cb1",
+    "poseidon_revision": "93adcbf10f75b45ac3bca3939cc3d3f239e1e663",
+    "poseidon_config_sha256": "1fd7b545aedf0b46d180352df6b755354771e606185ee98dd4579ff7d2fa7048",
+    "poseidon_weights_sha256": "a363f7317fbc3a900a318fc63cc53197705d95fce0e0ce28dd3c8844a89112e2",
+    "replace_embedding_recovery": true,
+    "backbone_changed": false
+  },
+  "adapter": {
+    "authorized_fixtures": [
+      {"sample_id": "v6p1if1_0000", "role": "train", "receipt_sha256": "9d0195553283e2bf6d8511128c1c99abd31737c9ad1cfdd76785a7f83712b832"},
+      {"sample_id": "v6p1if1_0003", "role": "valid_iid", "receipt_sha256": "a1a00223ff93aa666f58eafe8327df60cb648ee306081cfe63073c7604c3a046"}
+    ],
+    "verified_grid": [65, 65, 57],
+    "coordinate_order": "C-order x,y,z",
+    "channels_per_layer": 13,
+    "flattened_input_channels": 741,
+    "deterministic_padding": "65x65 -> 128x128 right/bottom zero padding",
+    "temperature_used_as_input": false,
+    "normalization": "single authorized case statistics for smoke only; formal train-only stats pending"
+  },
+  "train_fixture": {
+    "sample_id": "v6p1if1_0000",
+    "split_role": "train",
+    "load_seconds": 0.4230480194091797,
+    "forward_seconds": [1.1784088611602783, 0.034281015396118164],
+    "optimizer_step_seconds": [0.0804133415222168, 0.005246639251708984],
+    "losses": [1.1214803457260132, 1.0822488069534302],
+    "finite": true,
+    "checkpoint_reload_state_equal": true,
+    "checkpoint_sha256": "05935ea29d4ad674542164a651197a8bbff7dafd1fa194ff0d2228f7d92929ba"
+  },
+  "valid_fixture": {
+    "sample_id": "v6p1if1_0003",
+    "split_role": "valid_iid",
+    "load_seconds": 0.3709983825683594,
+    "forward_seconds": [1.1773312091827393, 0.03543233871459961],
+    "optimizer_step_seconds": [0.08071351051330566, 0.005419731140136719],
+    "losses": [1.12472665309906, 1.07879638671875],
+    "finite": true,
+    "checkpoint_reload_state_equal": true,
+    "checkpoint_sha256": "d7792e9e0dc229840509aa6a3b9198ee0d1aa9ec0c5d5f83b6bff0e327bce5a3"
+  },
+  "interpretation": "pretrained load, replacement layers, direct dense case-definition adapter, forward/backward and reload are qualified for feasibility; synthetic finite unit target is smoke-only and no accuracy or convergence claim is made",
+  "hard_boundaries": {
+    "p1i_test_iid_accessed": false,
+    "sealed_accessed": false,
+    "deepoheat_official100_accessed": false,
+    "new_formal_training_started": false,
+    "large_thermfm_archive_downloaded": false
+  }
+}

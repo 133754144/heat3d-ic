@@ -1,0 +1,61 @@
+{
+  "schema_version": "heat3d_v7_g2_p21_thermfm_asset_receipt_v1",
+  "observed_at": "2026-09-16",
+  "status": "SELECTIVE_POSEIDON_T_ASSET_VERIFIED",
+  "thermfm_repo": {
+    "repo": "https://github.com/haiyangxin/Therm-FM",
+    "upstream_commit_sha": "1c338d0fbe0dca25311eb896a9ea136a4f3d3cb1",
+    "license": "Apache-2.0",
+    "readme_sha256": "0d31b5458d96f7f9141e6bf9cb7e5ca8e3d1c83c46a78c863832f38cc5812d47",
+    "pyproject_sha256": "430a00dd12bd40af83cebd5071fe23536a4da6f76ac7bb22793cec6e71f187b8"
+  },
+  "poseidon_t": {
+    "hub_id": "camlab-ethz/Poseidon-T",
+    "revision": "93adcbf10f75b45ac3bca3939cc3d3f239e1e663",
+    "config": {"size_bytes": 940, "sha256": "1fd7b545aedf0b46d180352df6b755354771e606185ee98dd4579ff7d2fa7048"},
+    "pytorch_model_bin": {"size_bytes": 83390397, "sha256": "a363f7317fbc3a900a318fc63cc53197705d95fce0e0ce28dd3c8844a89112e2"},
+    "total_selected_bytes": 83391337,
+    "config_contract": {"model_type": "swinv2", "architecture": "SwinForPDE", "image_size": 128, "patch_size": 4, "hidden_size": 384},
+    "local_verified_path": "/private/tmp/g2_p21_poseidon_t",
+    "devbox_verified_path": "/home/xyh/.cache/g2_external/poseidon-T-93adcbf",
+    "devbox_sha_match": true
+  },
+  "download_attempts": [
+    {
+      "method": "hf download via hf-mirror",
+      "result": "SUCCESS",
+      "command_scope": "config.json + pytorch_model.bin only; pinned revision; HF_HUB_DISABLE_XET=1",
+      "artifact_sha_verified": true
+    },
+    {
+      "method": "fresh local hf CLI retry",
+      "result": "FAILED_CLOSED",
+      "error": "FileMetadataError/LocalEntryNotFoundError: distant resource metadata did not validate as huggingface.co",
+      "impact": "no artifact replaced; previously verified copy retained"
+    },
+    {
+      "method": "fresh local direct curl retry",
+      "result": "FAILED_CLOSED",
+      "error": "LibreSSL SSL_connect: SSL_ERROR_SYSCALL after mirror redirect",
+      "impact": "no partial file retained"
+    },
+    {
+      "method": "fresh local hf CLI retry (P21 follow-up, single worker, 20s metadata timeout)",
+      "result": "FAILED_CLOSED",
+      "error": "FileMetadataError/LocalEntryNotFoundError at Hub metadata validation; command exited without downloading",
+      "impact": "retry directory contains no usable artifact; verified first copy and devbox copy were not replaced"
+    }
+  ],
+  "thermfm_large_assets": {
+    "model_checkpoint_archive_downloaded": false,
+    "dataset_archive_downloaded": false,
+    "thermal_model_T_checkpoint": "not obtained; not required for Poseidon-T initialization smoke",
+    "normalization_constants": "not obtained; full train-only P1i stats remain a formal-run prerequisite"
+  },
+  "boundaries": {
+    "p1i_test_iid_accessed": false,
+    "sealed_accessed": false,
+    "deepoheat_official100_accessed": false,
+    "g1_modified": false
+  }
+}
