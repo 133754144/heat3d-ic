@@ -37,10 +37,14 @@ def read(path: Path) -> dict[str, Any]:
     payload = json.loads(path.read_text(encoding="utf-8"))
     boundaries = payload.get("hard_boundaries", {})
     forbidden = {
-        "p1i_test_iid_accessed": boundaries.get("p1i_test_iid_accessed", boundaries.get("test_iid")),
+        "p1i_test_iid_accessed": boundaries.get(
+            "p1i_test_iid_accessed",
+            boundaries.get("test_iid_accessed", boundaries.get("test_iid")),
+        ),
         "sealed_accessed": boundaries.get("sealed_accessed", boundaries.get("sealed")),
         "deepoheat_official100_accessed": boundaries.get(
-            "deepoheat_official100_accessed", boundaries.get("official100")
+            "deepoheat_official100_accessed",
+            boundaries.get("official100_accessed", boundaries.get("official100")),
         ),
     }
     if any(value is not False for value in forbidden.values()):
@@ -97,6 +101,12 @@ def main() -> int:
     p15_best_u = p15agg["best_common_scheduled_u_v2_metric"]
     p15_wall = p15agg["training_wall_seconds"]
     p15_mem = max(int(p15["runs"][str(seed)]["peak_device_memory"] or 0) for seed in (0, 1, 2))
+    p15_param_count = int(p15["runs"]["0"].get("parameter_count") or 0)
+    p15_u_latency = summary([
+        float(p15["dense_receipts"][str(seed)]["600"]["runtime"]["u_v2_inference_seconds"])
+        for seed in (0, 1, 2)
+    ])
+    p17_param_count = int(p17["seeds"]["0"].get("parameter_count") or 0)
     rows = [
         {
             "regime": "DeepOHeat-full-minus-valid128",
@@ -108,6 +118,11 @@ def main() -> int:
             "final_sd": p17agg["final_sample_first_relative_rmse_pct"]["sample_sd"],
             "wall_hours": p17agg["training_wall_seconds"]["mean"] / 3600.0,
             "peak_memory_gib": p17agg["peak_device_bytes_max"] / (1024**3),
+            "parameter_count": p17_param_count,
+            "training_budget": "100000 iterations; 50 functions/iteration",
+            "inference_latency_model_only_seconds": None,
+            "inference_latency_end_to_end_dense_seconds": None,
+            "latency_status": "NOT_MEASURED_IN_P17_RECEIPT",
             "modality": "PDE/BC physics-informed native full mesh",
         },
         {
@@ -120,6 +135,11 @@ def main() -> int:
             "final_sd": d768agg["final_primary_metric_pct_sample_sd"],
             "wall_hours": d768agg["wall_seconds_mean"] / 3600.0,
             "peak_memory_gib": d768agg["peak_device_bytes_max"] / (1024**3),
+            "parameter_count": int(d768agg.get("parameter_count", p17_param_count)),
+            "training_budget": "100000 iterations; 50 functions/iteration",
+            "inference_latency_model_only_seconds": None,
+            "inference_latency_end_to_end_dense_seconds": None,
+            "latency_status": "NOT_MEASURED_IN_P14_RECEIPT",
             "modality": "PDE/BC physics-informed native full mesh",
         },
         {
@@ -132,6 +152,11 @@ def main() -> int:
             "final_sd": p15_final_u["sample_sd"],
             "wall_hours": p15_wall["mean"] / 3600.0,
             "peak_memory_gib": p15_mem / (1024**3),
+            "parameter_count": p15_param_count,
+            "training_budget": "600 epochs; B24; 768 supervised cases",
+            "inference_latency_model_only_seconds": None,
+            "inference_latency_end_to_end_dense_seconds": p15_u_latency,
+            "latency_status": "U-v2 dense includes full-query graph construction and direct-query forward",
             "modality": "supervised sparse 1024 support + U-v2 reconstruction",
         },
     ]
@@ -170,6 +195,27 @@ def main() -> int:
             "same_information_budget": False,
             "native_full_reference_rankable_on_valid128": False,
         },
+        "efficiency_contract": {
+            "rows": [
+                {
+                    "regime": row["regime"],
+                    "training_cases": row["training_cases"],
+                    "training_budget": row["training_budget"],
+                    "parameter_count": row["parameter_count"],
+                    "wall_hours_per_seed": row["wall_hours"],
+                    "peak_memory_gib": row["peak_memory_gib"],
+                    "inference_latency_model_only_seconds": row["inference_latency_model_only_seconds"],
+                    "inference_latency_end_to_end_dense_seconds": row["inference_latency_end_to_end_dense_seconds"],
+                    "latency_status": row["latency_status"],
+                }
+                for row in rows
+            ],
+            "latency_boundary": {
+                "model_only": "model forward only; not available for DeepOHeat P17/P14 receipts",
+                "end_to_end_dense": "includes query/preprocessing and dense formation; Heat3D U-v2 timing includes full-query graph construction + direct-query forward",
+                "same_hardware_remeasurement_required": True,
+            },
+        },
         "interpretation": {
             "q1": "Compare DeepOHeat-768 and Heat3D-768 only as same physical-case/data-regime evidence.",
             "q2": "Compare full-minus-valid128 versus 768-case DeepOHeat for data-scale effect.",
@@ -199,7 +245,22 @@ def main() -> int:
         "",
         f"e200 U-v2 dense mean = {u14rep['sample_first_relative_rmse_pct']['mean']:.6f}%；IDW 与 U-v2 oracle 仅作 reconstruction floor/diagnostic，不做误差相减分解。",
         "",
+        "## Efficiency and latency boundary",
+        "",
+        "| regime | parameters | training budget | model-only latency | end-to-end dense latency |",
+        "|---|---:|---|---:|---:|",
     ]
+    for row in rows:
+        model_latency = "not measured" if row["inference_latency_model_only_seconds"] is None else f"{row['inference_latency_model_only_seconds']['mean']:.3f} s"
+        dense_latency = "not measured" if row["inference_latency_end_to_end_dense_seconds"] is None else f"{row['inference_latency_end_to_end_dense_seconds']['mean']:.3f} ± {row['inference_latency_end_to_end_dense_seconds']['sample_sd']:.3f} s"
+        lines.append(
+            f"| {row['regime']} | {row['parameter_count']:,} | {row['training_budget']} | {model_latency} | {dense_latency} |"
+        )
+    lines.extend([
+        "",
+        "Latency must be remeasured on the same hardware before Pareto claims. Heat3D U-v2 end-to-end timing includes full-query graph construction and direct-query forward; DeepOHeat P14/P17 receipts do not contain a directly comparable dense latency measurement.",
+        "",
+    ])
     args.markdown.parent.mkdir(parents=True, exist_ok=True)
     args.markdown.write_text("\n".join(lines) + "\n", encoding="utf-8")
     print(json.dumps({"status": out["status"], "output": str(args.output), "markdown": str(args.markdown)}))

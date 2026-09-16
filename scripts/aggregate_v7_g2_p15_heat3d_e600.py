@@ -193,7 +193,20 @@ def main() -> int:
             f"final native = {payload_out['aggregate']['final_native_metric']['mean']:.6f} ± {payload_out['aggregate']['final_native_metric']['sample_sd']:.6f}%.",
             "",
             "Dense metrics are descriptive and do not alter native checkpoint selection. No test/sealed/official100 data were opened.",
+            "",
+            "## Scheduled dense views (mean ± sample SD)",
+            "",
+            "| epoch | native-1024 [%] | IDW dense [%] | U-v2 dense [%] |",
+            "|---:|---:|---:|---:|",
         ])
+        for epoch in (200, 400, 600):
+            dense_epoch = payload_out["aggregate"]["dense_by_epoch"][str(epoch)]
+            lines.append(
+                f"| {epoch} | "
+                f"{dense_epoch['native_1024']['sample_first_relative_rmse_pct']['mean']:.6f} ± {dense_epoch['native_1024']['sample_first_relative_rmse_pct']['sample_sd']:.6f} | "
+                f"{dense_epoch['idw_dense_571256']['sample_first_relative_rmse_pct']['mean']:.6f} ± {dense_epoch['idw_dense_571256']['sample_first_relative_rmse_pct']['sample_sd']:.6f} | "
+                f"{dense_epoch['u_v2_dense_571256']['sample_first_relative_rmse_pct']['mean']:.6f} ± {dense_epoch['u_v2_dense_571256']['sample_first_relative_rmse_pct']['sample_sd']:.6f} |"
+            )
         args.markdown.parent.mkdir(parents=True, exist_ok=True)
         args.markdown.write_text("\n".join(lines) + "\n", encoding="utf-8")
     print(json.dumps({"status": payload_out["status"], "output": str(args.output)}, sort_keys=True))

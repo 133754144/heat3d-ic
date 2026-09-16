@@ -8,7 +8,7 @@
 | matched physical-case | DeepOHeat-v1 768 train / 128 valid, P14 | 0 within the cohort | `SAME_PHYSICAL_CASE_BUDGET`; not same information budget |
 | Heat3D e200 | 768 train / 128 valid, three frozen seeds | 0 within the cohort | baseline e200; native/IDW/U-v2 views |
 | Heat3D e600 | 768 train / 128 valid, fresh seeds | 0 within the cohort | P15 complete; fresh 600e convergence study, e200 scheduler not reused |
-| full-minus-valid128 | official pool minus 128 valid IDs | 0 by P17 exclusion manifest | P17 native-recipe held-out validation; training in progress/receipt pending |
+| full-minus-valid128 | official pool minus 128 valid IDs | 0 by P17 exclusion manifest | P17 complete native-recipe held-out validation; valid-only aggregation |
 
 DeepOHeat uses PDE/BC/mesh physics supervision and native full-field operators; Heat3D uses
 supervised temperature labels on sparse 1024 support. 因此任何跨行结论都只能称
@@ -23,11 +23,20 @@ supervised temperature labels on sparse 1024 support. 因此任何跨行结论�
 - Native seed42 full-pool receipt 已审计为与 Heat3D valid128 overlap，故不用于 valid128
   accuracy ranking。official100 保持 sealed。
 
-P15 e600 与 P17 full-minus-valid128 完成后，新增结果只能进入各自预注册行；不得回写
-或重解释上述历史 receipt。
+P15 e600 与 P17 full-minus-valid128 均已完成；新增结果只进入各自预注册行，不回写
+或重解释历史 receipt。
 
-P15 e600 三 seed 已完成（native best `0.68562 ± 0.01167%`; scheduled U-v2
-full-field e600 `0.70989 ± 0.00777%`; all three seeds classified
-`CONVERGED_WITHIN_600`). P17 full-minus-valid128 training is a fresh native-recipe
-cohort on the frozen 99,872-case pool; its validation remains the excluded valid128
-and its official test boundary is closed until P18 completion.
+P15 e600 三 seed 已完成（native best `0.685619 ± 0.011673%`; scheduled U-v2
+full-field e600 `0.709888 ± 0.007765%`; all three seeds classified
+`CONVERGED_WITHIN_600`). P17 full-minus-valid128 是在 exclusion manifest 计算出的
+training pool（99,872 cases）上 fresh native-recipe cohort；三 seed best full-field
+为 `1.146688 ± 0.038323%`，final 为 `1.507919 ± 0.218354%`，验证仅使用排除的
+valid128，三 seed checkpoint reload 均 PASS。
+
+P18 common-valid table uses the same 128 physical validation cases and 571,256-point
+temperature-space evaluator for DeepOHeat-full-minus-valid128, DeepOHeat-768, and
+Heat3D-768-e600. This is a physical-case/data-regime comparison, not a same-
+information-budget or same-compute claim: DeepOHeat is PDE/BC physics-informed on
+the full mesh, while Heat3D is supervised on 1024 sparse support with U-v2 dense
+reconstruction. Historical native-full DeepOHeat remains `NATIVE_REFERENCE` only,
+because its pool overlaps valid128.

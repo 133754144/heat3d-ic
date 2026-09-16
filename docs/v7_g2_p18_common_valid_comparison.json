@@ -1,0 +1,307 @@
+{
+  "efficiency_contract": {
+    "latency_boundary": {
+      "end_to_end_dense": "includes query/preprocessing and dense formation; Heat3D U-v2 timing includes full-query graph construction + direct-query forward",
+      "model_only": "model forward only; not available for DeepOHeat P17/P14 receipts",
+      "same_hardware_remeasurement_required": true
+    },
+    "rows": [
+      {
+        "inference_latency_end_to_end_dense_seconds": null,
+        "inference_latency_model_only_seconds": null,
+        "latency_status": "NOT_MEASURED_IN_P17_RECEIPT",
+        "parameter_count": 3303680,
+        "peak_memory_gib": 0.6399681568145752,
+        "regime": "DeepOHeat-full-minus-valid128",
+        "training_budget": "100000 iterations; 50 functions/iteration",
+        "training_cases": 99872,
+        "wall_hours_per_seed": 0.5799900281338853
+      },
+      {
+        "inference_latency_end_to_end_dense_seconds": null,
+        "inference_latency_model_only_seconds": null,
+        "latency_status": "NOT_MEASURED_IN_P14_RECEIPT",
+        "parameter_count": 3303680,
+        "peak_memory_gib": 0.7004730701446533,
+        "regime": "DeepOHeat-768",
+        "training_budget": "100000 iterations; 50 functions/iteration",
+        "training_cases": 768,
+        "wall_hours_per_seed": 0.6599409241259262
+      },
+      {
+        "inference_latency_end_to_end_dense_seconds": {
+          "mean": 1008.1367344298827,
+          "n": 3,
+          "sample_sd": 11.024656733782763
+        },
+        "inference_latency_model_only_seconds": null,
+        "latency_status": "U-v2 dense includes full-query graph construction and direct-query forward",
+        "parameter_count": 892776,
+        "peak_memory_gib": 3.868252754211426,
+        "regime": "Heat3D-768-e600",
+        "training_budget": "600 epochs; B24; 768 supervised cases",
+        "training_cases": 768,
+        "wall_hours_per_seed": 0.7423015468579629
+      }
+    ]
+  },
+  "evaluation": {
+    "cases": 128,
+    "deepoheat_official100": "sealed",
+    "domain": "101x101x56=571256",
+    "primary_metric": "sample_first_relative_rmse_pct",
+    "sealed": "sealed",
+    "temperature_space": "deltaT_K",
+    "test_iid": "sealed"
+  },
+  "fairness": {
+    "native_full_reference_rankable_on_valid128": false,
+    "p17_excluded_valid_count": 128,
+    "p17_valid_overlap": 0,
+    "same_information_budget": false,
+    "same_physical_case_budget": "DeepOHeat-768 vs Heat3D-768"
+  },
+  "hard_boundaries": {
+    "deepoheat_official100": false,
+    "sealed": false,
+    "test_iid": false
+  },
+  "inputs": {
+    "deepoheat768": {
+      "path": "docs/v7_g2_p14_deepoheat_v1_matched_aggregation.json",
+      "sha256": "dd0633d3088717bcfe21722b258583585b7949694cd9638fa5b957c926200091"
+    },
+    "heat3d200": {
+      "path": "docs/v7_g2_p13_heat3d_v1_3seed_valid_only_aggregation.json",
+      "sha256": "7b249e62139e29f4641212a635bf96a15fe2caa47cea9057820a1be541c3f80f"
+    },
+    "p14u": {
+      "path": "docs/v7_g2_p14_1_u_v2_aggregate.json",
+      "sha256": "49ee09d1b52ac30dc6634a5a546c50b81c3afdd01dce1549acb63cb2dfa08095"
+    },
+    "p15": {
+      "path": "docs/v7_g2_p15_heat3d_e600_aggregation.json",
+      "sha256": "f111bc47b8a4a5c90e2533b46859f38570c84230769702a940b45358636df5c7"
+    },
+    "p17": {
+      "path": "docs/v7_g2_p17_deepoheat_full_minus_valid128_aggregation.json",
+      "sha256": "1aac604283ae09f8bc90975a6bedfb413791d3b0ad23cf296a8772c137d88e86"
+    }
+  },
+  "interpretation": {
+    "q1": "Compare DeepOHeat-768 and Heat3D-768 only as same physical-case/data-regime evidence.",
+    "q2": "Compare full-minus-valid128 versus 768-case DeepOHeat for data-scale effect.",
+    "q3": "Heat3D-768 versus full-minus-valid128 is physical-case efficiency, not equal information/compute budget.",
+    "q4": "Use P14.1 oracle floors as lower-bound diagnostics; do not subtract them from prediction error."
+  },
+  "p14_1_e200_views": {
+    "heat3d_idw_dense": {
+      "MAE_K": {
+        "mean": 0.2790547469429854,
+        "n": 3,
+        "sample_sd": 0.003269866218377289
+      },
+      "peak_RMSE_K": {
+        "mean": 0.4169029516409139,
+        "n": 3,
+        "sample_sd": 0.03522632136912744
+      },
+      "peak_temperature_max_abs_error_K": {
+        "mean": 1.3172423044840496,
+        "n": 3,
+        "sample_sd": 0.13072342845635657
+      },
+      "peak_temperature_mean_abs_error_K": {
+        "mean": 0.3203725864489873,
+        "n": 3,
+        "sample_sd": 0.02455432619078839
+      },
+      "point_global_relative_rmse_pct": {
+        "mean": 1.4386400899315057,
+        "n": 3,
+        "sample_sd": 0.015489337707825667
+      },
+      "raw_cv_weighted_rmse_K": {
+        "mean": 0.3742713070014175,
+        "n": 3,
+        "sample_sd": 0.00414723845994018
+      },
+      "sample_first_relative_rmse_pct": {
+        "mean": 1.4315019634083572,
+        "n": 3,
+        "sample_sd": 0.016590536927650282
+      }
+    },
+    "heat3d_native_1024": {
+      "MAE_K": {
+        "mean": 0.17846402347398302,
+        "n": 3,
+        "sample_sd": 0.0030418509158961987
+      },
+      "peak_RMSE_K": {
+        "mean": 0.39121208161565113,
+        "n": 3,
+        "sample_sd": 0.027299703397550546
+      },
+      "peak_temperature_max_abs_error_K": {
+        "mean": 1.2441457112630208,
+        "n": 3,
+        "sample_sd": 0.0709401436583588
+      },
+      "peak_temperature_mean_abs_error_K": {
+        "mean": 0.29669109483559925,
+        "n": 3,
+        "sample_sd": 0.019204603171292425
+      },
+      "point_global_relative_rmse_pct": {
+        "mean": 0.8930686652640814,
+        "n": 3,
+        "sample_sd": 0.026659342679832734
+      },
+      "raw_cv_weighted_rmse_K": {
+        "mean": 0.21159019911613774,
+        "n": 3,
+        "sample_sd": 0.004433303404499463
+      },
+      "sample_first_relative_rmse_pct": {
+        "mean": 0.7799422830429066,
+        "n": 3,
+        "sample_sd": 0.013954628500681559
+      }
+    },
+    "heat3d_u_v2_dense": {
+      "MAE_K": {
+        "mean": 0.1635990201432186,
+        "n": 3,
+        "sample_sd": 0.00012500193226803094
+      },
+      "peak_RMSE_K": {
+        "mean": 0.3878653347850452,
+        "n": 3,
+        "sample_sd": 0.03065842182642841
+      },
+      "peak_temperature_max_abs_error_K": {
+        "mean": 1.127290217081698,
+        "n": 3,
+        "sample_sd": 0.10163119764503845
+      },
+      "peak_temperature_mean_abs_error_K": {
+        "mean": 0.2992088387409879,
+        "n": 3,
+        "sample_sd": 0.024194496957269964
+      },
+      "point_global_relative_rmse_pct": {
+        "mean": 0.8481827811643302,
+        "n": 3,
+        "sample_sd": 0.009130742078981761
+      },
+      "raw_cv_weighted_rmse_K": {
+        "mean": 0.2191453111494815,
+        "n": 3,
+        "sample_sd": 0.002191379673762877
+      },
+      "sample_first_relative_rmse_pct": {
+        "mean": 0.814137166525291,
+        "n": 3,
+        "sample_sd": 0.006053537178662305
+      }
+    },
+    "idw_oracle_floor": {
+      "MAE_K": {
+        "mean": 0.22603675303239254,
+        "n": 3,
+        "sample_sd": 0.0
+      },
+      "peak_RMSE_K": {
+        "mean": 0.14184493682598695,
+        "n": 3,
+        "sample_sd": 0.0
+      },
+      "peak_temperature_max_abs_error_K": {
+        "mean": 0.376495361328125,
+        "n": 3,
+        "sample_sd": 0.0
+      },
+      "peak_temperature_mean_abs_error_K": {
+        "mean": 0.11589008569717407,
+        "n": 3,
+        "sample_sd": 0.0
+      },
+      "point_global_relative_rmse_pct": {
+        "mean": 1.2203971291027094,
+        "n": 3,
+        "sample_sd": 0.0
+      },
+      "raw_cv_weighted_rmse_K": {
+        "mean": 0.31821318429719586,
+        "n": 3,
+        "sample_sd": 0.0
+      },
+      "sample_first_relative_rmse_pct": {
+        "mean": 1.2221455508584527,
+        "n": 3,
+        "sample_sd": 0.0
+      }
+    },
+    "u_v2_oracle": "NOT_DEFINED_FOR_DIRECT_QUERY"
+  },
+  "rows": [
+    {
+      "best_mean": 1.1466878888156613,
+      "best_sd": 0.0383230550622063,
+      "final_mean": 1.5079187607774105,
+      "final_sd": 0.21835435606159476,
+      "inference_latency_end_to_end_dense_seconds": null,
+      "inference_latency_model_only_seconds": null,
+      "latency_status": "NOT_MEASURED_IN_P17_RECEIPT",
+      "metric": "sample_first_relative_rmse_pct (full 571256)",
+      "modality": "PDE/BC physics-informed native full mesh",
+      "parameter_count": 3303680,
+      "peak_memory_gib": 0.6399681568145752,
+      "regime": "DeepOHeat-full-minus-valid128",
+      "training_budget": "100000 iterations; 50 functions/iteration",
+      "training_cases": 99872,
+      "wall_hours": 0.5799900281338853
+    },
+    {
+      "best_mean": 1.3051668254914464,
+      "best_sd": 0.26832110323450936,
+      "final_mean": 1.4368067559474278,
+      "final_sd": 0.3094757303674489,
+      "inference_latency_end_to_end_dense_seconds": null,
+      "inference_latency_model_only_seconds": null,
+      "latency_status": "NOT_MEASURED_IN_P14_RECEIPT",
+      "metric": "sample_first_relative_rmse_pct (full 571256)",
+      "modality": "PDE/BC physics-informed native full mesh",
+      "parameter_count": 3303680,
+      "peak_memory_gib": 0.7004730701446533,
+      "regime": "DeepOHeat-768",
+      "training_budget": "100000 iterations; 50 functions/iteration",
+      "training_cases": 768,
+      "wall_hours": 0.6599409241259262
+    },
+    {
+      "best_mean": 0.7098883030963314,
+      "best_sd": 0.007765142811416873,
+      "final_mean": 0.7098883030963314,
+      "final_sd": 0.007765142811416873,
+      "inference_latency_end_to_end_dense_seconds": {
+        "mean": 1008.1367344298827,
+        "n": 3,
+        "sample_sd": 11.024656733782763
+      },
+      "inference_latency_model_only_seconds": null,
+      "latency_status": "U-v2 dense includes full-query graph construction and direct-query forward",
+      "metric": "sample_first_relative_rmse_pct (U-v2 full 571256)",
+      "modality": "supervised sparse 1024 support + U-v2 reconstruction",
+      "parameter_count": 892776,
+      "peak_memory_gib": 3.868252754211426,
+      "regime": "Heat3D-768-e600",
+      "training_budget": "600 epochs; B24; 768 supervised cases",
+      "training_cases": 768,
+      "wall_hours": 0.7423015468579629
+    }
+  ],
+  "schema_version": "heat3d_v7_g2_p18_common_valid_comparison_v1",
+  "status": "COMPLETE_VALID_ONLY_COMPARISON_TABLE"
+}

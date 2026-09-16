@@ -1,6 +1,6 @@
 {
   "schema_version": "heat3d_v7_g2_p13_baseline_taxonomy_status_v1",
-  "observed_at": "2026-09-16T10:12:00+08:00",
+  "observed_at": "2026-09-16T11:55:00+08:00",
   "scope": "valid-only G2 baseline closure; test/sealed evaluation remains locked",
   "taxonomy": {
     "common_task_supervised": [
@@ -11,7 +11,7 @@
     "semiconductor_native": [
       {"model": "DeepOHeat-v1", "status": "COMPLETE_UPSTREAM_SEED42_FROZEN", "formal_scope": "official dense physics-informed protocol"},
       {"model": "Heat3D-on-DeepOHeat-v1", "status": "COMPLETE_VALID_ONLY_E600_THREE_SEEDS", "formal_scope": "supervised method-native cross-benchmark; fresh e600 convergence cohort; native-1024 selection plus scheduled U-v2 571256-point valid-only evaluator"},
-      {"model": "DeepOHeat-v1 full-minus-valid128", "status": "RUNNING_NATIVE_RECIPE_HELDOUT_VALIDATION", "formal_scope": "P17 native recipe on frozen full pool minus Heat3D valid128; valid-only, no official100 access"}
+      {"model": "DeepOHeat-v1 full-minus-valid128", "status": "COMPLETE_VALID_ONLY_THREE_SEEDS", "formal_scope": "P17 native recipe on frozen full pool minus Heat3D valid128; valid-only, no official100 access"}
     ,{"model": "DeepOHeat-v1 matched 768/128", "status": "COMPLETE_VALID_ONLY_SAME_PHYSICAL_CASE_BUDGET", "formal_scope": "upstream-faithful physics-informed matched cohort; not same information budget"}
     ],
     "pretrained_foundation": [
@@ -27,7 +27,7 @@
     "GINO": "COMPLETE_VALID_ONLY_3_SEEDS",
     "Transolver": "INDEPENDENT_VALID_ONLY_COMPLETE",
     "Heat3D_on_DeepOHeat_v1": "P15_E600_COMPLETE_VALID_ONLY_TEST_SEALED",
-    "DeepOHeat_v1_full_minus_valid128": "P17_RUNNING_VALID_ONLY_TEST_SEALED",
+    "DeepOHeat_v1_full_minus_valid128": "P17_COMPLETE_VALID_ONLY_TEST_SEALED",
     "DeepOHeat_v1_matched_768_128": "P14_COMPLETE_VALID_ONLY_SAME_PHYSICAL_CASE_BUDGET",
     "Therm_FM": "NEEDS_AMENDMENT",
     "test_unlock": "NOT_AUTHORIZED"
@@ -64,5 +64,9 @@
     ,"heat3d_p15_e600_protocol": "configs/heat3d_v7/g2_p15_heat3d_v1_e600_frozen_protocol.json"
     ,"deepoheat_p17_protocol": "configs/heat3d_v7/g2_p17_deepoheat_full_minus_valid128_frozen_protocol.json"
     ,"deepoheat_p17_exclusion_manifest": "configs/heat3d_v7/g2_p17_deepoheat_full_minus_valid128_exclusion_manifest.json"
+    ,"deepoheat_p17_aggregation": "docs/v7_g2_p17_deepoheat_full_minus_valid128_aggregation.json"
+    ,"deepoheat_p17_aggregation_markdown": "docs/v7_g2_p17_deepoheat_full_minus_valid128_aggregation.md"
+    ,"g2_p18_common_valid_comparison": "docs/v7_g2_p18_common_valid_comparison.json"
+    ,"g2_p18_common_valid_comparison_markdown": "docs/v7_g2_p18_common_valid_comparison.md"
   }
 }

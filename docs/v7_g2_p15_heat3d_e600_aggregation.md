@@ -15,3 +15,11 @@ scheduled U-v2 best = 0.709888 ± 0.007765%;
 final native = 0.695857 ± 0.008638%.
 
 Dense metrics are descriptive and do not alter native checkpoint selection. No test/sealed/official100 data were opened.
+
+## Scheduled dense views (mean ± sample SD)
+
+| epoch | native-1024 [%] | IDW dense [%] | U-v2 dense [%] |
+|---:|---:|---:|---:|
+| 200 | 0.830212 ± 0.025093 | 1.481163 ± 0.073425 | 0.868863 ± 0.034575 |
+| 400 | 0.741490 ± 0.017958 | 1.434201 ± 0.037833 | 0.770950 ± 0.034560 |
+| 600 | 0.695839 ± 0.008660 | 1.381139 ± 0.018880 | 0.709888 ± 0.007765 |
