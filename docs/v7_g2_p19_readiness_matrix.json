@@ -1,0 +1,111 @@
+{
+  "schema_version": "heat3d_v7_g2_p19_readiness_matrix_v1",
+  "status": "P19_VALIDATION_CLOSURE_COMPLETE_TESTS_LOCKED",
+  "branch": "research/v7-g2-baselines",
+  "scope": "valid-only closure and inference profiling; no new training",
+  "closed_gates": [
+    {
+      "gate": "P14.1_valid_only_evaluator",
+      "status": "CLOSED",
+      "evidence": "docs/v7_g2_p14_1_u_v2_aggregate.json"
+    },
+    {
+      "gate": "P15_heat3d_e600_three_seeds",
+      "status": "CLOSED_CONSERVATIVE_CONVERGENCE_WORDING",
+      "evidence": "docs/v7_g2_p15_heat3d_e600_aggregation.json",
+      "interpretation": "NO_CLEAR_BOUNDARY_RIGHT_CENSORING_STABLE_PLATEAU_UNPROVEN"
+    },
+    {
+      "gate": "P17_deepoheat_full_minus_valid128_three_seeds",
+      "status": "CLOSED_VALID_ONLY",
+      "evidence": "docs/v7_g2_p17_deepoheat_full_minus_valid128_aggregation.json"
+    },
+    {
+      "gate": "P18_common_valid_comparison",
+      "status": "CLOSED_FORMAL_ROWS_E600_ONLY",
+      "evidence": "docs/v7_g2_p18_common_valid_comparison.json",
+      "policy": "e200 and IDW are historical diagnostics; Heat3D is fixed e600 endpoint; DeepOHeat reports validation-selected best and final endpoint"
+    },
+    {
+      "gate": "P19_inference_reload_provenance",
+      "status": "CLOSED_PASS_VALID_ONLY",
+      "evidence": "docs/v7_g2_p19_inference_profile_aggregation.json"
+    }
+  ],
+  "model_status": [
+    {
+      "model": "Heat3D-on-DeepOHeat-v1",
+      "status": "READY_VALID_ONLY_E600",
+      "formal_view": "fresh e600 x3, U-v2 direct-query dense inference on 571256 points",
+      "remaining": "evaluation-only unlock review"
+    },
+    {
+      "model": "DeepOHeat-v1 full-minus-valid128",
+      "status": "READY_VALID_ONLY_NATIVE_RECIPE",
+      "formal_view": "best and final endpoints on valid128; no official100 claim"
+    },
+    {
+      "model": "DeepOHeat-v1 matched-768",
+      "status": "READY_VALID_ONLY_SAME_PHYSICAL_CASE_BUDGET",
+      "formal_view": "separate data-regime comparison; not same information budget"
+    },
+    {
+      "model": "GINO",
+      "status": "PRIOR_VALID_ONLY_E3_PASS_RECEIPT",
+      "formal_view": "existing E3-authoritative valid-only result; P19 does not alter its protocol"
+    },
+    {
+      "model": "Transolver",
+      "status": "PRIOR_VALID_ONLY_COMPLETE",
+      "formal_view": "existing frozen valid-only result; P19 does not alter its protocol"
+    },
+    {
+      "model": "Therm-FM",
+      "status": "OPEN_NEEDS_AMENDMENT",
+      "formal_view": "pretrained transfer only; no large checkpoint downloaded"
+    }
+  ],
+  "open_gates": [
+    {
+      "gate": "P20_evaluation_only_unlock",
+      "status": "OPEN_NOT_AUTHORIZED",
+      "locked_splits": ["P1i_test_iid", "sealed", "DeepOHeat_official100"]
+    },
+    {
+      "gate": "same_hardware_latency_review",
+      "status": "OPEN_REVIEW",
+      "note": "P19 provides matched-devbox inference phases, but batch/query boundaries differ and no new Pareto claim is authorized"
+    },
+    {
+      "gate": "publication_wording_and_fairness_review",
+      "status": "OPEN_REVIEW",
+      "note": "Keep supervision modality, physical-case budget, and checkpoint policy explicit"
+    }
+  ],
+  "p20_prerequisites": [
+    "human review of P19 receipts and terminology",
+    "freeze all configs, runners, splits, and checkpoint identities",
+    "verify no train/valid overlap with the intended unlock domain",
+    "approve one-time evaluation-only unlock protocol",
+    "evaluate locked test/sealed artifacts once without retraining or model changes",
+    "report test results separately from valid-only evidence"
+  ],
+  "hard_boundaries": {
+    "g1_modified": false,
+    "training_started_in_p19": false,
+    "p1i_test_iid_accessed": false,
+    "sealed_accessed": false,
+    "deepoheat_official100_accessed": false,
+    "therm_fm_downloaded": false,
+    "multi_htc_started": false,
+    "existing_checkpoint_overwritten": false
+  },
+  "artifacts": {
+    "p19_protocol_sha256": "4bc666c2e42e35cf54422986772fe4845113cc7fb37a3ad67ff251047cc87851",
+    "p19_raw_profile_sha256": "baea3fa13f51529bcce36f6594e7632d18c44e62b47654c82704e5cacbcb6594",
+    "p19_profile_aggregation_sha256": "da2987b54a919bafde294442644dd4ee4c85304603296f5a7631f5778af825c4",
+    "p19_idw_provenance_sha256": "1261ce23a730ccc3f03f10c3f7661e239f25b03a346b9d933da8af7882e4e676",
+    "p18_comparison_sha256": "583b4c7ab57cc62b2dae5329456f62a2d27d0bc84c1eeea1a29e7108cba22417",
+    "p15_aggregation_sha256": "457fa709113a9dbe3466d0e745f68265a3ccef93e8d81106bddbb62e82f6c61f"
+  }
+}

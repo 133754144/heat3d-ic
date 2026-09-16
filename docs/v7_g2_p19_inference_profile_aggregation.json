@@ -1,0 +1,383 @@
+{
+  "checkpoint_reload_provenance": {
+    "deepoheat_best_loaded": true,
+    "deepoheat_final_loaded": true,
+    "heat3d_checkpoint_loaded": true,
+    "weights_modified": false
+  },
+  "data_provenance": {
+    "fs_train_sha256": "a39a4f51e853f9114d86feb88f74553914b2bfc68ab1c553a3a31df25893fff7",
+    "label_receipt_sha256": "a4bb99638a977b2004a93a88b469166ff7da697e89181e64e04152c7f96fe4fd",
+    "normalization_payload_sha256": "3a0273bb92b8c060df8a214b1e0e7dd0e4b5df6bece86b7dea15197ca56ed0db",
+    "subset_manifest_sha256": "e719665176a22213487ee92c1aac993dd01b02a51555c7cd68bf81a13b861558",
+    "target_truth_loaded": false,
+    "valid_count": 128
+  },
+  "environment": {
+    "backend": "gpu",
+    "devices": [
+      "cuda:0"
+    ],
+    "jax": "0.9.1",
+    "jaxlib": "0.9.1",
+    "memory_initial": {
+      "bytes_in_use": 0,
+      "bytes_limit": 9615360000,
+      "bytes_reserved": 0,
+      "largest_alloc_size": 0,
+      "largest_free_block_bytes": 0,
+      "num_allocs": 0,
+      "peak_bytes_in_use": 0,
+      "peak_bytes_reserved": 0,
+      "peak_pool_bytes": 0,
+      "pool_bytes": 0
+    },
+    "platform": "Linux-6.6.87.2-microsoft-standard-WSL2-x86_64-with-glibc2.39",
+    "python": "3.14.3",
+    "smi": {
+      "query": "NVIDIA GeForce RTX 5070, 591.86, 12227"
+    },
+    "xla_flags": "--xla_gpu_deterministic_ops=false"
+  },
+  "generated_at_utc": "2026-09-16T08:27:54.846041+00:00",
+  "hard_boundaries": {
+    "deepoheat_official100_accessed": false,
+    "existing_checkpoint_overwritten": false,
+    "multi_htc_started": false,
+    "p1i_test_iid_accessed": false,
+    "sealed_accessed": false,
+    "therm_fm_downloaded": false,
+    "training_started": false
+  },
+  "idw_provenance": {
+    "path": "docs/v7_g2_p19_idw_provenance.json",
+    "role": "historical P14.1 diagnostic only; not used by this timing profile",
+    "sha256": "1261ce23a730ccc3f03f10c3f7661e239f25b03a346b9d933da8af7882e4e676"
+  },
+  "interpretation": {
+    "checkpoint_policy": "Heat3D fixed e600 endpoint; DeepOHeat validation-selected best and final endpoint both profiled",
+    "formal_accuracy": "not claimed; finite checks only",
+    "latency_boundary": "explicit jax.block_until_ready; cold first valid pass includes compilation; steady pass excludes the first case; cached fixture repeats use a prepared first case/batch",
+    "u_v2_naming": "direct-query dense inference"
+  },
+  "profile_raw_receipt": {
+    "path": "/private/tmp/g2_p19_inference_profile_final.json",
+    "schema_version": "heat3d_v7_g2_p19_valid_only_inference_profile_v1",
+    "sha256": "baea3fa13f51529bcce36f6594e7632d18c44e62b47654c82704e5cacbcb6594",
+    "wall_clock_finished_unix": 1789545982.9778728,
+    "wall_clock_started_unix": 1789544809.0668583
+  },
+  "profiles": {
+    "deepoheat_full_minus_valid128_best": {
+      "all_finite": true,
+      "batch_size": 4,
+      "cached_fixture": {
+        "e2e_seconds": {
+          "median": 0.004822305985726416,
+          "p95": 0.00535203791805543
+        },
+        "repeats": [
+          {
+            "e2e_seconds": 0.005410897021647543,
+            "finite": true,
+            "model_only_seconds": 0.002286980045028031,
+            "postprocess_seconds": 0.003123916976619512,
+            "repeat": 0
+          },
+          {
+            "e2e_seconds": 0.004580734996125102,
+            "finite": true,
+            "model_only_seconds": 0.0014162819716148078,
+            "postprocess_seconds": 0.003164453024510294,
+            "repeat": 1
+          },
+          {
+            "e2e_seconds": 0.004822305985726416,
+            "finite": true,
+            "model_only_seconds": 0.0011878849472850561,
+            "postprocess_seconds": 0.00363442103844136,
+            "repeat": 2
+          }
+        ]
+      },
+      "checkpoint": {
+        "path": "output/heat3d_v7_g2/deepoheat_v1_full_minus_valid128_p17/seed_0/DeepOHeat_v1_best.eqx",
+        "sha256": "75eb29c4fc2ce707e4ef5c64189e014d982509e2c0151f15b70da9ee7751bfa0"
+      },
+      "checkpoint_role": "validation_selected_best",
+      "cold_e2e_seconds": 3.0969933559536003,
+      "e2e_seconds": {
+        "median": 0.004915427998639643,
+        "p95": 0.005740631694789044,
+        "samples_per_second": 813.7643357011862
+      },
+      "model_only_seconds": {
+        "median": 0.0010143225081264973,
+        "p95": 0.0020040416246047245,
+        "samples_per_second": 3943.51891824642
+      },
+      "output_count": 571256,
+      "peak_gpu_memory": {
+        "bytes_limit": 9615360000,
+        "peak_bytes_in_use": 5577385728,
+        "peak_bytes_reserved": 0,
+        "peak_gib": 5.194345235824585,
+        "peak_live_bytes_in_use": 37997824,
+        "peak_live_gib": 0.03538823127746582,
+        "peak_pool_bytes": 8604614656,
+        "peak_stats_scope": "process cumulative; live peak is phase-row maximum"
+      },
+      "postprocess_seconds": {
+        "median": 0.0031892659899313003,
+        "p95": 0.0035845654958393423
+      },
+      "status": "PASS_VALID_ONLY_INFERENCE_PROFILE",
+      "valid_count": 128
+    },
+    "deepoheat_full_minus_valid128_final": {
+      "all_finite": true,
+      "batch_size": 4,
+      "cached_fixture": {
+        "e2e_seconds": {
+          "median": 0.004656074044760317,
+          "p95": 0.0054367628297768535
+        },
+        "repeats": [
+          {
+            "e2e_seconds": 0.005523506028112024,
+            "finite": true,
+            "model_only_seconds": 0.002244390023406595,
+            "postprocess_seconds": 0.003279116004705429,
+            "repeat": 0
+          },
+          {
+            "e2e_seconds": 0.004656074044760317,
+            "finite": true,
+            "model_only_seconds": 0.0013451500562950969,
+            "postprocess_seconds": 0.0033109239884652197,
+            "repeat": 1
+          },
+          {
+            "e2e_seconds": 0.004614091012626886,
+            "finite": true,
+            "model_only_seconds": 0.0012683590175583959,
+            "postprocess_seconds": 0.0033457319950684905,
+            "repeat": 2
+          }
+        ]
+      },
+      "checkpoint": {
+        "path": "output/heat3d_v7_g2/deepoheat_v1_full_minus_valid128_p17/seed_0/DeepOHeat_v1_final.eqx",
+        "sha256": "a6ae3d658604d1b1c5150de00db1b29657cbcc5c37a975e498c8f09bb001da6e"
+      },
+      "checkpoint_role": "final_endpoint",
+      "cold_e2e_seconds": 1.467455155972857,
+      "e2e_seconds": {
+        "median": 0.005517095502000302,
+        "p95": 0.005928472999949008,
+        "samples_per_second": 725.0191696971247
+      },
+      "model_only_seconds": {
+        "median": 0.00183472951175645,
+        "p95": 0.0020337477239081637,
+        "samples_per_second": 2180.157878515107
+      },
+      "output_count": 571256,
+      "peak_gpu_memory": {
+        "bytes_limit": 9615360000,
+        "peak_bytes_in_use": 5577385728,
+        "peak_bytes_reserved": 0,
+        "peak_gib": 5.194345235824585,
+        "peak_live_bytes_in_use": 37989888,
+        "peak_live_gib": 0.03538084030151367,
+        "peak_pool_bytes": 8604614656,
+        "peak_stats_scope": "process cumulative; live peak is phase-row maximum"
+      },
+      "postprocess_seconds": {
+        "median": 0.003208372014341876,
+        "p95": 0.0033237574389204383
+      },
+      "status": "PASS_VALID_ONLY_INFERENCE_PROFILE",
+      "valid_count": 128
+    },
+    "heat3d_e600_fixed_endpoint": {
+      "all_finite": true,
+      "batch_size": 1,
+      "cached_fixture": {
+        "e2e_seconds": {
+          "median": 0.4730312239844352,
+          "p95": 3.360594209254486
+        },
+        "repeats": [
+          {
+            "e2e_seconds": 3.681434540951159,
+            "finite": true,
+            "memory_after": {
+              "bytes_in_use": 331086848,
+              "bytes_limit": 9615360000,
+              "bytes_reserved": 0,
+              "largest_alloc_size": 1333159936,
+              "largest_free_block_bytes": 0,
+              "num_allocs": 400151,
+              "peak_bytes_in_use": 5577385728,
+              "peak_bytes_reserved": 0,
+              "peak_pool_bytes": 8604614656,
+              "pool_bytes": 8604614656
+            },
+            "memory_before": {
+              "bytes_in_use": 380150784,
+              "bytes_limit": 9615360000,
+              "bytes_reserved": 0,
+              "largest_alloc_size": 1333159936,
+              "largest_free_block_bytes": 0,
+              "num_allocs": 398344,
+              "peak_bytes_in_use": 5577385728,
+              "peak_bytes_reserved": 0,
+              "peak_pool_bytes": 8604614656,
+              "pool_bytes": 8604614656
+            },
+            "model_forward_seconds": 3.6791619189898483,
+            "postprocess_seconds": 0.002272621961310506,
+            "repeat": 0
+          },
+          {
+            "e2e_seconds": 0.4528649380081333,
+            "finite": true,
+            "memory_after": {
+              "bytes_in_use": 378098944,
+              "bytes_limit": 9615360000,
+              "bytes_reserved": 0,
+              "largest_alloc_size": 1333159936,
+              "largest_free_block_bytes": 0,
+              "num_allocs": 401958,
+              "peak_bytes_in_use": 5577385728,
+              "peak_bytes_reserved": 0,
+              "peak_pool_bytes": 8604614656,
+              "pool_bytes": 8604614656
+            },
+            "memory_before": {
+              "bytes_in_use": 331086848,
+              "bytes_limit": 9615360000,
+              "bytes_reserved": 0,
+              "largest_alloc_size": 1333159936,
+              "largest_free_block_bytes": 0,
+              "num_allocs": 400151,
+              "peak_bytes_in_use": 5577385728,
+              "peak_bytes_reserved": 0,
+              "peak_pool_bytes": 8604614656,
+              "pool_bytes": 8604614656
+            },
+            "model_forward_seconds": 0.4508940990199335,
+            "postprocess_seconds": 0.00197083898819983,
+            "repeat": 1
+          },
+          {
+            "e2e_seconds": 0.4730312239844352,
+            "finite": true,
+            "memory_after": {
+              "bytes_in_use": 328930304,
+              "bytes_limit": 9615360000,
+              "bytes_reserved": 0,
+              "largest_alloc_size": 1333159936,
+              "largest_free_block_bytes": 0,
+              "num_allocs": 403765,
+              "peak_bytes_in_use": 5577385728,
+              "peak_bytes_reserved": 0,
+              "peak_pool_bytes": 8604614656,
+              "pool_bytes": 8604614656
+            },
+            "memory_before": {
+              "bytes_in_use": 378098944,
+              "bytes_limit": 9615360000,
+              "bytes_reserved": 0,
+              "largest_alloc_size": 1333159936,
+              "largest_free_block_bytes": 0,
+              "num_allocs": 401958,
+              "peak_bytes_in_use": 5577385728,
+              "peak_bytes_reserved": 0,
+              "peak_pool_bytes": 8604614656,
+              "pool_bytes": 8604614656
+            },
+            "model_forward_seconds": 0.47095193300629035,
+            "postprocess_seconds": 0.0020792909781448543,
+            "repeat": 2
+          }
+        ],
+        "valid_index": 0
+      },
+      "checkpoint": {
+        "metadata": {
+          "epoch": 600,
+          "seed": 0,
+          "selection_metric": null,
+          "selection_value": null,
+          "step": 19200
+        },
+        "path": "output/heat3d_v7_g2/heat3d_on_deepoheat_v1_e600_p15/seed_0/params_final.pkl",
+        "sha256": "4ac59931156300d4488398eddded4ebbfe8e426bfee1ce9e46588e71331e8419"
+      },
+      "checkpoint_role": "fixed_e600_endpoint",
+      "cold_e2e_seconds": 18.3860499629518,
+      "edge_counts": {
+        "all_cases_real_edge_count_max": 1141410,
+        "all_cases_real_edge_count_min": 863549,
+        "first_case": {
+          "p2r_edge_indices": 2364,
+          "r2p_edge_indices": 938495,
+          "r2r_edge_domains": 4181,
+          "r2r_edge_indices": 4181
+        }
+      },
+      "model_forward_seconds": {
+        "cold": 13.938640914973803,
+        "steady_median": 4.999001068004873,
+        "steady_p95": 5.583132015407318
+      },
+      "output_count": 571256,
+      "peak_gpu_memory": {
+        "bytes_limit": 9615360000,
+        "peak_bytes_in_use": 5577385728,
+        "peak_bytes_reserved": 0,
+        "peak_gib": 5.194345235824585,
+        "peak_live_bytes_in_use": 495271424,
+        "peak_live_gib": 0.4612574577331543,
+        "peak_pool_bytes": 8604614656,
+        "peak_stats_scope": "process cumulative; live peak is phase-row maximum"
+      },
+      "postprocess_seconds": {
+        "cold": 0.0019572789897210896,
+        "steady_median": 0.002029905968811363,
+        "steady_p95": 0.010691838606726374
+      },
+      "query_graph_construction_seconds": {
+        "cold": 4.445448126003612,
+        "steady_median": 3.9225237169885077,
+        "steady_p95": 4.658105782803613
+      },
+      "status": "PASS_VALID_ONLY_INFERENCE_PROFILE",
+      "steady_e2e_seconds": {
+        "median": 8.873593483003788,
+        "p95": 10.01083532749908
+      },
+      "valid_count": 128
+    }
+  },
+  "protocol": {
+    "path": "configs/heat3d_v7/g2_p19_validation_closure_inference_profile_protocol.json",
+    "sha256": "4bc666c2e42e35cf54422986772fe4845113cc7fb37a3ad67ff251047cc87851"
+  },
+  "runner": {
+    "repo_commit_sha": "f9cd8b59512b42b609bd28fb88b8cd4fb0111e73",
+    "runner_script_sha256": "eee7d8502c999b54bdbb74992ef0721ccac03a3646334cf8a9040de4cf640d6b",
+    "script": "scripts/profile_v7_g2_p19_inference.py"
+  },
+  "schema_version": "heat3d_v7_g2_p19_inference_profile_aggregation_v2",
+  "scope": "P19 valid128 inference profiling only; no training or accuracy claim",
+  "status": "COMPLETE_VALID_ONLY_INFERENCE_PROFILE_AGGREGATION",
+  "timing_contract": {
+    "accuracy_used": false,
+    "cached_repeats": 3,
+    "jax_block_until_ready": true,
+    "test_or_sealed_access": false
+  }
+}

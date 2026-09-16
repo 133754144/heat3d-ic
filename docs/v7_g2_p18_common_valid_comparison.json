@@ -1,7 +1,24 @@
 {
+  "checkpoint_policy": {
+    "best_to_best_comparison": false,
+    "best_to_best_status": "prohibited_ambiguous_primary_comparison",
+    "deepoheat_768": {
+      "formal_table_role": "validation_selected_best_and_final_endpoint",
+      "selection": "validation-selected best and fixed final-100000 endpoint are both reported"
+    },
+    "deepoheat_full_minus_valid128": {
+      "formal_table_role": "validation_selected_best_and_final_endpoint",
+      "selection": "validation-selected best and fixed final-100000 endpoint are both reported"
+    },
+    "heat3d": {
+      "dense_view": "U-v2 direct-query dense full 571256 at e600",
+      "formal_table_role": "fixed_e600_endpoint",
+      "selection": "fixed e600 endpoint; no validation-selected checkpoint in the formal row"
+    }
+  },
   "efficiency_contract": {
     "latency_boundary": {
-      "end_to_end_dense": "includes query/preprocessing and dense formation; Heat3D U-v2 timing includes full-query graph construction + direct-query forward",
+      "end_to_end_dense": "includes query/preprocessing and dense formation; Heat3D U-v2 direct-query timing includes full-query graph construction + direct-query forward",
       "model_only": "model forward only; not available for DeepOHeat P17/P14 receipts",
       "same_hardware_remeasurement_required": true
     },
@@ -35,7 +52,7 @@
           "sample_sd": 11.024656733782763
         },
         "inference_latency_model_only_seconds": null,
-        "latency_status": "U-v2 dense includes full-query graph construction and direct-query forward",
+        "latency_status": "U-v2 direct-query dense includes full-query graph construction and direct-query forward",
         "parameter_count": 892776,
         "peak_memory_gib": 3.868252754211426,
         "regime": "Heat3D-768-e600",
@@ -66,35 +83,7 @@
     "sealed": false,
     "test_iid": false
   },
-  "inputs": {
-    "deepoheat768": {
-      "path": "docs/v7_g2_p14_deepoheat_v1_matched_aggregation.json",
-      "sha256": "356ada1ae589c254326239218c09683ffa7d483cbae02e3b8bbf422580d017ec"
-    },
-    "heat3d200": {
-      "path": "docs/v7_g2_p13_heat3d_v1_3seed_valid_only_aggregation.json",
-      "sha256": "7b249e62139e29f4641212a635bf96a15fe2caa47cea9057820a1be541c3f80f"
-    },
-    "p14u": {
-      "path": "docs/v7_g2_p14_1_u_v2_aggregate.json",
-      "sha256": "49ee09d1b52ac30dc6634a5a546c50b81c3afdd01dce1549acb63cb2dfa08095"
-    },
-    "p15": {
-      "path": "docs/v7_g2_p15_heat3d_e600_aggregation.json",
-      "sha256": "f111bc47b8a4a5c90e2533b46859f38570c84230769702a940b45358636df5c7"
-    },
-    "p17": {
-      "path": "docs/v7_g2_p17_deepoheat_full_minus_valid128_aggregation.json",
-      "sha256": "1aac604283ae09f8bc90975a6bedfb413791d3b0ad23cf296a8772c137d88e86"
-    }
-  },
-  "interpretation": {
-    "q1": "Compare DeepOHeat-768 and Heat3D-768 only as same physical-case/data-regime evidence.",
-    "q2": "Compare full-minus-valid128 versus 768-case DeepOHeat for data-scale effect.",
-    "q3": "Heat3D-768 versus full-minus-valid128 is physical-case efficiency, not equal information/compute budget.",
-    "q4": "Use P14.1 oracle floors as lower-bound diagnostics; do not subtract them from prediction error."
-  },
-  "p14_1_e200_views": {
+  "historical_diagnostics": {
     "heat3d_idw_dense": {
       "MAE_K": {
         "mean": 0.2790547469429854,
@@ -243,7 +232,39 @@
         "sample_sd": 0.0
       }
     },
+    "idw_provenance": "docs/v7_g2_p19_idw_provenance.json",
+    "scope": "P14.1 e200 and IDW views are historical diagnostics only; excluded from formal rows and main conclusions",
+    "u_v2_name": "U-v2 direct-query dense inference",
     "u_v2_oracle": "NOT_DEFINED_FOR_DIRECT_QUERY"
+  },
+  "inputs": {
+    "deepoheat768": {
+      "path": "docs/v7_g2_p14_deepoheat_v1_matched_aggregation.json",
+      "sha256": "356ada1ae589c254326239218c09683ffa7d483cbae02e3b8bbf422580d017ec"
+    },
+    "heat3d200": {
+      "path": "docs/v7_g2_p13_heat3d_v1_3seed_valid_only_aggregation.json",
+      "sha256": "7b249e62139e29f4641212a635bf96a15fe2caa47cea9057820a1be541c3f80f"
+    },
+    "p14u": {
+      "path": "docs/v7_g2_p14_1_u_v2_aggregate.json",
+      "sha256": "49ee09d1b52ac30dc6634a5a546c50b81c3afdd01dce1549acb63cb2dfa08095"
+    },
+    "p15": {
+      "path": "docs/v7_g2_p15_heat3d_e600_aggregation.json",
+      "sha256": "457fa709113a9dbe3466d0e745f68265a3ccef93e8d81106bddbb62e82f6c61f"
+    },
+    "p17": {
+      "path": "docs/v7_g2_p17_deepoheat_full_minus_valid128_aggregation.json",
+      "sha256": "1aac604283ae09f8bc90975a6bedfb413791d3b0ad23cf296a8772c137d88e86"
+    }
+  },
+  "interpretation": {
+    "convergence": "P15 has no clear boundary right-censoring, but a stable plateau is unproven; no extension beyond e600 is authorized.",
+    "q1": "Compare DeepOHeat-768 and Heat3D-768 only as same physical-case/data-regime evidence.",
+    "q2": "Compare full-minus-valid128 versus 768-case DeepOHeat for data-scale effect.",
+    "q3": "Heat3D-768 versus full-minus-valid128 is physical-case efficiency, not equal information/compute budget.",
+    "q4": "P14.1 e200 and IDW values remain historical diagnostics only; oracle floors are lower-bound diagnostics and must not be subtracted from prediction error. The formal Heat3D row uses e600 U-v2 direct-query dense inference."
   },
   "rows": [
     {
@@ -291,9 +312,9 @@
         "sample_sd": 11.024656733782763
       },
       "inference_latency_model_only_seconds": null,
-      "latency_status": "U-v2 dense includes full-query graph construction and direct-query forward",
-      "metric": "sample_first_relative_rmse_pct (U-v2 full 571256)",
-      "modality": "supervised sparse 1024 support + U-v2 reconstruction",
+      "latency_status": "U-v2 direct-query dense includes full-query graph construction and direct-query forward",
+      "metric": "sample_first_relative_rmse_pct (U-v2 direct-query dense full 571256)",
+      "modality": "supervised sparse 1024 support + direct-query dense inference",
       "parameter_count": 892776,
       "peak_memory_gib": 3.868252754211426,
       "regime": "Heat3D-768-e600",
@@ -302,6 +323,6 @@
       "wall_hours": 0.7423015468579629
     }
   ],
-  "schema_version": "heat3d_v7_g2_p18_common_valid_comparison_v1",
+  "schema_version": "heat3d_v7_g2_p18_common_valid_comparison_v2",
   "status": "COMPLETE_VALID_ONLY_COMPARISON_TABLE"
 }

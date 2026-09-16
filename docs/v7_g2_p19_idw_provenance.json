@@ -1,0 +1,54 @@
+{
+  "schema_version": "heat3d_v7_g2_p19_idw_provenance_v1",
+  "status": "VERIFIED_HISTORICAL_DIAGNOSTIC_ONLY",
+  "algorithm": "layer_interface_knn_inverse_distance_v1",
+  "scope": "P14.1 historical IDW full-field diagnostic; excluded from formal P19/P18 comparison rows",
+  "heat3d_source": {
+    "repository": "Heat3D-IC",
+    "repo_commit_sha": "f562a4d4f8b4181d234fa8c32906d341565acbb7",
+    "file": "rigno/heat3d_v6_full_field.py",
+    "file_blob_sha": "31d6e891ece0ba8028b684ab4baa9937d61cd6fd",
+    "implementation": {
+      "function": "build_reconstruction_map",
+      "lines": "100-151",
+      "map_operation": "layer/interface-aware cKDTree KNN with inverse-distance-squared weights and partition-of-unity check",
+      "value_operation": "ReconstructionMap.reconstruct at lines 36-41 gathers support values and applies frozen weights"
+    },
+    "consumer": {
+      "file": "scripts/evaluate_v7_g2_p14_1_heat3d_u_v2.py",
+      "function": "main",
+      "lines": "386-395",
+      "operation": "mapping.reconstruct(native) and mapping.reconstruct(truth_support)"
+    }
+  },
+  "not_deepoheat_v1": "This IDW path is a Heat3D V6/P1h full-field utility; it is not an implementation supplied by DeepOHeat-v1.",
+  "upstream_deepoheat_dense_output": {
+    "repository": "DeepOHeat-v1",
+    "upstream_commit_sha": "3ef3d9c41666a56b5940b39a61166ccaa5aaedb2",
+    "files": [
+      {
+        "file": "heat_volumetric.py",
+        "sha256": "b0cbf91912ca53cfb9b4d18a848312eb7266b1aea4355b352357bed1669ef269",
+        "evidence": "apply_model_deepoheat_st at lines 24-29 calls model(((x,y,z),f)); deepoheat_st_test_generator at lines 103-109 defines x=101, y=101, z=56."
+      },
+      {
+        "file": "models.py",
+        "sha256": "c1f679d573c2159cba19f96147a863f9cacee7888a399cbd3afb40c59ff3fbcf",
+        "evidence": "DeepOHeat_v1.__call__ at lines 292-309 forms the dense output directly with trunk basis, branch coefficients, and jnp.einsum."
+      },
+      {
+        "file": "train.py",
+        "sha256": "27e91285395fc65fe8f8260d16d599f18bf75a23073ee1792eb787fb7154cc54",
+        "evidence": "Pinned upstream training/evaluation entrypoint recorded for provenance; no IDW dependency is present in the DeepOHeat path."
+      }
+    ],
+    "dense_domain": "101x101x56=571256 points",
+    "comparison": "DeepOHeat emits its dense field directly on the declared coordinate grid; Heat3D P14.1 IDW instead maps 1024 native support values to that grid. These paths must not be conflated."
+  },
+  "hard_boundaries": {
+    "test_iid_accessed": false,
+    "sealed_accessed": false,
+    "deepoheat_official100_accessed": false,
+    "training_started": false
+  }
+}

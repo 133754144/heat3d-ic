@@ -1,6 +1,6 @@
 {
   "schema_version": "heat3d_v7_g2_p13_baseline_taxonomy_status_v1",
-  "observed_at": "2026-09-16T11:55:00+08:00",
+  "observed_at": "2026-09-16T16:33:34+08:00",
   "scope": "valid-only G2 baseline closure; test/sealed evaluation remains locked",
   "taxonomy": {
     "common_task_supervised": [
@@ -10,7 +10,7 @@
     ],
     "semiconductor_native": [
       {"model": "DeepOHeat-v1", "status": "COMPLETE_UPSTREAM_SEED42_FROZEN", "formal_scope": "official dense physics-informed protocol"},
-      {"model": "Heat3D-on-DeepOHeat-v1", "status": "COMPLETE_VALID_ONLY_E600_THREE_SEEDS", "formal_scope": "supervised method-native cross-benchmark; fresh e600 convergence cohort; native-1024 selection plus scheduled U-v2 571256-point valid-only evaluator"},
+      {"model": "Heat3D-on-DeepOHeat-v1", "status": "COMPLETE_VALID_ONLY_E600_THREE_SEEDS", "formal_scope": "supervised method-native cross-benchmark; fresh e600 endpoint cohort; U-v2 direct-query dense inference on 571256-point valid-only domain; e200/IDW historical diagnostics only"},
       {"model": "DeepOHeat-v1 full-minus-valid128", "status": "COMPLETE_VALID_ONLY_THREE_SEEDS", "formal_scope": "P17 native recipe on frozen full pool minus Heat3D valid128; valid-only, no official100 access"}
     ,{"model": "DeepOHeat-v1 matched 768/128", "status": "COMPLETE_VALID_ONLY_SAME_PHYSICAL_CASE_BUDGET", "formal_scope": "upstream-faithful physics-informed matched cohort; not same information budget"}
     ],
@@ -71,5 +71,10 @@
     ,"g2_p18_common_valid_comparison_markdown": "docs/v7_g2_p18_common_valid_comparison.md"
     ,"g2_p18_publication_limitations": "docs/v7_g2_p18_publication_limitations.md"
     ,"g2_p18_scientific_interpretation": "docs/v7_g2_p18_scientific_interpretation.md"
+    ,"g2_p19_validation_closure": "docs/v7_g2_p19_validation_closure.md"
+    ,"g2_p19_scientific_interpretation": "docs/v7_g2_p19_scientific_interpretation.md"
+    ,"g2_p19_inference_profile_aggregation": "docs/v7_g2_p19_inference_profile_aggregation.json"
+    ,"g2_p19_idw_provenance": "docs/v7_g2_p19_idw_provenance.json"
+    ,"g2_p19_readiness_matrix": "docs/v7_g2_p19_readiness_matrix.json"
   }
 }

@@ -863,7 +863,7 @@
       "best_common_scheduled_epoch": 600,
       "best_common_scheduled_metric": 0.7037150487852454,
       "best_to_final_native_degradation_pct_points": 0.015290011687643101,
-      "convergence": "CONVERGED_WITHIN_600",
+      "convergence": "NO_CLEAR_BOUNDARY_RIGHT_CENSORING_STABLE_PLATEAU_UNPROVEN",
       "final_epoch": 600,
       "final_native_metric": 0.7017997407054647,
       "native_best_epoch": 574,
@@ -878,7 +878,7 @@
       "best_common_scheduled_epoch": 600,
       "best_common_scheduled_metric": 0.7186065944188585,
       "best_to_final_native_degradation_pct_points": 0.0030019808431935857,
-      "convergence": "CONVERGED_WITHIN_600",
+      "convergence": "NO_CLEAR_BOUNDARY_RIGHT_CENSORING_STABLE_PLATEAU_UNPROVEN",
       "final_epoch": 600,
       "final_native_metric": 0.6998227492507437,
       "native_best_epoch": 593,
@@ -893,7 +893,7 @@
       "best_common_scheduled_epoch": 600,
       "best_common_scheduled_metric": 0.7073432660848905,
       "best_to_final_native_degradation_pct_points": 0.012420796729032624,
-      "convergence": "CONVERGED_WITHIN_600",
+      "convergence": "NO_CLEAR_BOUNDARY_RIGHT_CENSORING_STABLE_PLATEAU_UNPROVEN",
       "final_epoch": 600,
       "final_native_metric": 0.6859474896791818,
       "native_best_epoch": 581,
@@ -905,6 +905,18 @@
       "training_wall_seconds": 2707.367704441014
     }
   },
-  "schema_version": "heat3d_v7_g2_p15_e600_aggregation_v1",
+  "schema_version": "heat3d_v7_g2_p15_e600_aggregation_v2",
+  "convergence_interpretation": {
+    "label": "NO_CLEAR_BOUNDARY_RIGHT_CENSORING_STABLE_PLATEAU_UNPROVEN",
+    "basis": "Scheduled native and direct-query dense observations through epoch 600 show no clear boundary right-censoring; a stable plateau has not been established.",
+    "extension_authorized": false,
+    "historical_label": "CONVERGED_WITHIN_600",
+    "historical_label_status": "superseded_conservative_wording"
+  },
+  "formal_view_policy": {
+    "formal": "fresh e600 three-seed cohort with U-v2 direct-query dense inference on 571256 points",
+    "historical_only": ["e200 scheduled views", "IDW dense view", "IDW oracle floor"],
+    "historical_excluded_from_formal_comparison": true
+  },
   "status": "COMPLETE_VALID_ONLY_E600_THREE_SEEDS"
 }

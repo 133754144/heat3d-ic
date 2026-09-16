@@ -145,7 +145,7 @@ def main() -> int:
         {
             "regime": "Heat3D-768-e600",
             "training_cases": 768,
-            "metric": "sample_first_relative_rmse_pct (U-v2 full 571256)",
+            "metric": "sample_first_relative_rmse_pct (U-v2 direct-query dense full 571256)",
             "best_mean": p15_best_u["mean"],
             "best_sd": p15_best_u["sample_sd"],
             "final_mean": p15_final_u["mean"],
@@ -156,13 +156,13 @@ def main() -> int:
             "training_budget": "600 epochs; B24; 768 supervised cases",
             "inference_latency_model_only_seconds": None,
             "inference_latency_end_to_end_dense_seconds": p15_u_latency,
-            "latency_status": "U-v2 dense includes full-query graph construction and direct-query forward",
-            "modality": "supervised sparse 1024 support + U-v2 reconstruction",
+            "latency_status": "U-v2 direct-query dense includes full-query graph construction and direct-query forward",
+            "modality": "supervised sparse 1024 support + direct-query dense inference",
         },
     ]
 
     out = {
-        "schema_version": "heat3d_v7_g2_p18_common_valid_comparison_v1",
+        "schema_version": "heat3d_v7_g2_p18_common_valid_comparison_v2",
         "status": "COMPLETE_VALID_ONLY_COMPARISON_TABLE",
         "evaluation": {
             "cases": 128,
@@ -181,12 +181,32 @@ def main() -> int:
             "p14u": {"path": str(args.p14u), "sha256": sha256(args.p14u)},
         },
         "rows": rows,
-        "p14_1_e200_views": {
+        "checkpoint_policy": {
+            "heat3d": {
+                "formal_table_role": "fixed_e600_endpoint",
+                "selection": "fixed e600 endpoint; no validation-selected checkpoint in the formal row",
+                "dense_view": "U-v2 direct-query dense full 571256 at e600"
+            },
+            "deepoheat_full_minus_valid128": {
+                "formal_table_role": "validation_selected_best_and_final_endpoint",
+                "selection": "validation-selected best and fixed final-100000 endpoint are both reported"
+            },
+            "deepoheat_768": {
+                "formal_table_role": "validation_selected_best_and_final_endpoint",
+                "selection": "validation-selected best and fixed final-100000 endpoint are both reported"
+            },
+            "best_to_best_comparison": False,
+            "best_to_best_status": "prohibited_ambiguous_primary_comparison"
+        },
+        "historical_diagnostics": {
+            "scope": "P14.1 e200 and IDW views are historical diagnostics only; excluded from formal rows and main conclusions",
+            "u_v2_name": "U-v2 direct-query dense inference",
             "heat3d_native_1024": u14["representations"]["native_1024"]["across_seed"],
             "heat3d_idw_dense": u14["representations"]["idw_dense_571256"]["across_seed"],
             "heat3d_u_v2_dense": u14rep,
             "idw_oracle_floor": u14["representations"]["oracle_idw_gt_support_571256"]["across_seed"],
             "u_v2_oracle": "NOT_DEFINED_FOR_DIRECT_QUERY",
+            "idw_provenance": "docs/v7_g2_p19_idw_provenance.json",
         },
         "fairness": {
             "p17_valid_overlap": 0,
@@ -212,7 +232,7 @@ def main() -> int:
             ],
             "latency_boundary": {
                 "model_only": "model forward only; not available for DeepOHeat P17/P14 receipts",
-                "end_to_end_dense": "includes query/preprocessing and dense formation; Heat3D U-v2 timing includes full-query graph construction + direct-query forward",
+      "end_to_end_dense": "includes query/preprocessing and dense formation; Heat3D U-v2 direct-query timing includes full-query graph construction + direct-query forward",
                 "same_hardware_remeasurement_required": True,
             },
         },
@@ -220,7 +240,8 @@ def main() -> int:
             "q1": "Compare DeepOHeat-768 and Heat3D-768 only as same physical-case/data-regime evidence.",
             "q2": "Compare full-minus-valid128 versus 768-case DeepOHeat for data-scale effect.",
             "q3": "Heat3D-768 versus full-minus-valid128 is physical-case efficiency, not equal information/compute budget.",
-            "q4": "Use P14.1 oracle floors as lower-bound diagnostics; do not subtract them from prediction error.",
+            "q4": "P14.1 e200 and IDW values remain historical diagnostics only; oracle floors are lower-bound diagnostics and must not be subtracted from prediction error. The formal Heat3D row uses e600 U-v2 direct-query dense inference.",
+            "convergence": "P15 has no clear boundary right-censoring, but a stable plateau is unproven; no extension beyond e600 is authorized.",
         },
         "hard_boundaries": {"test_iid": False, "sealed": False, "deepoheat_official100": False},
     }
@@ -231,6 +252,7 @@ def main() -> int:
         "",
         "仅使用 Heat3D valid128；test_iid、sealed 与 DeepOHeat official100 均保持锁定。",
         "指标为 full 571256-point temperature-space sample-first relative RMSE [%]。",
+        "表中 Heat3D 的 best 列是固定 e600 endpoint 的占位显示，并非 validation-selected best；DeepOHeat 的 best/final 列分别对应 validation-selected best 与固定 100000-iteration endpoint。",
         "",
         "| regime | training cases | metric | best mean ± SD | final mean ± SD | wall h | peak GiB |",
         "|---|---:|---|---:|---:|---:|---:|",
@@ -241,9 +263,9 @@ def main() -> int:
         "DeepOHeat-768 与 Heat3D-768 共享 768/128 physical-case split，但不共享信息预算：前者使用 PDE/BC physics-informed full mesh，后者使用 supervised temperature labels 与 1024 sparse support。",
         "DeepOHeat-full-minus-valid128 的 128 个验证 case 在训练池中被严格排除，可用于共同 valid 比较；历史 native-full pool 与 valid128 重叠，不能作 valid 排名。",
         "",
-        "## P14.1 reconstruction diagnostic",
+        "## Historical diagnostics (excluded from formal comparison)",
         "",
-        f"e200 U-v2 dense mean = {u14rep['sample_first_relative_rmse_pct']['mean']:.6f}%；IDW 与 U-v2 oracle 仅作 reconstruction floor/diagnostic，不做误差相减分解。",
+        f"P14.1 e200 U-v2 direct-query dense mean = {u14rep['sample_first_relative_rmse_pct']['mean']:.6f}%；IDW 与 oracle 仅作历史 lower-bound diagnostic，不进入正式表，也不做误差相减分解。",
         "",
         "## Efficiency and latency boundary",
         "",
@@ -258,7 +280,7 @@ def main() -> int:
         )
     lines.extend([
         "",
-        "Latency must be remeasured on the same hardware before Pareto claims. Heat3D U-v2 end-to-end timing includes full-query graph construction and direct-query forward; DeepOHeat P14/P17 receipts do not contain a directly comparable dense latency measurement.",
+        "Latency must be remeasured on the same hardware before Pareto claims. Heat3D U-v2 direct-query dense end-to-end timing includes full-query graph construction and direct-query forward; DeepOHeat P14/P17 receipts do not contain a directly comparable dense latency measurement.",
         "",
     ])
     args.markdown.parent.mkdir(parents=True, exist_ok=True)
