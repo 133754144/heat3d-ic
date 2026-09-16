@@ -141,9 +141,10 @@ class InputOnlyDataset:
         directory = self.labels_root / self.role / row["sample_id"]
         support_meta = row["artifacts"]["support_indices"]
         support_path = directory / support_meta["file"]
-        support = np.asarray(np.load(support_path, allow_pickle=False), dtype=np.int64)
-        if sha256_array(support) != support_meta["sha256"]:
+        support_raw = np.asarray(np.load(support_path, allow_pickle=False), dtype=np.int32)
+        if sha256_array(support_raw) != support_meta["sha256"]:
             raise ValueError(f"support-index SHA drift: {row['sample_id']}")
+        support = support_raw.astype(np.int64)
         if support.shape != (1024,):
             raise ValueError(f"support shape drift: {row['sample_id']}")
         return {
