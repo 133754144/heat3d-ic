@@ -336,10 +336,10 @@ def profile_heat3d(args: argparse.Namespace) -> dict[str, Any]:
         e2e_seconds = time.perf_counter() - e2e_started
         after = memory_stats()
         peak = max_memory(peak, max_memory(before, after))
-        if cached_case is None:
-            cached_case = case
-        else:
-            del case
+        edge_counts = {
+            key: (None if value is None else int(value))
+            for key, value in runtime._edge_counts(case.query_metadata).items()
+        }
         rows.append({
             "valid_index": index,
             "sample_id": str(compact["sample_id"]),
@@ -350,10 +350,14 @@ def profile_heat3d(args: argparse.Namespace) -> dict[str, Any]:
             "e2e_seconds": float(e2e_seconds),
             "output_shape": output_shape,
             "finite": finite,
-            "query_edge_counts": {key: (None if value is None else int(value)) for key, value in runtime._edge_counts(case.query_metadata).items()} if cached_case is case else {key: (None if value is None else int(value)) for key, value in runtime._edge_counts(cached_case.query_metadata).items()},
+            "query_edge_counts": edge_counts,
             "memory_before": before,
             "memory_after": after,
         })
+        if cached_case is None:
+            cached_case = case
+        else:
+            del case
     cached_rows: list[dict[str, Any]] = []
     for repeat in range(int(args.cached_repeats)):
         before = memory_stats()
