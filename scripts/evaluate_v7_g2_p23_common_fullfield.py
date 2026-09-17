@@ -200,10 +200,14 @@ def summarize(rows: list[dict[str, Any]], require_three_seeds: bool = True) -> d
                 metric: float(np.mean([s["metrics"][metric] for s in seeds]))
                 for metric in seeds[0]["metrics"]
             },
-            "metrics_sd_across_training_seeds": {
-                metric: float(np.std([s["metrics"][metric] for s in seeds], ddof=1))
-                for metric in seeds[0]["metrics"]
-            },
+            "metrics_sd_across_training_seeds": (
+                {
+                    metric: float(np.std([s["metrics"][metric] for s in seeds], ddof=1))
+                    for metric in seeds[0]["metrics"]
+                }
+                if len(seeds) >= 2
+                else {metric: None for metric in seeds[0]["metrics"]}
+            ),
         }
     return {"per_seed": seed_summaries, "aggregate": aggregate}
 
