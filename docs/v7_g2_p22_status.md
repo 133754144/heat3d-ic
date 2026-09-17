@@ -15,15 +15,14 @@ denormalized evaluator 和 checkpoint model/optimizer reload；3 steps loss 为
 `1.1986 → 1.0873 → 0.9115`，状态 `PASS_T4_REAL_TARGET_NATIVE65`。该值仅是 pipeline
 qualification，不是 accuracy claim。
 
-在 T4 PASS 后，seed0 已按冻结 200-epoch / batch40 / AdamW / cosine / valid normalized p=2
-选模合同在 devbox `PDEFormer` 中完成；完整性审计见
-`docs/v7_g2_p22_thermfm_seed0_audit.json`。seed1 的首个尝试因命令漏写 `data/` 在 required-path
-检查阶段失败（未访问数据），失败 receipt 与原日志保留；retry1 已使用绝对且已预检的正确路径
-运行，目前约在 epoch 35/200。seed2 不并行启动，由独立 gate 等待 seed1 的
-`COMPLETE_VALID_ONLY` receipt 后再执行绝对路径、空目录检查并串行启动。
+在 T4 PASS 后，seed0、seed1、seed2 均按冻结 200-epoch / batch40 / AdamW / cosine /
+valid normalized p=2 选模合同在 devbox `PDEFormer` 中串行完成。seed1 首次路径错误发生在
+required-path 检查阶段、未访问数据；失败 receipt 与原日志保留，retry1 使用绝对路径并通过
+preflight。seed2 由 gate 在 seed1 完成后启动，路径与空目录检查通过。
 
-当前尚无三 seed aggregation；在 seed1/seed2 完成并分别审计后才生成 valid-only 汇总。整个 cohort
-继续禁止读取 `test_iid`、sealed 与 DeepOHeat official100。
+三 seed valid-only 汇总见 `docs/v7_g2_p22_thermfm_formal_aggregation.json` 和 `.md`；每组
+history、best/final checkpoint SHA 与 completion receipt 一致，reload state equal。整个 cohort
+未读取 `test_iid`、sealed 或 DeepOHeat official100，未执行 evaluation unlock。
 
 HCP 审计确认官方 train/eval geometry 内联且仓库不含 checkpoint/raw accuracy bundle；native
 smoke 可运行但不能宣称论文 accuracy，也不能原生接入 P1i variable geometry/material/source/BC。

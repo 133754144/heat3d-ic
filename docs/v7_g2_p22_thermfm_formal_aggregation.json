@@ -1,0 +1,211 @@
+{
+  "schema_version": "heat3d_v7_g2_p22_thermfm_formal_valid_only_aggregation_v1",
+  "status": "COMPLETE_VALID_ONLY_AGGREGATION",
+  "observed_at": "2026-09-17T11:31:54+08:00",
+  "scope": "Therm-FM/Poseidon-T P1i formal seeds 0/1/2; train768 + valid128 only",
+  "contract": {
+    "repo_commit_sha": "5aad5be9381c19d30ab7a5f71e2b7a9397e5513f",
+    "upstream_commit_sha": "1c338d0fbe0dca25311eb896a9ea136a4f3d3cb1",
+    "runner_sha256": "5865163434f9058ac3acf262b2709e6116c3f7c960b0dbf760970205ff4114ef",
+    "adapter_sha256": "b0f1333e58098f47a15f4ec093a6c167620c21c4a2c943e92641e5929d4c2a53",
+    "dataset_split_sha256": "87aaa84af4b203d0a8ba93ed33b3757d46adc3143dad970371daa0f893ea491f",
+    "normalization_sha256": "76acbd1a09771f63de5f9ff400127d5d11871e7b702cfa12d70570b037644eec",
+    "poseidon_revision": "93adcbf10f75b45ac3bca3939cc3d3f239e1e663",
+    "poseidon_config_sha256": "1fd7b545aedf0b46d180352df6b755354771e606185ee98dd4579ff7d2fa7048",
+    "poseidon_weights_sha256": "a363f7317fbc3a900a318fc63cc53197705d95fce0e0ce28dd3c8844a89112e2",
+    "train_count": 768,
+    "valid_count": 128,
+    "native_grid": [65, 65, 57],
+    "nodes_per_sample": 240825,
+    "input_channels": 741,
+    "output_channels": 57,
+    "parameter_count": 21435546,
+    "batch_size": 40,
+    "validation_batch_size": 40,
+    "epochs": 200,
+    "updates_per_epoch": 20,
+    "total_updates": 4000,
+    "optimizer": "AdamW",
+    "learning_rate": 5e-05,
+    "learning_rate_embedding_recovery": 0.0005,
+    "weight_decay": 1e-06,
+    "max_grad_norm": 5.0,
+    "scheduler": "cosine, T_max=4000 updates",
+    "loss": "upstream ScOT normalized p=2, channel slice [0,57]",
+    "checkpoint_selection": "minimum valid normalized loss, lower is better",
+    "primary_metric": "sample_first_relative_rmse_pct on denormalized valid full field",
+    "secondary_metrics": [
+      "point_global_relative_rmse_pct",
+      "rmse_K",
+      "mae_K",
+      "peak_abs_error_K_mean",
+      "peak_error_rmse_K"
+    ]
+  },
+  "per_seed": [
+    {
+      "seed": 0,
+      "status": "COMPLETE_VALID_ONLY",
+      "best_epoch": 184,
+      "best_valid_normalized_loss": 0.007783112610923126,
+      "best_metrics": {
+        "sample_first_relative_rmse_pct": 2.5106709812078796,
+        "point_global_relative_rmse_pct": 3.1423527128258524,
+        "rmse_K": 2.4954549041601,
+        "mae_K": 1.6026628548647266,
+        "peak_abs_error_K_mean": 10.620173644384677,
+        "peak_error_rmse_K": 11.814140203879981
+      },
+      "final_metrics": {
+        "sample_first_relative_rmse_pct": 2.509769166226021,
+        "point_global_relative_rmse_pct": 3.1475088438646717,
+        "rmse_K": 2.499549572602251,
+        "mae_K": 1.6033872983270774,
+        "peak_abs_error_K_mean": 10.597733935086689,
+        "peak_error_rmse_K": 11.789372785831004
+      },
+      "best_to_final_delta": {
+        "sample_first_relative_rmse_pct": -0.0009018149818587062,
+        "point_global_relative_rmse_pct": 0.005156131038819289,
+        "rmse_K": 0.004094668442150784,
+        "mae_K": 0.0007244434623507878,
+        "peak_abs_error_K_mean": -0.022439709297987775,
+        "peak_error_rmse_K": -0.02476741804897742
+      },
+      "training_walltime_seconds": 4812.7417362529995,
+      "peak_memory_allocated_bytes": 5095374848,
+      "peak_memory_reserved_bytes": 6450839552,
+      "run_receipt_sha256": "7db64e257aac3886d5385e9e682cafc7ecf17ee62e775d3e83a4b9a191f3531b",
+      "best_checkpoint_sha256": "f3d8fb189c4662ecd2f10f8637e2ee34a2d5ec8423d44df5ace302ea2f56cd2b",
+      "final_checkpoint_sha256": "23c7585ff53cdc5e7c55ec1e892020ad297e059813c2b7afb38e1e9e2d8a89cd",
+      "history_sha256": "b3ce43cd3621e48a823187100c237c148852096e1ecc1e5df956bce47155f20a",
+      "run_config_sha256": "4be1b0d976142c6dbcb91bfdb5387f6f439e8ca99b7a3320a2c306e1ed600419",
+      "log_sha256": "3f398a2818bdafd3f613dfecbdc942f35fa2cec80ce5414f3470aa2a5b0d6772",
+      "checkpoint_reload_state_equal": true,
+      "test_iid_read": false,
+      "sealed_read": false,
+      "official100_read": false
+    },
+    {
+      "seed": 1,
+      "status": "COMPLETE_VALID_ONLY",
+      "best_epoch": 136,
+      "best_valid_normalized_loss": 0.005909454353968613,
+      "best_metrics": {
+        "sample_first_relative_rmse_pct": 2.4280653613800873,
+        "point_global_relative_rmse_pct": 2.6919399076491155,
+        "rmse_K": 2.137765953779983,
+        "mae_K": 1.4590548259650236,
+        "peak_abs_error_K_mean": 10.702618275546634,
+        "peak_error_rmse_K": 11.792462924466392
+      },
+      "final_metrics": {
+        "sample_first_relative_rmse_pct": 2.3362461064788427,
+        "point_global_relative_rmse_pct": 2.71724922064337,
+        "rmse_K": 2.1578649862579877,
+        "mae_K": 1.4275064424022164,
+        "peak_abs_error_K_mean": 9.83710239314777,
+        "peak_error_rmse_K": 10.88646163391723
+      },
+      "best_to_final_delta": {
+        "sample_first_relative_rmse_pct": -0.09181925490124465,
+        "point_global_relative_rmse_pct": 0.02530931299425454,
+        "rmse_K": 0.02009903247800482,
+        "mae_K": -0.0315483835628072,
+        "peak_abs_error_K_mean": -0.8655158823988636,
+        "peak_error_rmse_K": -0.9060012905491615
+      },
+      "training_walltime_seconds": 4920.330713147003,
+      "peak_memory_allocated_bytes": 5095374848,
+      "peak_memory_reserved_bytes": 6450839552,
+      "run_receipt_sha256": "da41531d9dbbc68aa482864e4bac8bbe5ba2abd8d2c62228c25abbaac1cf7a55",
+      "best_checkpoint_sha256": "6e9cc8fe96ad1633c14766416f5caa060514cf4944edb7cfea235f0d23b65cc7",
+      "final_checkpoint_sha256": "7280be388d619c9826deea9fb7ba8f7995e8d443169d395207b6a4ff92bce7aa",
+      "history_sha256": "37df9c423f6212341a0f5d627932340160c08570308a2024bce5137f9a503ac4",
+      "run_config_sha256": "0dc8ef7d57705c4ce618928e017f679516a2b5a21b046727be5f99ed7860759f",
+      "log_sha256": "a203d67d854369f93dd25b243333a9830a1581ba541d5b5783e316bc4229e66f",
+      "checkpoint_reload_state_equal": true,
+      "test_iid_read": false,
+      "sealed_read": false,
+      "official100_read": false
+    },
+    {
+      "seed": 2,
+      "status": "COMPLETE_VALID_ONLY",
+      "best_epoch": 181,
+      "best_valid_normalized_loss": 0.010528912738664076,
+      "best_metrics": {
+        "sample_first_relative_rmse_pct": 2.8812088078947085,
+        "point_global_relative_rmse_pct": 3.612502592792044,
+        "rmse_K": 2.8688177729632174,
+        "mae_K": 1.8473468006894318,
+        "peak_abs_error_K_mean": 10.411221501760387,
+        "peak_error_rmse_K": 11.544126139701008
+      },
+      "final_metrics": {
+        "sample_first_relative_rmse_pct": 2.882316895782232,
+        "point_global_relative_rmse_pct": 3.615256278249473,
+        "rmse_K": 2.8710045732708998,
+        "mae_K": 1.8478521962670322,
+        "peak_abs_error_K_mean": 10.406677516463485,
+        "peak_error_rmse_K": 11.539017986204009
+      },
+      "best_to_final_delta": {
+        "sample_first_relative_rmse_pct": 0.0011080878875233683,
+        "point_global_relative_rmse_pct": 0.0027536854574288228,
+        "rmse_K": 0.0021868003076823683,
+        "mae_K": 0.0005053955776004315,
+        "peak_abs_error_K_mean": -0.004543985296901809,
+        "peak_error_rmse_K": -0.00510815349699989
+      },
+      "training_walltime_seconds": 4953.924511873003,
+      "peak_memory_allocated_bytes": 5095374848,
+      "peak_memory_reserved_bytes": 6450839552,
+      "run_receipt_sha256": "2255c2cdf937367f4721be8ba32d1316b75639ba318d88e73b800d6f13780a80",
+      "best_checkpoint_sha256": "ba81fed391e100510aa35111feb2433411110251a806d355b32dfa0e8d10170e",
+      "final_checkpoint_sha256": "41df5a398b13f50d475dda72818ded3ac8d2f02dde08aba6a7f09d6a8921bb12",
+      "history_sha256": "65742d8b5f0dfc217829a910687f3815ea09991f118bef084c40e5a5ca2e1d49",
+      "run_config_sha256": "fe6d808a1926ba5324299d1621e6191fce8a5e0c5f2baf1acf5e40a492898b35",
+      "log_sha256": "5ce29ab13d7b7d81e697fa2cbdb03b0c2a020c3dc1550fc2b394368b5a037868",
+      "checkpoint_reload_state_equal": true,
+      "test_iid_read": false,
+      "sealed_read": false,
+      "official100_read": false
+    }
+  ],
+  "aggregate_sd_across_training_seeds": {
+    "best_valid_normalized_loss": {"mean": 0.008073826567851938, "sd": 0.0023234101866756564},
+    "best_sample_first_relative_rmse_pct": {"mean": 2.606648383494225, "sd": 0.24133688506321113},
+    "best_point_global_relative_rmse_pct": {"mean": 3.1489317377556705, "sd": 0.4603166051710062},
+    "best_rmse_K": {"mean": 2.5006795436344333, "sd": 0.3655539128856463},
+    "best_mae_K": {"mean": 1.6363548271730606, "sd": 0.1963263256859973},
+    "best_peak_abs_error_K_mean": {"mean": 10.578004473897233, "sd": 0.15020552302747578},
+    "best_peak_error_rmse_K": {"mean": 11.716909756015793, "sd": 0.15002702976732213},
+    "final_sample_first_relative_rmse_pct": {"mean": 2.5761107228290316, "sd": 0.2790147457250055},
+    "final_point_global_relative_rmse_pct": {"mean": 3.1600047809191714, "sd": 0.44913392235473054},
+    "final_rmse_K": {"mean": 2.509473044043713, "sd": 0.35667334369885817},
+    "final_mae_K": {"mean": 1.626248645665442, "sd": 0.21110333749052643},
+    "final_peak_abs_error_K_mean": {"mean": 10.280504614899314, "sd": 0.3957016381883397},
+    "final_peak_error_rmse_K": {"mean": 11.40495080198408, "sd": 0.4661465911878573},
+    "training_walltime_seconds": {"mean": 4895.665653757668, "sd": 73.75240944505892},
+    "training_walltime_hours": {"mean": 1.3599071260437967, "sd": 0.020486780401405256}
+  },
+  "anomaly_assessment": {
+    "status": "NO_NUMERICAL_ANOMALY",
+    "criteria": [
+      "all three runs reached 200 epochs and 4000 optimizer updates",
+      "all history train/valid values are finite",
+      "best/final checkpoint hashes match completion receipts",
+      "checkpoint reload state equal is true for all seeds",
+      "all three runs used identical scientific contract values",
+      "runtime spread is 141.183 seconds; no abnormal exit"
+    ],
+    "comment": "Seed1 has the lowest best valid metric and seed2 the highest; this is descriptive seed variability and was not used to alter protocol."
+  },
+  "test_isolation": {
+    "p1i_test_iid_accessed": false,
+    "sealed_accessed": false,
+    "DeepOHeat_official100_accessed": false,
+    "evaluation_unlock": "not performed; valid-only completion"
+  }
+}
