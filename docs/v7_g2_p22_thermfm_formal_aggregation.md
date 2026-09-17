@@ -11,6 +11,10 @@ P1i train 768 / valid 128；没有读取 `test_iid`、sealed 或 DeepOHeat offic
 | 1 | 136 | 0.005909 | 2.4281% | 2.6919% | 2.1378 | 2.3362% | 4920.3 s |
 | 2 | 181 | 0.010529 | 2.8812% | 3.6125% | 2.8688 | 2.8823% | 4953.9 s |
 
+JSON 中历史字段名 `best_metrics` 仅表示“在 minimum valid normalized loss checkpoint
+处记录的物理指标”；P23 的正式显示名称固定为
+`metrics_at_loss_selected_checkpoint`，不得解释为每个物理指标各自重选的最优值。
+
 按 **SD across training seeds** 汇总（checkpoint 仍按 normalized loss 选，不按物理指标重选）：
 
 - best sample-first relative RMSE：**2.6066 ± 0.2413%**；point-global：**3.1489 ± 0.4603%**。
