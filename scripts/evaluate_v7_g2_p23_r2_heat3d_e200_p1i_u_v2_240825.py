@@ -231,6 +231,20 @@ def metric_row(
     return row
 
 
+def array_finiteness(value: Any) -> dict[str, Any]:
+    array = np.asarray(value)
+    finite = np.isfinite(array)
+    finite_values = array[finite]
+    return {
+        "shape": list(array.shape),
+        "dtype": str(array.dtype),
+        "finite_count": int(np.count_nonzero(finite)),
+        "element_count": int(array.size),
+        "min_finite": (float(np.min(finite_values)) if finite_values.size else None),
+        "max_finite": (float(np.max(finite_values)) if finite_values.size else None),
+    }
+
+
 def main() -> int:
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--dataset-root", type=Path, required=True)
@@ -366,18 +380,43 @@ def main() -> int:
         raw_prediction = np.asarray(output["deltaT_hat"], dtype=np.float64)
         prediction = raw_prediction[0, 0, :, 0]
         if prediction.shape != (NODE_COUNT,) or not np.all(np.isfinite(prediction)):
-            finite = np.isfinite(raw_prediction)
-            finite_values = raw_prediction[finite]
-            bounds = (
-                (float(np.min(finite_values)), float(np.max(finite_values)))
-                if finite_values.size
-                else (None, None)
-            )
-            raise FloatingPointError(
-                f"nonfinite/wrong-shape U-v2 output for {sample_id}: "
-                f"raw_shape={raw_prediction.shape}, finite={int(np.count_nonzero(finite))}/"
-                f"{raw_prediction.size}, finite_bounds={bounds}"
-            )
+            failure = {
+                "schema_version": "heat3d_v7_g2_p23_r2_heat3d_e200_p1i_u_v2_240825_failure_receipt_v1",
+                "status": "FAIL_CLOSED_P1I_E200_NONFINITE_OUTPUT",
+                "failure_reason": "P1i physical inputs produce a non-finite e200 U-v2 output under the frozen DeepOHeat-v1 train-only normalization; no rescaling, clipping, or normalization refit is permitted.",
+                "seed": int(args.seed),
+                "sample_id": sample_id,
+                "checkpoint": {"path": str(args.checkpoint), "sha256": file_sha256(args.checkpoint), "metadata": checkpoint_meta},
+                "runner": {"script": "scripts/evaluate_v7_g2_p23_r2_heat3d_e200_p1i_u_v2_240825.py", "repo_commit_sha": subprocess.check_output(["git", "rev-parse", "HEAD"], cwd=ROOT, text=True).strip()},
+                "contracts": {
+                    "p1i_manifest_sha256": P1I_MANIFEST_SHA,
+                    "valid_case_manifest_sha256": VALID_MANIFEST_SHA,
+                    "full_fields_sha256": FULL_FIELDS_SHA,
+                    "normalization_payload_sha256": NORMALIZATION_SHA,
+                    "heat3d_config_sha256": E200_CONFIG_SHA,
+                    "test_iid_accessed": False,
+                    "sealed_accessed": False,
+                    "deepoheat_official100_accessed": False,
+                    "training_started": False,
+                },
+                "domain": {"grid": list(GRID), "count": NODE_COUNT, "temperature_space": "deltaT_K", "conditioning_count": 1024, "u_v2_mode": "direct_query_dense_inference"},
+                "input_diagnostics": {
+                    "raw_k_xyz": array_finiteness(k_full),
+                    "raw_q_W_m3": array_finiteness(q_full),
+                    "raw_top_h_W_m2K": float(anchor.meta["top_h_W_m2K"]),
+                    "raw_bottom_h_W_m2K": float(anchor.meta["bottom_h_W_m2K"]),
+                    "normalized_native_condition": array_finiteness(query_case.native_group["inputs"].c),
+                    "normalized_query_condition": array_finiteness(query_case.query_group["inputs"].c),
+                    "normalized_native_coordinates": array_finiteness(query_case.native_group["inputs"].x_inp),
+                    "normalized_query_coordinates": array_finiteness(query_case.query_group["inputs"].x_inp),
+                },
+                "output_diagnostics": {"deltaT_hat": array_finiteness(raw_prediction)},
+                "interpretation": "P1i geometry/material/BC/source values are outside the e200 training normalization envelope. A same-output-resolution numerical comparison is not identifiable without changing the frozen model input semantics; no Table-B accuracy result is emitted.",
+            }
+            args.output.parent.mkdir(parents=True, exist_ok=True)
+            args.output.write_text(json.dumps(failure, indent=2, sort_keys=True) + "\n", encoding="utf-8")
+            print(json.dumps(failure, indent=2, sort_keys=True))
+            return 2
         truth = truth_by_id[sample_id]
         row = metric_row(
             sample_id=sample_id,
