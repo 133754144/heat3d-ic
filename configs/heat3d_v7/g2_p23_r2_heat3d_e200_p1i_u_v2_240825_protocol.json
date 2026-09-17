@@ -1,0 +1,91 @@
+{
+  "schema_version": "heat3d_v7_g2_p23_r2_heat3d_e200_p1i_u_v2_protocol_v1",
+  "status": "FROZEN_BEFORE_VALID_ONLY_INFERENCE",
+  "experiment_id": "G2-P23-R2-Heat3D-V7-e200-P1i-U-v2-240825",
+  "scope": "Inference-only zero-shot same-output-resolution diagnostic",
+  "hard_boundaries": {
+    "training": false,
+    "checkpoint_reselection": false,
+    "valid_iid_only": true,
+    "p1i_test_iid": "forbidden",
+    "sealed": "forbidden",
+    "deepoheat_official100": "forbidden",
+    "prediction_archives": "not required; metrics receipt is the tracked result"
+  },
+  "model": {
+    "family": "Heat3D V7 e200 independent 200-epoch cohort",
+    "architecture": "frozen RIGNO from configs/heat3d_v7/v7_g1_full_p1i.json",
+    "training_domain": "DeepOHeat-v1 volumetric 768 train / 128 valid subset",
+    "selection_rule": "native-1024 valid sample-first relative RMSE; no reselection",
+    "checkpoints": {
+      "seed0": {
+        "path_on_devbox": "/home/xyh/myCodeGitOnly/heat3d-ic-g2/output/heat3d_v7_g2/heat3d_on_deepoheat_v1_formal_e3_20260915/seed_0/params_best_sample_first.pkl",
+        "sha256": "6a24871fb58e50735892a0159fd5d5bface9466de8f8445d5ebe8437e32fa071"
+      },
+      "seed1": {
+        "path_on_devbox": "/home/xyh/myCodeGitOnly/heat3d-ic-g2/output/heat3d_v7_g2/heat3d_on_deepoheat_v1_formal_e3_20260915/seed_1_retry1/params_best_sample_first.pkl",
+        "sha256": "11219c17e3a5920cbe1b466d80ef692244acd3b622b4ad79091b97386536c2fe"
+      },
+      "seed2": {
+        "path_on_devbox": "/home/xyh/myCodeGitOnly/heat3d-ic-g2/output/heat3d_v7_g2/heat3d_on_deepoheat_v1_formal_e3_20260915/seed_2/params_best_sample_first.pkl",
+        "sha256": "780cc15cef16ed66bedd0d49e2646e3259d0f6bf21cb6fe3cbc9b8610643cc9f"
+      }
+    },
+    "normalization": {
+      "source": "DeepOHeat-v1 e200 train-only statistics",
+      "payload_sha256": "3a0273bb92b8c060df8a214b1e0e7dd0e4b5df6bece86b7dea15197ca56ed0db",
+      "valid_or_test_used_to_fit": false
+    }
+  },
+  "dataset": {
+    "id": "heat3d_v6_p1i_continuous_physics1024_v1",
+    "source_manifest": "configs/heat3d_v6_p1i/v6_p1i_formal1024_v1_manifest.json",
+    "source_manifest_sha256": "f19987c659968c2ac14eade1f1ef7e206c8f7eeb94f58fde5897d6e765978514",
+    "valid_case_manifest": "configs/heat3d_v7/g2_p23_valid_only_case_manifest.json",
+    "valid_case_manifest_sha256": "f42cca611b6c70551b153f4f887b2d47724d9082846e4b381cab4ad9c652e57c",
+    "full_field_archive_sha256": "49023ac1205b8e7cf7c5bf782b89fcdb34997704b3f9aa2fb2d46cf1a59163cb",
+    "role": "valid_iid",
+    "case_count": 128,
+    "conditioning_count": 1024,
+    "output_grid": [65, 65, 57],
+    "output_node_count": 240825,
+    "temperature_space": "deltaT_K",
+    "truth_source": "valid_iid rows only from frozen full_fields.h5"
+  },
+  "input_contract": {
+    "conditioning": "stored P1i 1024 support coordinates + kx/ky/kz + q + four boundary flags + top/bottom Robin h",
+    "query": "all 240825 frozen P1i full-field coordinates with deterministic k/q/boundary fields materialized from case definition",
+    "support_selector": "the support points stored in each P1i sample; no new learned adapter",
+    "u_v2": "frozen asymmetric native-1024 conditioning plus direct-query output graph",
+    "interpolation_or_resampling": false,
+    "external_padding": false,
+    "learned_parameters_added": 0,
+    "coordinate_note": "P1i physical coordinates are retained; e200 normalization was fit on the DeepOHeat-v1 domain. This is a zero-shot cross-benchmark transfer diagnostic, not a same-domain training comparison."
+  },
+  "metrics": {
+    "implementation": "scripts/evaluate_v7_g2_p23_common_fullfield.py one_case_metrics/summarize semantics",
+    "primary": "sample_first_relative_rmse_pct",
+    "point_global": "100*sqrt(sum_case SSE / sum_case truth_SSE)",
+    "cv_weighted_point_global": "100*sqrt(sum_case CV-weighted SSE / sum_case CV-weighted truth energy)",
+    "rmse_K": "sqrt(sum node squared error / node count)",
+    "mae_K": "mean absolute node error",
+    "peak_temperature_absolute_error_K": "abs(max(pred)-max(truth))",
+    "peak_temperature_rmse_K": "sqrt(mean over valid cases of peak error squared)",
+    "hotspot": "top 1 percent nodes by T_true within each valid sample (2409 nodes); prediction never defines hotspot",
+    "dispersion": "mean plus SD across the three independent training seeds; not 384 independent observations"
+  },
+  "execution": {
+    "runner": "scripts/evaluate_v7_g2_p23_r2_heat3d_e200_p1i_u_v2_240825.py",
+    "inference_only": true,
+    "max_valid": 128,
+    "batching": "U-v2 cases are evaluated one at a time to keep graph/query memory bounded",
+    "output_policy": "per-seed JSON receipts under a devbox ignored output directory; no prediction arrays committed",
+    "repo_commit_sha": "recorded in each execution receipt"
+  },
+  "interpretation": {
+    "comparison_label": "same-output-resolution zero-shot transfer diagnostic",
+    "therm_fm_reference_domain": "P1i native 65x65x57 = 240825 nodes",
+    "fairness": "not same training domain, not same information budget, and not a replacement for a P1i-trained Heat3D cohort",
+    "winner_claim": "forbidden without a pre-registered common-domain cohort and matched training contract"
+  }
+}
