@@ -106,18 +106,30 @@ def one_case_metrics(pred: np.ndarray, truth: np.ndarray, weights: np.ndarray) -
         raise ValueError("truth energy must be positive")
     hotspot_count = int(np.ceil(0.01 * truth.size))
     hotspot_idx = np.argpartition(truth, -hotspot_count)[-hotspot_count:]
+    sse = float(np.sum(error * error))
+    truth_sse = float(np.sum(truth * truth))
+    cv_sse = float(np.sum(weights * error * error))
+    cv_truth_energy = float(np.sum(weights * truth * truth))
+    hotspot_sse = float(np.sum(error[hotspot_idx] ** 2))
     return {
+        "sse": sse,
+        "truth_sse": truth_sse,
+        "cv_sse": cv_sse,
+        "cv_truth_energy": cv_truth_energy,
+        "absolute_error_sum": float(np.sum(np.abs(error))),
+        "node_count": int(error.size),
+        "hotspot_sse": hotspot_sse,
+        "hotspot_count": hotspot_count,
         "sample_first_relative_rmse_pct": float(
-            100.0
-            * np.sqrt(np.sum(weights * error * error) / weighted_truth_energy)
+            100.0 * np.sqrt(cv_sse / weighted_truth_energy)
         ),
         "point_global_relative_rmse_pct": float(
-            100.0 * np.sqrt(np.sum(error * error) / truth_energy)
+            100.0 * np.sqrt(sse / truth_sse)
         ),
-        "rmse_K": float(np.sqrt(np.mean(error * error))),
-        "mae_K": float(np.mean(np.abs(error))),
+        "rmse_K": float(np.sqrt(sse / error.size)),
+        "mae_K": float(np.sum(np.abs(error)) / error.size),
         "peak_temperature_absolute_error_K": float(abs(np.max(pred) - np.max(truth))),
-        "true_hotspot_region_rmse_K": float(np.sqrt(np.mean(error[hotspot_idx] ** 2))),
+        "true_hotspot_region_rmse_K": float(np.sqrt(hotspot_sse / hotspot_count)),
     }
 
 
@@ -135,14 +147,44 @@ def summarize(rows: list[dict[str, Any]]) -> dict[str, Any]:
         by_model_seed.setdefault((row["model"], int(row["seed"])), []).append(row)
     seed_summaries: list[dict[str, Any]] = []
     for (model, seed), model_rows in sorted(by_model_seed.items()):
+        sse = sum(float(r["sse"]) for r in model_rows)
+        truth_sse = sum(float(r["truth_sse"]) for r in model_rows)
+        cv_sse = sum(float(r["cv_sse"]) for r in model_rows)
+        cv_truth_energy = sum(float(r["cv_truth_energy"]) for r in model_rows)
+        abs_error = sum(float(r["absolute_error_sum"]) for r in model_rows)
+        node_count = sum(int(r["node_count"]) for r in model_rows)
+        hotspot_sse = sum(float(r["hotspot_sse"]) for r in model_rows)
+        hotspot_count = sum(int(r["hotspot_count"]) for r in model_rows)
         seed_summaries.append(
             {
                 "model": model,
                 "seed": seed,
                 "valid_cases": len(model_rows),
                 "metrics": {
-                    metric: float(np.mean([r[metric] for r in model_rows]))
-                    for metric in metrics
+                    "sample_first_relative_rmse_pct": float(
+                        np.mean([r["sample_first_relative_rmse_pct"] for r in model_rows])
+                    ),
+                    "point_global_relative_rmse_pct": float(
+                        100.0 * np.sqrt(sse / truth_sse)
+                    ),
+                    "cv_weighted_point_global_relative_rmse_pct": float(
+                        100.0 * np.sqrt(cv_sse / cv_truth_energy)
+                    ),
+                    "rmse_K": float(np.sqrt(sse / node_count)),
+                    "mae_K": float(abs_error / node_count),
+                    "peak_temperature_mae_K": float(
+                        np.mean([r["peak_temperature_absolute_error_K"] for r in model_rows])
+                    ),
+                    "peak_temperature_rmse_K": float(
+                        np.sqrt(
+                            np.mean(
+                                [r["peak_temperature_absolute_error_K"] ** 2 for r in model_rows]
+                            )
+                        )
+                    ),
+                    "true_hotspot_region_rmse_K": float(
+                        np.sqrt(hotspot_sse / hotspot_count)
+                    ),
                 },
             }
         )
@@ -156,11 +198,11 @@ def summarize(rows: list[dict[str, Any]]) -> dict[str, Any]:
             "dispersion_label": "SD across training seeds",
             "metrics_mean": {
                 metric: float(np.mean([s["metrics"][metric] for s in seeds]))
-                for metric in metrics
+                for metric in seeds[0]["metrics"]
             },
             "metrics_sd_across_training_seeds": {
                 metric: float(np.std([s["metrics"][metric] for s in seeds], ddof=1))
-                for metric in metrics
+                for metric in seeds[0]["metrics"]
             },
         }
     return {"per_seed": seed_summaries, "aggregate": aggregate}
