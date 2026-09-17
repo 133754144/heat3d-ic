@@ -1,0 +1,21 @@
+{
+  "schema_version": "heat3d_v7_g2_p23_paired_bootstrap_result_v1",
+  "status": "NOT_EXECUTED_FAIL_CLOSED",
+  "protocol": "configs/heat3d_v7/g2_p23_common_fullfield_protocol.json",
+  "comparison": "Heat3D - Therm-FM",
+  "unit": "physical case",
+  "resamples": 10000,
+  "bootstrap_seed": 230023,
+  "n_cases_required": 128,
+  "n_training_seeds_per_model": 3,
+  "reported_metrics": [
+    "sample_first_relative_rmse_pct",
+    "rmse_K",
+    "mae_K",
+    "peak_temperature_absolute_error_K",
+    "true_hotspot_region_rmse_K"
+  ],
+  "results": null,
+  "reason": "P23 common full-field per-sample rows are unavailable for V6 seed1/seed2 and Therm-FM; the prior mixed-role CSV incident also requires reviewer-approved remediation.",
+  "inference_rule": "If later executed, resample physical cases in paired units after averaging the three frozen seed predictions; do not treat 384 seed-case rows as independent."
+}

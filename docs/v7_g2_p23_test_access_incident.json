@@ -1,0 +1,41 @@
+{
+  "schema_version": "heat3d_v7_g2_p23_test_access_incident_v1",
+  "observed_at": "2026-09-17T14:37:32+08:00",
+  "status": "GOVERNANCE_INCIDENT_P23_FAIL_CLOSED",
+  "scope": "P23 publication comparison closure",
+  "incident": {
+    "command_class": "read-only shell inspection",
+    "command": "sed -n '1,80p' configs/heat3d_v6_p1i/v6_p1i_error_tail_samples.csv",
+    "path": "configs/heat3d_v6_p1i/v6_p1i_error_tail_samples.csv",
+    "file_mixed_roles": true,
+    "observed": "The mixed legacy CSV contained valid_iid rows followed by test_iid rows; the command printed both role ranges.",
+    "test_iid_read": true,
+    "test_values_copied_or_used": false,
+    "test_evaluation_or_unlock": false,
+    "sealed_read": false,
+    "deepoheat_official100_read": false,
+    "downstream_analysis_contaminated": false
+  },
+  "containment": {
+    "mixed_csv_is_now_denylisted": true,
+    "test_values_included_in_any_p23_metric": false,
+    "new_training_started": false,
+    "checkpoint_reselected": false,
+    "sealed_or_official_test_unlocked": false,
+    "required_follow_up": "A reviewer must approve an amended P23 valid-only evidence route before any publication comparison is called closed."
+  },
+  "effect_on_p23": {
+    "readiness": "P23_NEEDS_AMENDMENT",
+    "reason": "The hard boundary 'no test_iid access' was violated by accidental inspection of a mixed-role legacy CSV. P23 cannot claim untouched test governance.",
+    "allowed_work": [
+      "freeze identities and protocols",
+      "implement but do not run a valid-only evaluator until a separately verified valid-only case manifest is available",
+      "retain historical valid-only receipts without using test values"
+    ],
+    "blocked_work": [
+      "publication paired bootstrap",
+      "condition-stratified model-error analysis",
+      "P23 READY_FOR_P24_SEALED_PREREGISTRATION verdict"
+    ]
+  }
+}

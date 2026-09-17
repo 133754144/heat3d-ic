@@ -1,0 +1,141 @@
+{
+  "schema_version": "heat3d_v7_g2_p23_common_fullfield_protocol_v1",
+  "status": "FROZEN_PROTOCOL_NOT_EXECUTED_P23_NEEDS_AMENDMENT",
+  "observed_at": "2026-09-17T14:37:32+08:00",
+  "scope": "Valid-only common full-field comparison of frozen Heat3D V6 and Therm-FM cohorts",
+  "hard_boundaries": {
+    "training": false,
+    "checkpoint_reselection": false,
+    "p1i_test_iid": "forbidden",
+    "sealed": "forbidden",
+    "deepoheat_official100": "forbidden",
+    "hcp": "excluded",
+    "mixed_role_csv": "denylisted; never an input"
+  },
+  "dataset": {
+    "dataset_id": "heat3d_v6_p1i_continuous_physics1024_v1",
+    "split_manifest_sha256": "87aaa84af4b203d0a8ba93ed33b3757d46adc3143dad970371daa0f893ea491f",
+    "truth_archive_sha256": "49023ac1205b8e7cf7c5bf782b89fcdb34997704b3f9aa2fb2d46cf1a59163cb",
+    "authorized_role": "valid_iid",
+    "authorized_count": 128,
+    "nodes_per_sample": 240825,
+    "grid": [65, 65, 57],
+    "units": "deltaT_K",
+    "valid_case_manifest": "REQUIRED_SEPARATE_VALID_ONLY_CASE_MANIFEST",
+    "valid_case_manifest_sha256": null,
+    "test_or_sealed_rows_materialized": false
+  },
+  "identities": {
+    "heat3d": {
+      "family": ["V6_06", "V6_07", "V6_08"],
+      "checkpoint_role": "frozen V6 point_global_best",
+      "selection_policy": "historical V6 valid_iid selection; no P23 reselection",
+      "input_representation": "1024 source-aware support points",
+      "full_field_mapping": "existing V6 deterministic full-field utility; mapping must be audited before execution"
+    },
+    "therm_fm": {
+      "family": ["P22 seed0", "P22 seed1", "P22 seed2"],
+      "checkpoint_role": "minimum valid normalized loss",
+      "display_name_for_physical_metrics": "metrics_at_loss_selected_checkpoint",
+      "selection_policy": "upstream normalized-loss selection; no physical-metric reselection",
+      "input_representation": "dense 741-channel case-definition raster on native 65x65 grid"
+    }
+  },
+  "metrics": {
+    "primary": "sample_first_relative_rmse_pct",
+    "sample_first_relative_rmse_pct": "100 * mean_s(sqrt(sum_i(w_i*(pred_i-truth_i)^2) / sum_i(w_i*truth_i^2))); w_i=control_volume_m3",
+    "point_global_relative_rmse_pct": "100 * sqrt(sum_{s,i}(pred_{si}-truth_{si})^2 / sum_{s,i} truth_{si}^2); unit node weights",
+    "rmse_K": "sqrt(mean_{s,i}((pred_si-truth_si)^2))",
+    "mae_K": "mean_{s,i}(|pred_si-truth_si|)",
+    "peak_temperature_absolute_error_K": "abs(max_i(pred_si)-max_i(truth_si))",
+    "peak_temperature_rmse_K": "sqrt(mean_s(peak_temperature_absolute_error_K^2))",
+    "true_hotspot_region_rmse_K": "sqrt(mean over nodes in frozen top-1-percent-by-T_true region of squared error)",
+    "hotspot_definition": {
+      "rule": "top 1 percent nodes by T_true within each sample",
+      "count": "ceil(0.01 * 240825) = 2409 nodes per sample",
+      "frozen_before_model_error": true,
+      "prediction_used": false
+    },
+    "rounding": "none before aggregation",
+    "seed_dispersion": "mean plus SD across three training seeds; 3x128 rows are not 384 independent replicates"
+  },
+  "per_sample": {
+    "required_fields": [
+      "sample_id",
+      "seed",
+      "model",
+      "sample_first_relative_rmse_pct",
+      "point_global_contribution",
+      "rmse_K",
+      "mae_K",
+      "peak_temperature_absolute_error_K",
+      "true_hotspot_region_rmse_K"
+    ],
+    "artifact": "docs/results/v7_g2_p23_per_sample_metrics.json",
+    "status": "NOT_GENERATED_MISSING_V6_SEED1_SEED2_PREDICTIONS"
+  },
+  "paired_bootstrap": {
+    "comparison": "Heat3D - Therm-FM",
+    "unit": "physical case",
+    "pairing": "same valid case after averaging the three frozen seed predictions within each model",
+    "resamples": 10000,
+    "seed": 230023,
+    "interval": "percentile 95 percent CI",
+    "reported_differences": [
+      "sample_first_relative_rmse_pct",
+      "rmse_K",
+      "mae_K",
+      "peak_temperature_absolute_error_K",
+      "true_hotspot_region_rmse_K"
+    ],
+    "interpretation": "conditional on the frozen three-seed cohort; no seed-level t-test or post-hoc significance fishing",
+    "status": "NOT_EXECUTED_MISSING_PAIRED_PER_SAMPLE_ARTIFACTS"
+  },
+  "condition_stratification": {
+    "variables": [
+      "source_count",
+      "total_power_W",
+      "source_power_heterogeneity",
+      "top_h_W_m2K",
+      "bottom_h_W_m2K",
+      "k_region_count",
+      "material_conductivity_heterogeneity"
+    ],
+    "bin_rule": "valid-case input-only quantiles Q0-Q33, Q33-Q67, Q67-Q100; edges frozen before joining any model error",
+    "edge_source": "authorized valid-only case-definition manifest",
+    "prediction_or_accuracy_used_for_bins": false,
+    "status": "NOT_EXECUTED_VALID_ONLY_CASE_MANIFEST_AND_INCIDENT_AMENDMENT_REQUIRED",
+    "no_pattern_label_until_run": true
+  },
+  "publication_tables": {
+    "table_A": {
+      "title": "P1i native sparse/common-task",
+      "models": ["Heat3D V6", "GINO", "Transolver"],
+      "domain": "native 1024 valid_iid",
+      "status": "IDENTITIES_FROZEN; EXISTING_VALID_ONLY_NATIVE_RESULTS MAY BE REFERENCED"
+    },
+    "table_B": {
+      "title": "P1i full-field transfer comparison",
+      "models": ["Heat3D V6", "Therm-FM/Poseidon-T"],
+      "domain": "240825-node valid_iid",
+      "pretraining_qualifier": "Therm-FM is pretrained transfer; not same-information-budget",
+      "status": "BLOCKED_UNTIL_COMMON_EVALUATOR_EXECUTION"
+    }
+  },
+  "checkpoint_policy": {
+    "heat3d": "fixed frozen V6 identity; no P23 selection",
+    "therm_fm": "minimum valid normalized loss; report physical metrics at that checkpoint",
+    "best_to_best": "not a new P23 policy; do not relabel different selection objectives as equivalent",
+    "final_sensitivity": "may be reported separately when artifacts are available"
+  },
+  "readiness": {
+    "decision": "P23_NEEDS_AMENDMENT",
+    "blockers": [
+      "accidental read of mixed-role legacy CSV recorded in test-access incident receipt",
+      "V6 seed1 and seed2 per-sample prediction archives are not available in this worktree",
+      "Therm-FM per-sample prediction artifacts are not materialized",
+      "valid-only case manifest with frozen hotspot/condition inputs is not independently staged"
+    ],
+    "next_safe_step": "Obtain reviewer-approved, separately hashed valid-only case/prediction manifests; then run this evaluator without touching any forbidden role."
+  }
+}

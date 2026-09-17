@@ -1,0 +1,21 @@
+{
+  "schema_version": "heat3d_v7_g2_p23_per_sample_metrics_v1",
+  "status": "NOT_GENERATED_FAIL_CLOSED",
+  "scope": "128 valid cases x 3 Heat3D seeds x 3 Therm-FM seeds",
+  "required_fields": [
+    "sample_id",
+    "seed",
+    "model",
+    "sample_first_relative_rmse_pct",
+    "rmse_K",
+    "mae_K",
+    "peak_temperature_absolute_error_K",
+    "true_hotspot_region_rmse_K"
+  ],
+  "rows": [],
+  "reason": "V6 seed1/seed2 per-sample predictions and Therm-FM per-sample predictions are not available; valid-only case manifest remediation is pending.",
+  "forbidden_inputs": ["test_iid", "sealed", "DeepOHeat official100"],
+  "test_iid_values_used": false,
+  "sealed_values_used": false,
+  "deepoheat_official100_values_used": false
+}

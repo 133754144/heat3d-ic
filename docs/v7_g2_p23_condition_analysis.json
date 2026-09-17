@@ -1,0 +1,18 @@
+{
+  "schema_version": "heat3d_v7_g2_p23_condition_analysis_v1",
+  "status": "PREREGISTERED_NOT_EXECUTED_FAIL_CLOSED",
+  "protocol": "configs/heat3d_v7/g2_p23_common_fullfield_protocol.json",
+  "allowed_input_side_variables": [
+    "source_count",
+    "total_power_W",
+    "source_power_heterogeneity",
+    "top_h_W_m2K",
+    "bottom_h_W_m2K",
+    "k_region_count",
+    "material_conductivity_heterogeneity"
+  ],
+  "bin_rule": "Q0-Q33, Q33-Q67, Q67-Q100 computed only from frozen valid-case definitions before joining model errors",
+  "results": null,
+  "reason": "No model-error grouping was run because the valid-only full-field paired artifact is incomplete and governance remediation is pending.",
+  "default_interpretation_if_completed": "NO_CLEAR_CONDITION_SPECIFIC_ADVANTAGE unless a stable pre-registered pattern is observed; bins may not be changed post hoc."
+}

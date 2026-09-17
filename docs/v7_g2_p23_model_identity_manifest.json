@@ -1,0 +1,134 @@
+{
+  "schema_version": "heat3d_v7_g2_p23_model_identity_manifest_v1",
+  "status": "IDENTITIES_FROZEN_VALID_ONLY_P23_NEEDS_AMENDMENT",
+  "observed_at": "2026-09-17T14:37:32+08:00",
+  "scope": "Frozen checkpoint identities for P23; no retraining, checkpoint reselection, or test evaluation",
+  "dataset": {
+    "id": "heat3d_v6_p1i_continuous_physics1024_v1",
+    "manifest_sha256": "f19987c659968c2ac14eade1f1ef7e206c8f7eeb94f58fde5897d6e765978514",
+    "split_manifest_sha256": "87aaa84af4b203d0a8ba93ed33b3757d46adc3143dad970371daa0f893ea491f",
+    "valid_role": "valid_iid",
+    "valid_count": 128,
+    "full_field_nodes": 240825,
+    "forbidden_roles": ["test_iid", "sealed"],
+    "truth_archive_sha256": "49023ac1205b8e7cf7c5bf782b89fcdb34997704b3f9aa2fb2d46cf1a59163cb"
+  },
+  "models": {
+    "Heat3D_V6": {
+      "taxonomy": "P1i_native_sparse_canonical_and_full_field_candidate",
+      "seeds": [0, 1, 2],
+      "training_config": "V6_06/V6_07/V6_08 frozen YAML; 600 epochs, B24",
+      "repo_commit_sha": "3884de07525b7e8c0f8fa3382b24bf94322bebe9",
+      "upstream_commit_sha": null,
+      "config_sha256_by_seed": {
+        "0": "cfff2358f8694e9fd37cd298dbc2b8ac62ba10847e6a2ae00342d01aa5561f44",
+        "1": "0cd1da16bf8ea52877f1e569a98c9bdc8785ccbc0676de8d2d56b758520431e4",
+        "2": "d57e5340989dcf45b799f92a7c917d0e6a440ff0f4c3b3fc5c00c80eaa6e1a8f"
+      },
+      "checkpoint_sha256_by_seed": {
+        "0": "51567afe17e38cb6ed8c95c4dd39598e647c1699de9351358e7729fecc20b90e",
+        "1": "7197157969278d99648ef9b40d74005d759f32e52e9282e72a5586003d1e71f7",
+        "2": "d67e0dac2e8ed8009ce7dcdf0b2de4543b10bc005c0bfaa51027ea721bb2ab49"
+      },
+      "checkpoint_role": "frozen V6 point_global_best; sample_first_best retained only as historical supplementary view",
+      "selection_policy": "valid_iid point_global primary checkpoint fixed by V6 closeout; no P23 reselection",
+      "representation": "1024 source-aware coordinates + k/q/dual-Robin features; native 1024 output; deterministic full-field view via existing V6 utility",
+      "parameter_count": 892776,
+      "external_pretraining": false,
+      "identity_evidence": "docs/v7_g2_p20_p1i_heat3d_v6_canonical_audit.json",
+      "per_sample_artifact_status": "seed0 prediction archive observed on devbox; seed1/seed2 prediction archives unavailable to this worktree (P23 blocker)"
+    },
+    "GINO": {
+      "taxonomy": "P1i_common_task_native_1024",
+      "seeds": [0, 1, 2],
+      "upstream_repo": "neuraloperator/neuraloperator",
+      "upstream_commit_sha": "00b7d86f8d74ff0af55da53eb585fe26df9c71f0",
+      "repo_commit_sha": "f9b36ef6ab8f5e775de52f043c696a756aa4be0a",
+      "runner_sha256": "cbc634ee1782ba15342b4aa67d2a0ea1e3eb0faf6b9caf508a55068c8b2e5977",
+      "config_manifest_sha256": "bebf116e91b921a4c121d617cb0b6a8e0bb5459c7627204ac977616bda9a1409",
+      "dataset_manifest_sha256": "f19987c659968c2ac14eade1f1ef7e206c8f7eeb94f58fde5897d6e765978514",
+      "normalization_sha256": "554ef44e093e60a2a45cff88e74d488a982fa69d1e227e9f7d43427cf3e0406a",
+      "checkpoint_sha256_by_seed": {
+        "0": "9ae1485065a14c86cc28cfe1d279faddfbeda701b51ef418cf2b0461b83c55e8",
+        "1": "da0c499609d6ed51c248bba1df0128a39eb64bbb47a58dd9099722dca819b46f",
+        "2": "ace5c92f181099db12c8989df5eef88b239796927789c1a7639b12a3e824e4d1"
+      },
+      "checkpoint_role": "valid_iid minimum sample_first_relative_rmse_pct, earliest epoch tie",
+      "selection_policy": "per-seed valid_iid sample-first selection; upstream final epoch retained as sensitivity",
+      "representation": "native 1024 point tokens; coords + 11 physical features; Open3D FixedRadiusSearch and torch-scatter; r_in=0.15, r_out=0.033, latent 32^3",
+      "parameter_count": 13673988,
+      "external_pretraining": false,
+      "evaluator_role": "native-1024 only; excluded from P23 full-field table",
+      "identity_evidence": "docs/v7_g2_p13_gino_3seed_valid_only_aggregation.json"
+    },
+    "Transolver": {
+      "taxonomy": "P1i_common_task_native_1024",
+      "seeds": [0, 1, 2],
+      "upstream_repo": "thuml/Transolver",
+      "upstream_commit_sha": "75e0f67643806a81cd1d3f6adc88dd8c02416fe7",
+      "repo_commit_sha": "3f306cc49f1fca10787a3e9aa4fac0935eebbf52",
+      "runner_sha256": "235fed17156b75b1015e3c8547a24b78077e8f435a2be27de320ecc3ab653a55",
+      "config_manifest_sha256": "af0a35abb6db0f908d46a783d67423fbdec1ae5f8a496e65e92f254f61737a91",
+      "dataset_manifest_sha256": "f19987c659968c2ac14eade1f1ef7e206c8f7eeb94f58fde5897d6e765978514",
+      "normalization_sha256": "554ef44e093e60a2a45cff88e74d488a982fa69d1e227e9f7d43427cf3e0406a",
+      "checkpoint_sha256_by_seed": {
+        "0": "f70ad7b897b2e1831a0f06b9300907ceb904a4d646cd7d7a8b8f949bdd0256eb",
+        "1": "75d8a61556935ff6609620b0670a14af8a4b5e6482a559b45092bdb75c142ccd",
+        "2": "6110ecc97bcdc1eb597bfe0c318d22ea048a9ce9da868daf23d43347d8ed89cb"
+      },
+      "checkpoint_role": "valid_iid minimum sample_first_relative_rmse_pct, earliest epoch tie",
+      "selection_policy": "per-seed valid_iid sample-first selection; final epoch retained as sensitivity",
+      "representation": "native 1024 point tokens; coords + 11 physical features; official Physics-Attention path",
+      "parameter_count": 716737,
+      "external_pretraining": false,
+      "evaluator_role": "native-1024 only; excluded from P23 full-field table",
+      "identity_evidence": "docs/v7_g2_p11_transolver_3seed_valid_only_aggregation.json"
+    },
+    "Therm_FM": {
+      "taxonomy": "COMPLETE_VALID_ONLY_3_SEEDS_PRETRAINED_TRANSFER",
+      "seeds": [0, 1, 2],
+      "upstream_repo": "haiyangxin/Therm-FM",
+      "upstream_commit_sha": "1c338d0fbe0dca25311eb896a9ea136a4f3d3cb1",
+      "repo_commit_sha": "5aad5be9381c19d30ab7a5f71e2b7a9397e5513f",
+      "runner_sha256": "5865163434f9058ac3acf262b2709e6116c3f7c960b0dbf760970205ff4114ef",
+      "adapter_sha256": "b0f1333e58098f47a15f4ec093a6c167620c21c4a2c943e92641e5929d4c2a53",
+      "dataset_split_sha256": "87aaa84af4b203d0a8ba93ed33b3757d46adc3143dad970371daa0f893ea491f",
+      "normalization_sha256": "76acbd1a09771f63de5f9ff400127d5d11871e7b702cfa12d70570b037644eec",
+      "poseidon_revision": "93adcbf10f75b45ac3bca3939cc3d3f239e1e663",
+      "checkpoint_sha256_by_seed": {
+        "0": "f3d8fb189c4662ecd2f10f8637e2ee34a2d5ec8423d44df5ace302ea2f56cd2b",
+        "1": "6e9cc8fe96ad1633c14766416f5caa060514cf4944edb7cfea235f0d23b65cc7",
+        "2": "ba81fed391e100510aa35111feb2433411110251a806d355b32dfa0e8d10170e"
+      },
+      "checkpoint_role": "minimum valid normalized loss; physical metrics are evaluated at that checkpoint",
+      "selection_policy": "upstream normalized-loss selection; P23 display name is metrics_at_loss_selected_checkpoint, not independently optimized physical metrics",
+      "representation": "dense native 65x65x57; 741 case-definition channels; output 57 temperature channels; 240825 physical nodes",
+      "parameter_count": 21435546,
+      "external_pretraining": true,
+      "pretraining": "Poseidon-T external PDE pretraining; not same-budget scratch training",
+      "evaluator_role": "P23 full-field transfer comparison candidate",
+      "identity_evidence": "docs/v7_g2_p22_thermfm_formal_aggregation.json"
+    },
+    "HCP": {
+      "taxonomy": "REFERENCE_ONLY_OFFICIAL_ACCURACY_ASSETS_BLOCKED",
+      "evaluator_role": "excluded from P23",
+      "identity_evidence": "docs/v7_g2_p22_hcp_provenance_audit.json"
+    }
+  },
+  "common_evaluation_scope": {
+    "models": ["Heat3D_V6", "Therm_FM"],
+    "domain": "P1i valid_iid 128 cases, 65x65x57=240825 nodes",
+    "truth_units": "deltaT_K",
+    "hotspot_definition": "top 1 percent nodes by T_true within each valid sample, frozen before model-error aggregation",
+    "protocol": "configs/heat3d_v7/g2_p23_common_fullfield_protocol.json",
+    "protocol_sha256": "6218d04782648b844adc2e7106d1f38dcca8b6ab26c39f157b62545d9b288f99",
+    "status": "BLOCKED_UNTIL_V6_SEED1_SEED2_PER_SAMPLE_PREDICTIONS_AND_INCIDENT_AMENDMENT"
+  },
+  "governance": {
+    "test_iid_new_access_in_p23": "accidental mixed-role CSV read; no values used",
+    "test_iid_incident": "see docs/v7_g2_p23_test_access_incident.json; an old mixed-role CSV was accidentally read, no values were used",
+    "sealed_access": false,
+    "deepoheat_official100_access": false,
+    "readiness": "P23_NEEDS_AMENDMENT"
+  }
+}

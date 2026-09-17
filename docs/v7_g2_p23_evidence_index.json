@@ -1,0 +1,50 @@
+{
+  "schema_version": "heat3d_v7_g2_p23_evidence_index_v1",
+  "status": "PARTIAL_VALID_ONLY_EVIDENCE_P23_NEEDS_AMENDMENT",
+  "protocol_artifacts": {
+    "identity_manifest": "docs/v7_g2_p23_model_identity_manifest.json",
+    "common_fullfield_protocol": "configs/heat3d_v7/g2_p23_common_fullfield_protocol.json",
+    "table_A": "docs/v7_g2_p23_table_a_native_sparse.json",
+    "table_B": "docs/v7_g2_p23_table_b_fullfield_transfer.json",
+    "p24_requirements": "docs/v7_g2_p23_p24_sealed_preregistration_requirements.md"
+  },
+  "executable_artifacts": {
+    "common_fullfield_evaluator": {
+      "path": "scripts/evaluate_v7_g2_p23_common_fullfield.py",
+      "sha256": "5ccbbe9bcbba5f1e15e3dbd72fb9acbb20f936e3d799545ac6b9747fc4ff44f"
+    },
+    "paired_bootstrap": {
+      "path": "scripts/analyze_v7_g2_p23_paired_bootstrap.py",
+      "sha256": "fbe152c3b55c6100f8e6ee55fe3dd13fa033720371c355b7a60b42106a7332ca"
+    },
+    "synthetic_metric_check": "PASS; no P1i/test data used"
+  },
+  "result_artifacts": {
+    "per_sample_metrics": {
+      "path": "docs/v7_g2_p23_per_sample_metrics.json",
+      "status": "NOT_GENERATED"
+    },
+    "paired_bootstrap": {
+      "path": "docs/v7_g2_p23_paired_bootstrap_result.json",
+      "status": "NOT_EXECUTED_FAIL_CLOSED"
+    },
+    "condition_analysis": {
+      "path": "docs/v7_g2_p23_condition_analysis.json",
+      "status": "PREREGISTERED_NOT_EXECUTED_FAIL_CLOSED"
+    }
+  },
+  "governance": {
+    "incident_receipt": "docs/v7_g2_p23_test_access_incident.json",
+    "p1i_test_iid_read": "accidental read from mixed legacy CSV; no values used",
+    "sealed_read": false,
+    "deepoheat_official100_read": false,
+    "evaluation_unlock": false,
+    "g1_modified": false
+  },
+  "blocker_summary": [
+    "P23 hard-boundary incident requires reviewer-approved remediation.",
+    "V6 seed1/seed2 per-sample prediction archives are unavailable in this worktree.",
+    "Therm-FM per-sample valid-only predictions are not materialized.",
+    "No independently staged valid-only case manifest with truth-row indices is available."
+  ]
+}

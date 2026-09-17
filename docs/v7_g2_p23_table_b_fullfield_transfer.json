@@ -1,0 +1,26 @@
+{
+  "schema_version": "heat3d_v7_g2_p23_table_b_fullfield_transfer_v1",
+  "status": "BLOCKED_COMMON_EVALUATOR_NOT_EXECUTED",
+  "title": "P1i full-field transfer comparison (valid_iid only)",
+  "domain": "65x65x57=240825 physical nodes; same valid_iid128 cases",
+  "models": ["Heat3D V6", "Therm-FM/Poseidon-T"],
+  "hotspot_definition": "top 1 percent nodes by T_true within each sample",
+  "required_metrics": [
+    "point_global_relative_rmse_pct",
+    "sample_first_relative_rmse_pct",
+    "rmse_K",
+    "mae_K",
+    "peak_temperature_absolute_error_K",
+    "peak_temperature_rmse_K",
+    "true_hotspot_region_rmse_K"
+  ],
+  "rows": [],
+  "blockers": [
+    "V6 seed1 and seed2 per-sample prediction archives are not available in the current worktree; historical aggregate values cannot substitute for paired rows.",
+    "Therm-FM P22 checkpoints exist only as remote large artifacts and no per-sample valid-only prediction archive is materialized.",
+    "A prior accidental read of a mixed-role legacy CSV is recorded in docs/v7_g2_p23_test_access_incident.json; reviewer-approved remediation is required before calling this table closed."
+  ],
+  "same_information_budget": false,
+  "pretraining_note": "Therm-FM uses Poseidon-T external PDE pretraining; it is a pretrained transfer baseline, not a scratch-trained same-budget model.",
+  "safe_status": "Do not populate or rank this table until a separately hashed valid-only case/prediction route is approved."
+}

@@ -1,0 +1,62 @@
+{
+  "schema_version": "heat3d_v7_g2_p23_status_v1",
+  "status": "P23_NEEDS_AMENDMENT",
+  "observed_at": "2026-09-17T14:37:32+08:00",
+  "branch": "codex/v7-g2-baselines-finalize",
+  "target_remote_branch": "research/v7-g2-baselines",
+  "scope": "P1i valid-only identity freeze and publication comparison preparation",
+  "identity_freeze": {
+    "status": "PASS_IDENTITY_MANIFEST_FROZEN",
+    "artifact": "docs/v7_g2_p23_model_identity_manifest.json",
+    "heat3d": ["V6_06", "V6_07", "V6_08"],
+    "gino": [0, 1, 2],
+    "transolver": [0, 1, 2],
+    "thermfm": [0, 1, 2]
+  },
+  "table_A": {
+    "status": "FROZEN_VALID_ONLY_REFERENCE_TABLE",
+    "artifact": "docs/v7_g2_p23_table_a_native_sparse.json",
+    "models": ["Heat3D V6", "GINO", "Transolver"]
+  },
+  "table_B": {
+    "status": "BLOCKED_COMMON_EVALUATOR_NOT_EXECUTED",
+    "artifact": "docs/v7_g2_p23_table_b_fullfield_transfer.json",
+    "models": ["Heat3D V6", "Therm-FM"]
+  },
+  "common_evaluator": {
+    "script": "scripts/evaluate_v7_g2_p23_common_fullfield.py",
+    "status": "IMPLEMENTED_NOT_RUN_ON_P1I",
+    "script_sha256": "5ccbbe9bcbba5f1e15e3dbd72fb9acbb20f936e3d799545ac6b9747fc4ff44f",
+    "protocol": "configs/heat3d_v7/g2_p23_common_fullfield_protocol.json",
+    "protocol_sha256": "6218d04782648b844adc2e7106d1f38dcca8b6ab26c39f157b62545d9b288f99",
+    "hotspot": "top 1 percent nodes by T_true per sample"
+  },
+  "paired_bootstrap": {
+    "status": "NOT_EXECUTED_FAIL_CLOSED",
+    "artifact": "docs/v7_g2_p23_paired_bootstrap_result.json",
+    "reason": "missing V6 seed1/seed2 and Therm-FM per-sample prediction archives"
+  },
+  "condition_analysis": {
+    "status": "PREREGISTERED_NOT_EXECUTED_FAIL_CLOSED",
+    "artifact": "docs/v7_g2_p23_condition_analysis.json"
+  },
+  "governance": {
+    "incident": "docs/v7_g2_p23_test_access_incident.json",
+    "p1i_test_iid_new_read": "accidental mixed-role CSV read; no values used",
+    "test_iid_new_access_in_p23": true,
+    "sealed_access": false,
+    "deepoheat_official100_access": false,
+    "test_evaluation_or_unlock": false,
+    "g1_modified": false,
+    "training_started": false,
+    "checkpoint_modified": false
+  },
+  "blockers": [
+    "A mixed-role historical CSV was accidentally read, so P23 cannot claim test_iid untouched and requires reviewer remediation.",
+    "V6 seed1/seed2 per-sample predictions are unavailable in the current worktree.",
+    "Therm-FM per-sample valid-only predictions are not materialized.",
+    "An independently hashed valid-only case manifest is required before running the evaluator and condition bins."
+  ],
+  "readiness": "P23_NEEDS_AMENDMENT",
+  "next_safe_step": "Obtain reviewer-approved valid-only manifests/predictions and rerun the frozen evaluator without touching any forbidden role."
+}

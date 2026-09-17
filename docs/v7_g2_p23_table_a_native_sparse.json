@@ -1,0 +1,53 @@
+{
+  "schema_version": "heat3d_v7_g2_p23_table_a_native_sparse_v1",
+  "status": "FROZEN_VALID_ONLY_REFERENCE_TABLE",
+  "title": "P1i native sparse/common-task (valid_iid only)",
+  "domain": "1024 query points; train768 / valid_iid128 contract",
+  "primary_metric": "sample_first_relative_rmse_pct",
+  "dispersion": "SD across training seeds",
+  "evaluator_contract": "configs/heat3d_v7/v7_metric_contract.json",
+  "evaluator_contract_sha256": "294761936a96b4b7cc1b50e48ab94306981f261ad2cf79149f38c3420c50fef5",
+  "rows": [
+    {
+      "model": "Heat3D V6",
+      "role": "canonical V6_06/V6_07/V6_08",
+      "sample_first_relative_rmse_pct_mean": 1.6294017339551512,
+      "sample_first_relative_rmse_pct_sd_across_training_seeds": 0.013132262946893854,
+      "point_global_relative_rmse_pct_mean": 2.027348369966488,
+      "point_global_relative_rmse_pct_sd_across_training_seeds": 0.09473836759761606,
+      "parameter_count": 892776,
+      "representation": "1024 source-aware physical points",
+      "checkpoint_selection": "frozen V6 point_global-best identity",
+      "source": "docs/v7_g2_p20_p1i_heat3d_v6_canonical_audit.json"
+    },
+    {
+      "model": "GINO",
+      "role": "native-1024 common-task",
+      "sample_first_relative_rmse_pct_mean": 15.013874063483147,
+      "sample_first_relative_rmse_pct_sd_across_training_seeds": 0.9130147279423757,
+      "point_global_relative_rmse_pct_mean": 17.731491553570415,
+      "point_global_relative_rmse_pct_sd_across_training_seeds": 1.65514663423997,
+      "parameter_count": 13673988,
+      "representation": "Open3D radius graph, 32^3 latent grid, 11 physical features",
+      "checkpoint_selection": "minimum valid_iid sample-first; earliest tie",
+      "source": "docs/v7_g2_p13_gino_3seed_valid_only_aggregation.json"
+    },
+    {
+      "model": "Transolver",
+      "role": "native-1024 common-task",
+      "sample_first_relative_rmse_pct_mean": 16.00282153065008,
+      "sample_first_relative_rmse_pct_sd_across_training_seeds": 1.0310203737418193,
+      "point_global_relative_rmse_pct_mean": 18.556495541017526,
+      "point_global_relative_rmse_pct_sd_across_training_seeds": 0.9265542554331201,
+      "parameter_count": 716737,
+      "representation": "Physics-Attention point tokens, 11 physical features",
+      "checkpoint_selection": "minimum valid_iid sample-first; earliest tie",
+      "source": "docs/v7_g2_p11_transolver_3seed_valid_only_aggregation.json"
+    }
+  ],
+  "limitations": [
+    "These are valid-only reference aggregates; they are not sealed/test evidence.",
+    "GINO and Transolver remain native-1024 and are not extended to the P23 240825-node full-field table.",
+    "No claim of same-information-budget is made."
+  ]
+}
