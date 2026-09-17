@@ -1,0 +1,114 @@
+{
+  "schema_version": "heat3d_v7_g2_p23_v7_e200_identity_audit_v1",
+  "status": "V7_E200_REPLAYABLE_THREE_SEED_REFERENCE_COHORT",
+  "role": "independent dynamic-LR 200-epoch Heat3D performance reference; not V6 canonical replacement",
+  "protocol_identity": {
+    "launch_manifest": "configs/heat3d_v7/g2_p12_heat3d_v1_formal_launch_manifest.json",
+    "launch_manifest_sha256": "cec7df520a85ad739ad1adb80421597bfa61d25ce3230d168172eda76dce9c83",
+    "execution_path": "legacy",
+    "xla_gpu_deterministic_ops": false,
+    "epochs": 200,
+    "batch_size": 24,
+    "validation_batch_size": 32,
+    "selection_rule": "minimum valid native-1024 sample_first_relative_rmse_pct; earliest epoch tie",
+    "scheduler_identity": "independent 200-epoch dynamic-LR schedule; not the first 200 epochs of V7 e600",
+    "parameter_count": 892776,
+    "repo_commit_sha_recorded_by_training": "043b0ba54b80ff790632c80cda6c21de46bb5111",
+    "runner_sha256": "9f01a09979d216f6217f73f2fae47ee0f551de78bb082f4f1749a35ec704c4fb",
+    "subset_sha256": "e719665176a22213487ee92c1aac993dd01b02a51555c7cd68bf81a13b861558",
+    "label_receipt_sha256": "a4bb99638a977b2004a93a88b469166ff7da697e89181e64e04152c7f96fe4fd",
+    "normalization_payload_sha256": "3a0273bb92b8c060df8a214b1e0e7dd0e4b5df6bece86b7dea15197ca56ed0db",
+    "train_count": 768,
+    "valid_count": 128,
+    "test_count_used": 0
+  },
+  "checkpoints": [
+    {
+      "logical_seed": 0,
+      "output_dir": "/home/xyh/myCodeGitOnly/heat3d-ic-g2/output/heat3d_v7_g2/heat3d_on_deepoheat_v1_formal_e3_20260915/seed_0",
+      "best_file": "params_best_sample_first.pkl",
+      "best_checkpoint_sha256": "6a24871fb58e50735892a0159fd5d5bface9466de8f8445d5ebe8437e32fa071",
+      "final_checkpoint_sha256": "59f6e62dec8a53a2bcf10843e1cd8bf19d7f95c393aefada2478b2add7bee17f",
+      "latest_checkpoint_sha256": "c51997378dfe1b7ae46bf4dd129b822588e8c00d999ce5fe727c988505f13b22",
+      "best_epoch": 200,
+      "selection_metric": 0.774624157732962,
+      "reload": "PASS_EXACT"
+    },
+    {
+      "logical_seed": 1,
+      "output_dir": "/home/xyh/myCodeGitOnly/heat3d-ic-g2/output/heat3d_v7_g2/heat3d_on_deepoheat_v1_formal_e3_20260915/seed_1_retry1",
+      "best_file": "params_best_sample_first.pkl",
+      "best_checkpoint_sha256": "11219c17e3a5920cbe1b466d80ef692244acd3b622b4ad79091b97386536c2fe",
+      "final_checkpoint_sha256": "61c4cc68e6a45f18ea72358efe60e81b031d22fd99acad57c0fa581283509236",
+      "latest_checkpoint_sha256": "08d90c3f1cbb54558c3961ca5dac2aeeaf634c04b644ab1e229b9bf245cdae96",
+      "best_epoch": 200,
+      "selection_metric": 0.7957860200447484,
+      "reload": "PASS_EXACT",
+      "retry_directory_note": "seed_1_retry1 is the completed logical seed1 run; no result mixing occurred"
+    },
+    {
+      "logical_seed": 2,
+      "output_dir": "/home/xyh/myCodeGitOnly/heat3d-ic-g2/output/heat3d_v7_g2/heat3d_on_deepoheat_v1_formal_e3_20260915/seed_2",
+      "best_file": "params_best_sample_first.pkl",
+      "best_checkpoint_sha256": "780cc15cef16ed66bedd0d49e2646e3259d0f6bf21cb6fe3cbc9b8610643cc9f",
+      "final_checkpoint_sha256": "16e27ba0632df6e6c4346b956aa744dd35c24ede35dd4dbf51ba544150f9168a",
+      "latest_checkpoint_sha256": "49b3002b0aab5cf95074d12f9f0d9a5e9d3686267ddfa56453bdc6bf0c3e5c44",
+      "best_epoch": 200,
+      "selection_metric": 0.7694945515952675,
+      "reload": "PASS_EXACT"
+    }
+  ],
+  "native_valid_selection_summary": {
+    "metric": "valid_sample_first_relative_rmse_pct",
+    "values": [0.774624157732962, 0.7957860200447484, 0.7694945515952675],
+    "mean": 0.7799682431243259,
+    "sd_across_training_seeds": 0.013936633912468072
+  },
+  "domain_and_replay_audit": {
+    "e200_valid_manifest": "configs/heat3d_v7/g2_deepoheat_v1_volumetric_subset_manifest.json",
+    "e200_valid_domain": "DeepOHeat-v1 volumetric 101x101x56 = 571256 nodes",
+    "e200_valid_role": "valid",
+    "p23_manifest": "configs/heat3d_v7/g2_p23_valid_only_case_manifest.json",
+    "p23_domain": "V6 P1i 65x65x57 = 240825 nodes",
+    "p23_sample_id_family": "v6p1if1_*",
+    "e200_sample_id_family": "dhv1_volume_valid_*",
+    "p23_common_evaluator_applicability": "BLOCKED_DOMAIN_MISMATCH",
+    "reason": "The e200 cohort and Therm-FM P1i cohort are not the same valid physical cases or output grid; applying the 240825-node P23 evaluator to the 571256-node e200 cohort would violate the evaluator contract.",
+    "checkpoint_reselection": false,
+    "test_iid_read": false,
+    "sealed_read": false
+  },
+  "descriptive_endpoint_comparison": {
+    "e200_u_v2_571256": {
+      "sample_first_relative_rmse_pct_mean": 0.814137166525291,
+      "sd_across_training_seeds": 0.006053537178662305,
+      "point_global_relative_rmse_pct_mean": 0.8481827811643302,
+      "point_global_relative_rmse_pct_sd": 0.009130742078981761,
+      "peak_temperature_rmse_K_mean": 0.3878653347850452,
+      "peak_temperature_rmse_K_sd": 0.03065842182642841
+    },
+    "v7_e600_u_v2_571256": {
+      "sample_first_relative_rmse_pct_mean": 0.7098883030963314,
+      "sd_across_training_seeds": 0.007765142811416873,
+      "point_global_relative_rmse_pct_mean": 0.7476361906643866,
+      "point_global_relative_rmse_pct_sd": 0.008208292222630217,
+      "peak_temperature_rmse_K_mean": 0.37380102945995736,
+      "peak_temperature_rmse_K_sd": 0.013079583055740012
+    },
+    "v6_canonical_240825": {
+      "sample_first_relative_rmse_pct_mean": 3.958292653590315,
+      "sd_across_training_seeds": 0.009731300506066283,
+      "point_global_relative_rmse_pct_mean": 3.442625525047171,
+      "point_global_relative_rmse_pct_sd": 0.05843506828224949,
+      "domain_note": "descriptive only; different dataset/output domain, not a numeric ranking against e200/e600"
+    }
+  },
+  "source_artifacts": {
+    "e200_fullfield_aggregation": "docs/v7_g2_p14_heat3d_v1_fullfield_valid_aggregation.json",
+    "e200_fullfield_aggregation_sha256": "8fcdc96ecc064dec0cc965c326a2b121014b09214bcf0e73251953c88d6e2d5f",
+    "e200_u_v2_aggregation": "docs/v7_g2_p14_1_u_v2_aggregate.json",
+    "e200_u_v2_aggregation_sha256": "49ee09d1b52ac30dc6634a5a546c50b81c3afdd01dce1549acb63cb2dfa08095",
+    "e600_aggregation": "docs/v7_g2_p15_heat3d_e600_aggregation.json",
+    "e600_aggregation_sha256": "457fa709113a9dbe3466d0e745f68265a3ccef93e8d81106bddbb62e82f6c61f"
+  }
+}

@@ -1,0 +1,29 @@
+{
+  "schema_version": "heat3d_v7_g2_p23_evidence_salvage_closeout_v1",
+  "status": "P23_EVIDENCE_SALVAGE_CLOSED_WITH_E200_REFERENCE_DOMAIN_GUARD",
+  "branch": "codex/v7-g2-baselines-finalize",
+  "v6_artifact_loss": "PERMANENT_BINARY_ARTIFACT_LOSS_AFTER_ORIGINAL_WSL2_RETIREMENT",
+  "v6_metric_bridge": "SEMANTIC_EQUIVALENCE_PASS for point-global, sample-first and peak RMSE; raw_cv_weighted_rmse_K NOT_COMPARABLE",
+  "historical_table_b": "docs/v7_g2_p23_historical_table_b.json",
+  "v7_e200": "V7_E200_REPLAYABLE_THREE_SEED_REFERENCE_COHORT",
+  "e200_replay": "PASS_VALID_ONLY_DOMAIN_SPECIFIC_REPLAY",
+  "e200_p23_common_evaluator": "NOT_APPLICABLE_DOMAIN_MISMATCH",
+  "e200_paired_bootstrap": "NOT_RUN_DOMAIN_MISMATCH",
+  "e200_condition_analysis": "NOT_RUN_DOMAIN_MISMATCH",
+  "evidence_hierarchy": "docs/v7_g2_p23_evidence_hierarchy.md",
+  "p24_readiness": {
+    "option_a": "CANDIDATE_ONLY; fixed seed0 sealed confirmation",
+    "option_b": "CANDIDATE_ONLY; e200 three-seed sealed reference requires symmetric-domain amendment",
+    "selected": false,
+    "sealed_unlocked": false
+  },
+  "hard_boundaries": {
+    "training": false,
+    "retraining_v6_seed1_seed2": false,
+    "checkpoint_substitution": false,
+    "new_test_iid_numerical_evaluation": false,
+    "sealed_read": false,
+    "deepoheat_official100": false,
+    "g1_reopened": false
+  }
+}

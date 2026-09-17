@@ -1,0 +1,45 @@
+{
+  "schema_version": "heat3d_v7_g2_p23_v6_artifact_loss_closeout_v1",
+  "status": "PERMANENT_BINARY_ARTIFACT_LOSS_AFTER_ORIGINAL_WSL2_RETIREMENT",
+  "scope": "V6 seed1/seed2 forensic recovery closeout; no training and no new test/sealed evaluation",
+  "targets": {
+    "seed1_checkpoint_sha256": "7197157969278d99648ef9b40d74005d759f32e52e9282e72a5586003d1e71f7",
+    "seed2_checkpoint_sha256": "d67e0dac2e8ed8009ce7dcdf0b2de4543b10bc005c0bfaa51027ea721bb2ab49"
+  },
+  "forensic_search": {
+    "search_receipt": "docs/v7_g2_p23_r2_forensic_search_receipt.json",
+    "search_receipt_sha256": "64a5b73ae4caa0e5705d4ca4ef962a73c6788ccc8dbb0629c95c91c93d6fdf1",
+    "provenance_receipt": "docs/v7_g2_p23_r2_checkpoint_provenance.json",
+    "provenance_receipt_sha256": "1faa9fd423eb408acb2343cc0b2302070d04792323b0c7f827d742909adca349",
+    "search_scope": [
+      "devbox heat3d-ic repositories, worktrees, output, checkpoints, artifact/cache/archive paths",
+      "V6 cross-resolution, Anchor-derived and U-v2 paths",
+      "receipts, commands, stdout/stderr and tmux/shell logs",
+      "target SHA, V6_07/V6_08, seed1/seed2 and point-global checkpoint names"
+    ],
+    "target_sha_matches": {"seed1": false, "seed2": false},
+    "historical_prediction_substitution": false
+  },
+  "historical_evidence": {
+    "status": "REMAINS_VALID_HISTORICAL_EVIDENCE",
+    "source_audit": "docs/v7_g2_p20_p1i_heat3d_v6_canonical_audit.json",
+    "source_audit_sha256": "2d53dea4742028431b5406d7603179a14a9339ab8fec410b8040321ad3c0a576",
+    "checkpoint_reload_evidence": "PASS for all three historical V6 checkpoints at original closeout",
+    "historical_three_seed_metrics": "retained without recomputation or substitution",
+    "loss_scope": "future binary replay capability for seed1/seed2 only; not validity of the historical result"
+  },
+  "future_replay": {
+    "seed1": "PERMANENTLY_UNAVAILABLE",
+    "seed2": "PERMANENTLY_UNAVAILABLE",
+    "retraining": false,
+    "checkpoint_substitution": false,
+    "continued_search": false
+  },
+  "hard_boundaries": {
+    "new_test_iid_read": false,
+    "sealed_read": false,
+    "deepoheat_official100_read": false,
+    "g1_modified": false,
+    "training_started": false
+  }
+}

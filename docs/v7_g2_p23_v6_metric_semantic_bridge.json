@@ -1,0 +1,72 @@
+{
+  "schema_version": "heat3d_v7_g2_p23_v6_metric_semantic_bridge_v1",
+  "status": "BRIDGE_CLOSED_FOR_THREE_METRICS",
+  "old_evaluator": {
+    "script": "scripts/evaluate_heat3d_v6_p1i_valid_full_field.py",
+    "script_sha256": "ce1ba878a0d9fa7b07bf1d67b5e00c686deadc7369d972b78ca02a6f1a4d44c6",
+    "historical_source": "docs/v7_g2_p20_p1i_heat3d_v6_canonical_audit.json"
+  },
+  "new_evaluator": {
+    "script": "scripts/evaluate_v7_g2_p23_common_fullfield.py",
+    "script_sha256": "368430c0c6758dfd2dfd4f66cf1a57822c00183878ccfb88c2021c37446501a1",
+    "seed0_source": "docs/v7_g2_p23_r_table_b_fullfield_transfer.json",
+    "valid_role": "valid_iid",
+    "truth_domain": "V6 P1i 65x65x57 = 240825 nodes"
+  },
+  "seed0_bridge": {
+    "checkpoint_sha256": "51567afe17e38cb6ed8c95c4dd39598e647c1699de9351358e7729fecc20b90e",
+    "point_global_relative_rmse_pct": {
+      "formula_old": "100*sqrt(sum_s,i((pred-truth)^2)/sum_s,i(truth^2)); unit node weighting",
+      "formula_new": "100*sqrt(sum_s SSE_s/sum_s truth_SSE_s); each SSE is unweighted node SSE",
+      "weighting": "unweighted nodes; raw SSE and raw truth energy",
+      "aggregation_order": "sum sufficient statistics across cases before square root",
+      "old_value": 3.4598839257728553,
+      "new_value": 3.4598839259190743,
+      "absolute_difference": 1.4621902229107974e-10,
+      "verdict": "SEMANTIC_EQUIVALENCE_PASS"
+    },
+    "sample_first_relative_rmse_pct": {
+      "formula_old": "mean_s(100*sqrt(sum_i(cv_i*error_i^2)/sum_i(cv_i*truth_i^2)))",
+      "formula_new": "mean_s(100*sqrt(cv_sse_s/cv_truth_energy_s))",
+      "weighting": "control-volume weights per case",
+      "aggregation_order": "case ratio first, then arithmetic mean over cases",
+      "old_value": 3.9642902273173015,
+      "new_value": 3.9642902278923375,
+      "absolute_difference": 5.750360294219939e-10,
+      "verdict": "SEMANTIC_EQUIVALENCE_PASS"
+    },
+    "peak_temperature_rmse_K": {
+      "formula_old": "sqrt(mean_s((max(pred_s)-max(truth_s))^2))",
+      "formula_new": "sqrt(mean_s(peak_temperature_absolute_error_s^2)), peak error uses abs(max(pred)-max(truth))",
+      "weighting": "one case per seed/case",
+      "aggregation_order": "per-case peak absolute error, then RMSE over cases",
+      "old_value": 4.150015006650825,
+      "new_value": 4.150015006650825,
+      "absolute_difference": 0.0,
+      "verdict": "SEMANTIC_EQUIVALENCE_PASS"
+    }
+  },
+  "non_equivalent_metric": {
+    "metric": "raw_cv_weighted_rmse_K",
+    "old_formula": "sqrt(sum(cv*error^2)/sum(cv_measure))",
+    "new_candidate": "rmse_K = sqrt(sum(error^2)/node_count)",
+    "verdict": "NOT_COMPARABLE",
+    "reason": "historical metric is control-volume weighted while current rmse_K is unweighted"
+  },
+  "table_b_eligibility": {
+    "allowed_metrics": [
+      "point_global_relative_rmse_pct",
+      "sample_first_relative_rmse_pct",
+      "peak_temperature_rmse_K"
+    ],
+    "paired_bootstrap_on_v6_aggregate": false,
+    "hotspot_mae_primary_comparison": false
+  },
+  "hard_boundaries": {
+    "new_test_iid_read": false,
+    "sealed_read": false,
+    "deepoheat_official100_read": false,
+    "training": false,
+    "checkpoint_reselection": false
+  }
+}

@@ -1,0 +1,58 @@
+{
+  "schema_version": "heat3d_v7_g2_p23_v7_e200_replay_receipt_v1",
+  "status": "PASS_VALID_ONLY_DOMAIN_SPECIFIC_REPLAY; P23_COMMON_COMPARISON_NOT_APPLICABLE",
+  "scope": "V7 e200 checkpoint replay without training or checkpoint reselection",
+  "support_replay": {
+    "authorized_role": "e200 DeepOHeat-v1 valid",
+    "count": 128,
+    "support_nodes": 1024,
+    "seed0": {
+      "checkpoint_sha256": "6a24871fb58e50735892a0159fd5d5bface9466de8f8445d5ebe8437e32fa071",
+      "archive_path": "/home/xyh/myCodeGitOnly/heat3d-ic-g2/output/g2_p23_e200_replay/e200_seed0_support.npz",
+      "archive_sha256": "04e0f5fb38e6b1adc237fc820c57d8a2bfca9274ebfb04f785b2c898886385fd"
+    },
+    "seed1": {
+      "checkpoint_sha256": "11219c17e3a5920cbe1b466d80ef692244acd3b622b4ad79091b97386536c2fe",
+      "archive_path": "/home/xyh/myCodeGitOnly/heat3d-ic-g2/output/g2_p23_e200_replay/e200_seed1_support.npz",
+      "archive_sha256": "446ca554718e9f951edd52245d26145e5bca3d777315d4efc029ded9a1dba5d7"
+    },
+    "seed2": {
+      "checkpoint_sha256": "780cc15cef16ed66bedd0d49e2646e3259d0f6bf21cb6fe3cbc9b8610643cc9f",
+      "archive_path": "/home/xyh/myCodeGitOnly/heat3d-ic-g2/output/g2_p23_e200_replay/e200_seed2_support.npz",
+      "archive_sha256": "587d56431b7e327ccb4b1a849b77389f55e08d645ab483ce40d1a03337b4ddb2"
+    }
+  },
+  "full_field_reference": {
+    "status": "REUSED_FROZEN_VALID_ONLY_P14_EVALUATION_RECEIPTS",
+    "evaluator": "scripts/evaluate_v7_g2_p14_heat3d_v1_fullfield.py",
+    "evaluator_repo_commit_sha": "59f6a351d0fd702e8c821a559dd4c1f2e29fbd66",
+    "domain": "101x101x56 = 571256 points",
+    "aggregation": "docs/v7_g2_p14_heat3d_v1_fullfield_valid_aggregation.json",
+    "aggregation_sha256": "8fcdc96ecc064dec0cc965c326a2b121014b09214bcf0e73251953c88d6e2d5f",
+    "status": "PASS_VALID_ONLY_THREE_SEEDS",
+    "metrics": {
+      "sample_first_relative_rmse_pct_mean": 1.4314736613061305,
+      "sample_first_relative_rmse_pct_sd": 0.016559705669969928,
+      "point_global_relative_rmse_pct_mean": 1.4386125207029536,
+      "point_global_relative_rmse_pct_sd": 0.015456242232847568,
+      "peak_rmse_K_mean": 0.4168712875505559,
+      "peak_rmse_K_sd": 0.035389749224494525
+    }
+  },
+  "p23_replay_decision": {
+    "current_p23_evaluator": "scripts/evaluate_v7_g2_p23_common_fullfield.py",
+    "current_p23_evaluator_sha256": "368430c0c6758dfd2dfd4f66cf1a57822c00183878ccfb88c2021c37446501a1",
+    "decision": "NOT_RUN_FAIL_CLOSED_DOMAIN_MISMATCH",
+    "reason": "P23 requires 240825-node V6 P1i valid_iid cases; e200 has a distinct DeepOHeat-v1 571256-node valid cohort.",
+    "thermfm_paired_bootstrap": "NOT_RUN_DOMAIN_MISMATCH",
+    "condition_analysis": "NOT_RUN_DOMAIN_MISMATCH",
+    "winner_claim": false
+  },
+  "hard_boundaries": {
+    "training": false,
+    "checkpoint_reselection": false,
+    "new_test_iid_read": false,
+    "sealed_read": false,
+    "deepoheat_official100_read": false
+  }
+}

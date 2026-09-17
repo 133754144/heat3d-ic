@@ -1,0 +1,55 @@
+{
+  "schema_version": "heat3d_v7_g2_p23_historical_table_b_v1",
+  "status": "FROZEN_HISTORICAL_AGGREGATE_COMPARISON",
+  "title": "P1i full-field historical aggregate comparison (metric bridge only)",
+  "domain": "V6 P1i valid_iid=128, 65x65x57=240825 nodes, deltaT_K",
+  "dispersion_label": "mean +/- SD across training seeds",
+  "metric_bridge": "docs/v7_g2_p23_v6_metric_semantic_bridge.json",
+  "rows": [
+    {
+      "model": "Heat3D V6",
+      "role": "historically frozen three-seed canonical results; seed1/seed2 binary checkpoints no longer available",
+      "representation": "1024 source-aware irregular support points plus deterministic V6 full-field mapping",
+      "external_pretraining": false,
+      "training_cases": 768,
+      "checkpoint_selection": "historical frozen point-global-best V6 family; no P23 reselection",
+      "metrics": {
+        "point_global_relative_rmse_pct_mean": 3.442625525047171,
+        "point_global_relative_rmse_pct_sd": 0.05843506828224949,
+        "sample_first_relative_rmse_pct_mean": 3.958292653590315,
+        "sample_first_relative_rmse_pct_sd": 0.009731300506066283,
+        "peak_temperature_rmse_K_mean": 3.774552005415641,
+        "peak_temperature_rmse_K_sd": 0.3785072688630482
+      },
+      "parameter_count": 892776,
+      "source": "docs/v7_g2_p20_p1i_heat3d_v6_canonical_audit.json"
+    },
+    {
+      "model": "Therm-FM",
+      "role": "currently replayable three-seed pretrained-transfer cohort",
+      "representation": "dense 741-channel native 65x65 adapter",
+      "external_pretraining": "Poseidon-T; not same-information-budget",
+      "training_cases": 768,
+      "checkpoint_selection": "minimum valid normalized loss; physical metrics reported at that checkpoint",
+      "metrics_at_loss_selected_checkpoint": {
+        "point_global_relative_rmse_pct_mean": 3.1489568402271666,
+        "point_global_relative_rmse_pct_sd": 0.46034342859491767,
+        "sample_first_relative_rmse_pct_mean": 2.5972060345376353,
+        "sample_first_relative_rmse_pct_sd": 0.2399296342144874,
+        "peak_temperature_rmse_K_mean": 5.5718272900998045,
+        "peak_temperature_rmse_K_sd": 0.17995065465750198
+      },
+      "parameter_count": 21435546,
+      "source": "docs/v7_g2_p23_r_table_b_fullfield_transfer.json"
+    }
+  ],
+  "interpretation_limits": [
+    "This is a historical aggregate table, not a paired case-level inference result.",
+    "The models do not share the same information budget or supervision modality.",
+    "No superiority claim is made from this table alone.",
+    "Metrics without a demonstrated old/new semantic bridge are excluded."
+  ],
+  "test_iid_read": false,
+  "sealed_read": false,
+  "deepoheat_official100_read": false
+}
