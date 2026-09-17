@@ -296,6 +296,7 @@ def main() -> int:
         converter=converter,
     )
     p1i_context_helper = load_script("run_v7_g2_p5_heat3d_v1_dual_output_smoke.py")
+    runtime_helper = load_script("evaluate_v7_g2_p14_1_heat3d_u_v2.py")
     # attach_input_contexts only needs examples to fit/encode the context; an
     # empty batch list avoids building a second native graph solely for context.
     from rigno.heat3d_training.p1i import attach_input_contexts  # noqa: E402
@@ -314,7 +315,7 @@ def main() -> int:
 
     model = RIGNO(**model_config)
     params, checkpoint_meta = checkpoint_params(args.checkpoint, CHECKPOINT_SHA[args.seed])
-    session = p1i_context_helper.build_session(
+    session = runtime_helper.build_session(
         model=model,
         params=params,
         stats=stats,
