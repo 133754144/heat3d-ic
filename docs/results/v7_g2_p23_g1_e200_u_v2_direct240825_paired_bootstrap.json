@@ -1,0 +1,50 @@
+{
+  "schema_version": "heat3d_v7_g2_p23_paired_bootstrap_v1",
+  "status": "COMPLETE_VALID_ONLY",
+  "comparison": "Heat3D - Therm-FM",
+  "unit": "physical case",
+  "n_cases": 128,
+  "n_training_seeds_per_model": 3,
+  "resamples": 10000,
+  "bootstrap_seed": 230023,
+  "interval": "percentile 95 percent CI",
+  "conditional_on": "frozen three-seed cohort",
+  "per_metric": {
+    "sample_first_relative_rmse_pct": {
+      "observed_mean_difference": 0.5290279527892645,
+      "ci95": [
+        0.17511775328386725,
+        0.8827925090931721
+      ]
+    },
+    "rmse_K": {
+      "observed_mean_difference": 0.44618671551630823,
+      "ci95": [
+        0.09962762520528898,
+        0.763536527284687
+      ]
+    },
+    "mae_K": {
+      "observed_mean_difference": 0.4612697705873474,
+      "ci95": [
+        0.11336961483556444,
+        0.7809307084041426
+      ]
+    },
+    "peak_temperature_absolute_error_K": {
+      "observed_mean_difference": -0.14750014742215484,
+      "ci95": [
+        -0.9029575124382971,
+        0.5714301620920502
+      ]
+    },
+    "true_hotspot_region_rmse_K": {
+      "observed_mean_difference": 1.689961856721756,
+      "ci95": [
+        1.229331346544813,
+        2.1391442658212325
+      ]
+    }
+  },
+  "per_sample_artifact_sha256": "98829db6308c598ccdfe42d8d95f2bb15dbf14a30d45b316a70223efed13f140"
+}

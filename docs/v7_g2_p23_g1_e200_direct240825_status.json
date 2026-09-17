@@ -1,0 +1,85 @@
+{
+  "schema_version": "v7-g2-p23-g1-e200-direct240825-status-v1",
+  "status": "COMPLETE_VALID_ONLY_REPRODUCTION_PASS",
+  "scope": "V7 G1 Full e200 x3 Heat3D U-v2 direct240825 versus Therm-FM x3 on identical P1i valid_iid=128 full field",
+  "branch": "codex/v7-g2-baselines-finalize",
+  "repo_commit_sha_at_execution": "d9d961aa6970f60a45dea7995f1b82dab2e335d8",
+  "training_performed": false,
+  "checkpoint_reselection": false,
+  "new_test_iid_access": false,
+  "sealed_iid_access": false,
+  "deepoheat_official100_access": false,
+  "domain": {
+    "valid_case_count": 128,
+    "nodes_per_case": 240825,
+    "grid_shape": [65, 65, 57],
+    "valid_manifest_sha256": "f42cca611b6c70551b153f4f887b2d47724d9082846e4b381cab4ad9c652e57c",
+    "split_manifest_sha256": "87aaa84af4b203d0a8ba93ed33b3757d46adc3143dad970371daa0f893ea491f",
+    "truth_archive_sha256": "49023ac1205b8e7cf7c5bf782b89fcdb34997704b3f9aa2fb2d46cf1a59163cb",
+    "coordinate_hash": "c293ae6a382deda78346b09a23cad7b9ce4adc3677233225c22ca076c600daa4",
+    "control_volume_hash": "0bfe0b3ea5f4ce0c0b6e8b945121c58769d9a913b61ecc140bd262ed12a9d5da",
+    "layer_id_hash": "36743975fa62fe0c08fee76a8e73ce115c905e27e5c697b2705d4bee07d890b9",
+    "same_sample_ids": true,
+    "same_truth_archive": true,
+    "same_coordinate_order": true,
+    "same_node_count": true
+  },
+  "heat3d": {
+    "role": "V7_G1_FULL_E200_U_V2_DIRECT240825",
+    "selection_rule_preserved": true,
+    "prediction_recomputed": false,
+    "checkpoint_sha256": {
+      "seed0": "7ee050c946513004c3e33ce3b28c6fd246965ee4e95ff661eca3d888d5786517",
+      "seed1": "1821a8ea395e485e34e45ca4c08bf846e4217b4afb5fdd15b30d00a8d3a6f019",
+      "seed2": "2ed4c5d0a07fe696347877ac68ca50438be1fecadf83429b3090c83d529b151b"
+    },
+    "direct_prediction_sha256": {
+      "seed0": "a261c9342b45b91b337d7a9e302fcb1275e8f5eece35f2387eca3b0356eba801",
+      "seed1": "4167d3bbdf508294708e02aa43115660536f1ed91ebe6e8846b0eac363c33e5d",
+      "seed2": "0f67cb0393992a86cb5ac3fdbcc39311cf6df9598e1a173a1a9cc0aa05f66cea"
+    },
+    "archive_manifest_sha256": "8c6ea7dca9cefddd676c8ce5d1f30855547ed273f70466549bfd8ae88f3305c7",
+    "sidecar_provenance_note": "Direct240825 sidecar receipts and binaries were independently SHA-verified; the tracked G1 archive manifest did not enumerate the H2 sidecar. This is retained as a provenance caveat, not silently promoted to a manifest claim."
+  },
+  "therm_fm": {
+    "role": "P22_P23_LOSS_SELECTED_PRETRAINED_TRANSFER",
+    "checkpoint_sha256": {
+      "seed0": "f3d8fb189c4662ecd2f10f8637e2ee34a2d5ec8423d44df5ace302ea2f56cd2b",
+      "seed1": "6e9cc8fe96ad1633c14766416f5caa060514cf4944edb7cfea235f0d23b65cc7",
+      "seed2": "ba81fed391e100510aa35111feb2433411110251a806d355b32dfa0e8d10170e"
+    },
+    "prediction_sha256": {
+      "seed0": "fa9d007fbaa76140f3de372ddf7d0fd14a7f5c7c5f5fcb219ec8a2504a882035",
+      "seed1": "0ec05daf6e4985afb29bb8b204ec51c331bd60af18ee7312590c83a2f9558517",
+      "seed2": "e4f7e4d5c66cf8d9423a3868e3ef057dbd996ccd5a92370d644ef0358fd504c2"
+    },
+    "adapter_sha256": "b0f1333e58098f47a15f4ec093a6c167620c21c4a2c943e92641e5929d4c2a53",
+    "normalization_sha256": "76acbd1a09771f63de5f9ff400127d5d11871e7b702cfa12d70570b037644eec",
+    "external_pretraining": true,
+    "same_information_budget": false
+  },
+  "evaluation": {
+    "common_evaluator_sha256": "368430c0c6758dfd2dfd4f66cf1a57822c00183878ccfb88c2021c37446501a1",
+    "prediction_spec_sha256": "b0da2e51add5f37d151a79e2f7bcfd78dc5e34a1d0362394b04ce3037534bc32",
+    "common_eval_sha256": "98829db6308c598ccdfe42d8d95f2bb15dbf14a30d45b316a70223efed13f140",
+    "reproduction_gate_sha256": "28e75ee2fb81534049c0bc9d12483451492d721df4269444d0d35f118d469e69",
+    "bootstrap_sha256": "40cdf1418514d04c85d45f83ab03f458c879af5dbcb3c758fb91c27abdc986d6",
+    "condition_analysis_sha256": "bafbb5a5da3b9f7030a58b4fc7814b2e903fa0d358774e10fb37e52943d95310",
+    "hotspot_definition": "top 1% nodes by T_true within each sample (2409 nodes)",
+    "dispersion_label": "SD across training seeds",
+    "paired_bootstrap": {
+      "unit": "physical_case",
+      "cases": 128,
+      "resamples": 10000,
+      "seed": 230023,
+      "difference": "Heat3D - Therm-FM",
+      "conditional_on": "frozen three-seed cohort"
+    }
+  },
+  "readiness": {
+    "valid_only_comparison": "CLOSED",
+    "sealed_evaluation": "NOT_UNLOCKED",
+    "next_step": "separate preregistered evaluation-only unlock; no unlock performed in this commit",
+    "claim_boundary": "descriptive same-domain valid-only comparison; not same-information-budget and no universal superiority claim"
+  }
+}

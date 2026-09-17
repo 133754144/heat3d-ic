@@ -1,0 +1,102 @@
+{
+  "schema_version": "heat3d_v7_g2_p23_g1_direct240825_reproduction_gate_v1",
+  "status": "REPRODUCTION_PASS",
+  "common_evaluator_sha256": "368430c0c6758dfd2dfd4f66cf1a57822c00183878ccfb88c2021c37446501a1",
+  "common_eval_sha256": "98829db6308c598ccdfe42d8d95f2bb15dbf14a30d45b316a70223efed13f140",
+  "g1_direct_route": {
+    "status": "PASS",
+    "metric_checks": [
+      {
+        "seed": 0,
+        "differences": {
+          "sample_first_relative_rmse_pct": 0.0,
+          "point_global_relative_rmse_pct": 0.0,
+          "peak_temperature_rmse_K": 0.0
+        },
+        "pass": true,
+        "noncomparable_old_metric": "raw_K_CV_RMSE_K vs new unweighted rmse_K"
+      },
+      {
+        "seed": 1,
+        "differences": {
+          "sample_first_relative_rmse_pct": 0.0,
+          "point_global_relative_rmse_pct": 0.0,
+          "peak_temperature_rmse_K": 0.0
+        },
+        "pass": true,
+        "noncomparable_old_metric": "raw_K_CV_RMSE_K vs new unweighted rmse_K"
+      },
+      {
+        "seed": 2,
+        "differences": {
+          "sample_first_relative_rmse_pct": 8.881784197001252e-16,
+          "point_global_relative_rmse_pct": 0.0,
+          "peak_temperature_rmse_K": 0.0
+        },
+        "pass": true,
+        "noncomparable_old_metric": "raw_K_CV_RMSE_K vs new unweighted rmse_K"
+      }
+    ],
+    "tolerance": 1e-05
+  },
+  "thermfm_p23_common": {
+    "status": "PASS",
+    "metric_checks": [
+      {
+        "seed": 0,
+        "max_abs_difference": 0.0,
+        "differences": {
+          "sample_first_relative_rmse_pct": 0.0,
+          "point_global_relative_rmse_pct": 0.0,
+          "cv_weighted_point_global_relative_rmse_pct": 0.0,
+          "rmse_K": 0.0,
+          "mae_K": 0.0,
+          "peak_temperature_mae_K": 0.0,
+          "peak_temperature_rmse_K": 0.0,
+          "true_hotspot_region_rmse_K": 0.0
+        },
+        "pass": true
+      },
+      {
+        "seed": 1,
+        "max_abs_difference": 0.0,
+        "differences": {
+          "sample_first_relative_rmse_pct": 0.0,
+          "point_global_relative_rmse_pct": 0.0,
+          "cv_weighted_point_global_relative_rmse_pct": 0.0,
+          "rmse_K": 0.0,
+          "mae_K": 0.0,
+          "peak_temperature_mae_K": 0.0,
+          "peak_temperature_rmse_K": 0.0,
+          "true_hotspot_region_rmse_K": 0.0
+        },
+        "pass": true
+      },
+      {
+        "seed": 2,
+        "max_abs_difference": 0.0,
+        "differences": {
+          "sample_first_relative_rmse_pct": 0.0,
+          "point_global_relative_rmse_pct": 0.0,
+          "cv_weighted_point_global_relative_rmse_pct": 0.0,
+          "rmse_K": 0.0,
+          "mae_K": 0.0,
+          "peak_temperature_mae_K": 0.0,
+          "peak_temperature_rmse_K": 0.0,
+          "true_hotspot_region_rmse_K": 0.0
+        },
+        "pass": true
+      }
+    ],
+    "reference_sha256": "c5c68f1e2400dcb93cd17f0e89f3c0a82cbb23934abe7e101d12f7310df1bb07"
+  },
+  "thermfm_p22_legacy": {
+    "status": "REPLAY_REPRODUCTION_PASS",
+    "max_abs_difference_reported": 7.486730454520085e-05,
+    "reference_sha256": "46a9231b45250763212dafd43918a435f919c46d74dbccb14d4cb14b1add4b5f",
+    "semantic_note": "P22 legacy sample-first/peak definitions are retained as a separate replay contract; P23 common evaluator uses frozen CV-weighted sample-first and abs(max(pred)-max(truth)) peak metric."
+  },
+  "test_iid_read": false,
+  "sealed_read": false,
+  "deepoheat_official100_read": false
+}

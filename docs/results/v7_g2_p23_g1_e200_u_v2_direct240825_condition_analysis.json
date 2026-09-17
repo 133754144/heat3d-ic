@@ -1,0 +1,545 @@
+{
+  "schema_version": "heat3d_v7_g2_p23_condition_analysis_v1",
+  "status": "COMPLETE_VALID_ONLY",
+  "bin_policy": "frozen input-only condition bins; no error-driven rebinning",
+  "valid_manifest_sha256": "f42cca611b6c70551b153f4f887b2d47724d9082846e4b381cab4ad9c652e57c",
+  "bins_receipt_sha256": "71468934ee8b99c2a2d805a138f436af7bc9450c80011316fccec1a4b1f415c5",
+  "common_evaluation_sha256": "98829db6308c598ccdfe42d8d95f2bb15dbf14a30d45b316a70223efed13f140",
+  "case_count": 128,
+  "metrics": [
+    "sample_first_relative_rmse_pct",
+    "rmse_K",
+    "true_hotspot_region_rmse_K"
+  ],
+  "dispersion_label": "SD across training seeds; condition rows use per-case seed means",
+  "test_iid_read": false,
+  "sealed_read": false,
+  "deepoheat_official100_read": false,
+  "rows": [
+    {
+      "condition": "source_count",
+      "bin": "low",
+      "case_count": 45,
+      "bin_definition": {
+        "kind": "discrete",
+        "bins": {
+          "low": {
+            "inclusive_range": [
+              3,
+              5
+            ],
+            "case_count": 45
+          },
+          "mid": {
+            "inclusive_range": [
+              6,
+              7
+            ],
+            "case_count": 32
+          },
+          "high": {
+            "inclusive_range": [
+              8,
+              10
+            ],
+            "case_count": 51
+          }
+        }
+      },
+      "sample_first_relative_rmse_pct_Heat3D_seed_mean": 3.1179379944619163,
+      "sample_first_relative_rmse_pct_ThermFM_seed_mean": 2.8234693045818164,
+      "sample_first_relative_rmse_pct_paired_difference_Heat3D_minus_ThermFM": 0.2944686898800999,
+      "rmse_K_Heat3D_seed_mean": 2.5006498550972687,
+      "rmse_K_ThermFM_seed_mean": 2.3616004751058224,
+      "rmse_K_paired_difference_Heat3D_minus_ThermFM": 0.1390493799914463,
+      "true_hotspot_region_rmse_K_Heat3D_seed_mean": 6.147857530338514,
+      "true_hotspot_region_rmse_K_ThermFM_seed_mean": 4.3939200446965865,
+      "true_hotspot_region_rmse_K_paired_difference_Heat3D_minus_ThermFM": 1.7539374856419272
+    },
+    {
+      "condition": "source_count",
+      "bin": "mid",
+      "case_count": 32,
+      "bin_definition": {
+        "kind": "discrete",
+        "bins": {
+          "low": {
+            "inclusive_range": [
+              3,
+              5
+            ],
+            "case_count": 45
+          },
+          "mid": {
+            "inclusive_range": [
+              6,
+              7
+            ],
+            "case_count": 32
+          },
+          "high": {
+            "inclusive_range": [
+              8,
+              10
+            ],
+            "case_count": 51
+          }
+        }
+      },
+      "sample_first_relative_rmse_pct_Heat3D_seed_mean": 2.9352928475670392,
+      "sample_first_relative_rmse_pct_ThermFM_seed_mean": 2.8838710138530876,
+      "sample_first_relative_rmse_pct_paired_difference_Heat3D_minus_ThermFM": 0.05142183371395159,
+      "rmse_K_Heat3D_seed_mean": 1.8814920444039327,
+      "rmse_K_ThermFM_seed_mean": 1.816244411540408,
+      "rmse_K_paired_difference_Heat3D_minus_ThermFM": 0.06524763286352475,
+      "true_hotspot_region_rmse_K_Heat3D_seed_mean": 3.2205425078332297,
+      "true_hotspot_region_rmse_K_ThermFM_seed_mean": 2.3408464469472734,
+      "true_hotspot_region_rmse_K_paired_difference_Heat3D_minus_ThermFM": 0.8796960608859563
+    },
+    {
+      "condition": "source_count",
+      "bin": "high",
+      "case_count": 51,
+      "bin_definition": {
+        "kind": "discrete",
+        "bins": {
+          "low": {
+            "inclusive_range": [
+              3,
+              5
+            ],
+            "case_count": 45
+          },
+          "mid": {
+            "inclusive_range": [
+              6,
+              7
+            ],
+            "case_count": 32
+          },
+          "high": {
+            "inclusive_range": [
+              8,
+              10
+            ],
+            "case_count": 51
+          }
+        }
+      },
+      "sample_first_relative_rmse_pct_Heat3D_seed_mean": 3.2533601863708164,
+      "sample_first_relative_rmse_pct_ThermFM_seed_mean": 2.217693750418367,
+      "sample_first_relative_rmse_pct_paired_difference_Heat3D_minus_ThermFM": 1.0356664359524492,
+      "rmse_K_Heat3D_seed_mean": 2.466402611576712,
+      "rmse_K_ThermFM_seed_mean": 1.5101917638347595,
+      "rmse_K_paired_difference_Heat3D_minus_ThermFM": 0.9562108477419524,
+      "true_hotspot_region_rmse_K_Heat3D_seed_mean": 4.327021287432553,
+      "true_hotspot_region_rmse_K_ThermFM_seed_mean": 2.1851064470767203,
+      "true_hotspot_region_rmse_K_paired_difference_Heat3D_minus_ThermFM": 2.1419148403558324
+    },
+    {
+      "condition": "k_region_count",
+      "bin": "low",
+      "case_count": 31,
+      "bin_definition": {
+        "kind": "discrete",
+        "bins": {
+          "low": {
+            "inclusive_range": [
+              2,
+              3
+            ],
+            "case_count": 31
+          },
+          "mid": {
+            "inclusive_range": [
+              4,
+              5
+            ],
+            "case_count": 38
+          },
+          "high": {
+            "inclusive_range": [
+              6,
+              8
+            ],
+            "case_count": 59
+          }
+        }
+      },
+      "sample_first_relative_rmse_pct_Heat3D_seed_mean": 3.023298111800328,
+      "sample_first_relative_rmse_pct_ThermFM_seed_mean": 2.3556739476323783,
+      "sample_first_relative_rmse_pct_paired_difference_Heat3D_minus_ThermFM": 0.6676241641679499,
+      "rmse_K_Heat3D_seed_mean": 2.256374057227256,
+      "rmse_K_ThermFM_seed_mean": 1.630545622187362,
+      "rmse_K_paired_difference_Heat3D_minus_ThermFM": 0.6258284350398939,
+      "true_hotspot_region_rmse_K_Heat3D_seed_mean": 4.5369145763372005,
+      "true_hotspot_region_rmse_K_ThermFM_seed_mean": 2.503484719874766,
+      "true_hotspot_region_rmse_K_paired_difference_Heat3D_minus_ThermFM": 2.0334298564624347
+    },
+    {
+      "condition": "k_region_count",
+      "bin": "mid",
+      "case_count": 38,
+      "bin_definition": {
+        "kind": "discrete",
+        "bins": {
+          "low": {
+            "inclusive_range": [
+              2,
+              3
+            ],
+            "case_count": 31
+          },
+          "mid": {
+            "inclusive_range": [
+              4,
+              5
+            ],
+            "case_count": 38
+          },
+          "high": {
+            "inclusive_range": [
+              6,
+              8
+            ],
+            "case_count": 59
+          }
+        }
+      },
+      "sample_first_relative_rmse_pct_Heat3D_seed_mean": 3.428023746052889,
+      "sample_first_relative_rmse_pct_ThermFM_seed_mean": 2.5807994798889125,
+      "sample_first_relative_rmse_pct_paired_difference_Heat3D_minus_ThermFM": 0.8472242661639764,
+      "rmse_K_Heat3D_seed_mean": 2.4479094790299056,
+      "rmse_K_ThermFM_seed_mean": 1.9308115875433949,
+      "rmse_K_paired_difference_Heat3D_minus_ThermFM": 0.5170978914865108,
+      "true_hotspot_region_rmse_K_Heat3D_seed_mean": 5.247126481749867,
+      "true_hotspot_region_rmse_K_ThermFM_seed_mean": 3.5778019583609275,
+      "true_hotspot_region_rmse_K_paired_difference_Heat3D_minus_ThermFM": 1.6693245233889398
+    },
+    {
+      "condition": "k_region_count",
+      "bin": "high",
+      "case_count": 59,
+      "bin_definition": {
+        "kind": "discrete",
+        "bins": {
+          "low": {
+            "inclusive_range": [
+              2,
+              3
+            ],
+            "case_count": 31
+          },
+          "mid": {
+            "inclusive_range": [
+              4,
+              5
+            ],
+            "case_count": 38
+          },
+          "high": {
+            "inclusive_range": [
+              6,
+              8
+            ],
+            "case_count": 59
+          }
+        }
+      },
+      "sample_first_relative_rmse_pct_Heat3D_seed_mean": 2.985945873932596,
+      "sample_first_relative_rmse_pct_ThermFM_seed_mean": 2.7346796577700827,
+      "sample_first_relative_rmse_pct_paired_difference_Heat3D_minus_ThermFM": 0.25126621616251343,
+      "rmse_K_Heat3D_seed_mean": 2.29754857819549,
+      "rmse_K_ThermFM_seed_mean": 1.9914214896639078,
+      "rmse_K_paired_difference_Heat3D_minus_ThermFM": 0.3061270885315823,
+      "true_hotspot_region_rmse_K_Heat3D_seed_mean": 4.412777569525568,
+      "true_hotspot_region_rmse_K_ThermFM_seed_mean": 2.8899901081481176,
+      "true_hotspot_region_rmse_K_paired_difference_Heat3D_minus_ThermFM": 1.5227874613774506
+    },
+    {
+      "condition": "total_power_W",
+      "bin": "low",
+      "case_count": 43,
+      "bin_definition": {
+        "kind": "continuous",
+        "q33": 5.57166855786286,
+        "q67": 8.678269918745148
+      },
+      "sample_first_relative_rmse_pct_Heat3D_seed_mean": 2.84432953513049,
+      "sample_first_relative_rmse_pct_ThermFM_seed_mean": 3.133236961826613,
+      "sample_first_relative_rmse_pct_paired_difference_Heat3D_minus_ThermFM": -0.28890742669612335,
+      "rmse_K_Heat3D_seed_mean": 1.4246643708804374,
+      "rmse_K_ThermFM_seed_mean": 1.44642006944912,
+      "rmse_K_paired_difference_Heat3D_minus_ThermFM": -0.021755698568682647,
+      "true_hotspot_region_rmse_K_Heat3D_seed_mean": 2.5291978173263714,
+      "true_hotspot_region_rmse_K_ThermFM_seed_mean": 1.744670094222563,
+      "true_hotspot_region_rmse_K_paired_difference_Heat3D_minus_ThermFM": 0.7845277231038084
+    },
+    {
+      "condition": "total_power_W",
+      "bin": "mid",
+      "case_count": 42,
+      "bin_definition": {
+        "kind": "continuous",
+        "q33": 5.57166855786286,
+        "q67": 8.678269918745148
+      },
+      "sample_first_relative_rmse_pct_Heat3D_seed_mean": 3.1510504548047242,
+      "sample_first_relative_rmse_pct_ThermFM_seed_mean": 2.4815280772489126,
+      "sample_first_relative_rmse_pct_paired_difference_Heat3D_minus_ThermFM": 0.6695223775558117,
+      "rmse_K_Heat3D_seed_mean": 2.5687714515695528,
+      "rmse_K_ThermFM_seed_mean": 2.245084346357314,
+      "rmse_K_paired_difference_Heat3D_minus_ThermFM": 0.323687105212239,
+      "true_hotspot_region_rmse_K_Heat3D_seed_mean": 4.881326337394651,
+      "true_hotspot_region_rmse_K_ThermFM_seed_mean": 3.1304603068249124,
+      "true_hotspot_region_rmse_K_paired_difference_Heat3D_minus_ThermFM": 1.750866030569739
+    },
+    {
+      "condition": "total_power_W",
+      "bin": "high",
+      "case_count": 43,
+      "bin_definition": {
+        "kind": "continuous",
+        "q33": 5.57166855786286,
+        "q67": 8.678269918745148
+      },
+      "sample_first_relative_rmse_pct_Heat3D_seed_mean": 3.383899099196131,
+      "sample_first_relative_rmse_pct_ThermFM_seed_mean": 2.174162879484153,
+      "sample_first_relative_rmse_pct_paired_difference_Heat3D_minus_ThermFM": 1.2097362197119779,
+      "rmse_K_Heat3D_seed_mean": 3.0087105389984936,
+      "rmse_K_ThermFM_seed_mean": 1.9749306272397307,
+      "rmse_K_paired_difference_Heat3D_minus_ThermFM": 1.033779911758763,
+      "true_hotspot_region_rmse_K_Heat3D_seed_mean": 6.665530754868544,
+      "true_hotspot_region_rmse_K_ThermFM_seed_mean": 4.129622562240822,
+      "true_hotspot_region_rmse_K_paired_difference_Heat3D_minus_ThermFM": 2.535908192627722
+    },
+    {
+      "condition": "source_power_heterogeneity",
+      "bin": "low",
+      "case_count": 43,
+      "bin_definition": {
+        "kind": "continuous",
+        "q33": 0.2188784416848707,
+        "q67": 0.2958272839976763
+      },
+      "sample_first_relative_rmse_pct_Heat3D_seed_mean": 3.121965463067575,
+      "sample_first_relative_rmse_pct_ThermFM_seed_mean": 2.7825259770350463,
+      "sample_first_relative_rmse_pct_paired_difference_Heat3D_minus_ThermFM": 0.3394394860325285,
+      "rmse_K_Heat3D_seed_mean": 2.517194317343471,
+      "rmse_K_ThermFM_seed_mean": 2.2774853318812363,
+      "rmse_K_paired_difference_Heat3D_minus_ThermFM": 0.23970898546223474,
+      "true_hotspot_region_rmse_K_Heat3D_seed_mean": 5.312714688381865,
+      "true_hotspot_region_rmse_K_ThermFM_seed_mean": 3.6430119691040717,
+      "true_hotspot_region_rmse_K_paired_difference_Heat3D_minus_ThermFM": 1.6697027192777933
+    },
+    {
+      "condition": "source_power_heterogeneity",
+      "bin": "mid",
+      "case_count": 42,
+      "bin_definition": {
+        "kind": "continuous",
+        "q33": 0.2188784416848707,
+        "q67": 0.2958272839976763
+      },
+      "sample_first_relative_rmse_pct_Heat3D_seed_mean": 2.9189564862509116,
+      "sample_first_relative_rmse_pct_ThermFM_seed_mean": 2.4020532034557722,
+      "sample_first_relative_rmse_pct_paired_difference_Heat3D_minus_ThermFM": 0.5169032827951394,
+      "rmse_K_Heat3D_seed_mean": 2.153153941705755,
+      "rmse_K_ThermFM_seed_mean": 1.6744655410412066,
+      "rmse_K_paired_difference_Heat3D_minus_ThermFM": 0.4786884006645482,
+      "true_hotspot_region_rmse_K_Heat3D_seed_mean": 4.191399769934945,
+      "true_hotspot_region_rmse_K_ThermFM_seed_mean": 2.7009467250570207,
+      "true_hotspot_region_rmse_K_paired_difference_Heat3D_minus_ThermFM": 1.490453044877924
+    },
+    {
+      "condition": "source_power_heterogeneity",
+      "bin": "high",
+      "case_count": 43,
+      "bin_definition": {
+        "kind": "continuous",
+        "q33": 0.2188784416848707,
+        "q67": 0.2958272839976763
+      },
+      "sample_first_relative_rmse_pct_Heat3D_seed_mean": 3.3329596056604442,
+      "sample_first_relative_rmse_pct_ThermFM_seed_mean": 2.60250048518995,
+      "sample_first_relative_rmse_pct_paired_difference_Heat3D_minus_ThermFM": 0.7304591204704942,
+      "rmse_K_Heat3D_seed_mean": 2.3221325789140526,
+      "rmse_K_ThermFM_seed_mean": 1.7012139653489293,
+      "rmse_K_paired_difference_Heat3D_minus_ThermFM": 0.6209186135651232,
+      "true_hotspot_region_rmse_K_Heat3D_seed_mean": 4.555895647378347,
+      "true_hotspot_region_rmse_K_ThermFM_seed_mean": 2.650805581179115,
+      "true_hotspot_region_rmse_K_paired_difference_Heat3D_minus_ThermFM": 1.9050900661992318
+    },
+    {
+      "condition": "top_h_W_m2K",
+      "bin": "low",
+      "case_count": 43,
+      "bin_definition": {
+        "kind": "continuous",
+        "q33": 749.6606974011661,
+        "q67": 1157.0601550662582
+      },
+      "sample_first_relative_rmse_pct_Heat3D_seed_mean": 2.7292046454294736,
+      "sample_first_relative_rmse_pct_ThermFM_seed_mean": 2.902394973314962,
+      "sample_first_relative_rmse_pct_paired_difference_Heat3D_minus_ThermFM": -0.1731903278854885,
+      "rmse_K_Heat3D_seed_mean": 2.2785636642202194,
+      "rmse_K_ThermFM_seed_mean": 2.496124903702708,
+      "rmse_K_paired_difference_Heat3D_minus_ThermFM": -0.2175612394824884,
+      "true_hotspot_region_rmse_K_Heat3D_seed_mean": 3.819319874476888,
+      "true_hotspot_region_rmse_K_ThermFM_seed_mean": 2.9767507405741087,
+      "true_hotspot_region_rmse_K_paired_difference_Heat3D_minus_ThermFM": 0.8425691339027792
+    },
+    {
+      "condition": "top_h_W_m2K",
+      "bin": "mid",
+      "case_count": 42,
+      "bin_definition": {
+        "kind": "continuous",
+        "q33": 749.6606974011661,
+        "q67": 1157.0601550662582
+      },
+      "sample_first_relative_rmse_pct_Heat3D_seed_mean": 3.2335815259581797,
+      "sample_first_relative_rmse_pct_ThermFM_seed_mean": 2.5680258620290632,
+      "sample_first_relative_rmse_pct_paired_difference_Heat3D_minus_ThermFM": 0.6655556639291165,
+      "rmse_K_Heat3D_seed_mean": 2.3253791376500916,
+      "rmse_K_ThermFM_seed_mean": 1.6201106758188482,
+      "rmse_K_paired_difference_Heat3D_minus_ThermFM": 0.7052684618312435,
+      "true_hotspot_region_rmse_K_Heat3D_seed_mean": 4.717947847979486,
+      "true_hotspot_region_rmse_K_ThermFM_seed_mean": 2.5361934389650775,
+      "true_hotspot_region_rmse_K_paired_difference_Heat3D_minus_ThermFM": 2.1817544090144088
+    },
+    {
+      "condition": "top_h_W_m2K",
+      "bin": "high",
+      "case_count": 43,
+      "bin_definition": {
+        "kind": "continuous",
+        "q33": 749.6606974011661,
+        "q67": 1157.0601550662582
+      },
+      "sample_first_relative_rmse_pct_Heat3D_seed_mean": 3.418412244979819,
+      "sample_first_relative_rmse_pct_ThermFM_seed_mean": 2.3205186596058893,
+      "sample_first_relative_rmse_pct_paired_difference_Heat3D_minus_ThermFM": 1.0978935853739298,
+      "rmse_K_Heat3D_seed_mean": 2.3925432732079526,
+      "rmse_K_ThermFM_seed_mean": 1.5356651921167384,
+      "rmse_K_paired_difference_Heat3D_minus_ThermFM": 0.8568780810912142,
+      "true_hotspot_region_rmse_K_Heat3D_seed_mean": 5.53498768737935,
+      "true_hotspot_region_rmse_K_ThermFM_seed_mean": 3.4779886240314415,
+      "true_hotspot_region_rmse_K_paired_difference_Heat3D_minus_ThermFM": 2.0569990633479085
+    },
+    {
+      "condition": "bottom_h_W_m2K",
+      "bin": "low",
+      "case_count": 43,
+      "bin_definition": {
+        "kind": "continuous",
+        "q33": 45.256583514409215,
+        "q67": 101.08337819001079
+      },
+      "sample_first_relative_rmse_pct_Heat3D_seed_mean": 1.9413955185044982,
+      "sample_first_relative_rmse_pct_ThermFM_seed_mean": 2.575114105108944,
+      "sample_first_relative_rmse_pct_paired_difference_Heat3D_minus_ThermFM": -0.6337185866044457,
+      "rmse_K_Heat3D_seed_mean": 1.635112632159138,
+      "rmse_K_ThermFM_seed_mean": 2.190210275381295,
+      "rmse_K_paired_difference_Heat3D_minus_ThermFM": -0.555097643222157,
+      "true_hotspot_region_rmse_K_Heat3D_seed_mean": 3.861088130133385,
+      "true_hotspot_region_rmse_K_ThermFM_seed_mean": 3.355045590755299,
+      "true_hotspot_region_rmse_K_paired_difference_Heat3D_minus_ThermFM": 0.5060425393780861
+    },
+    {
+      "condition": "bottom_h_W_m2K",
+      "bin": "mid",
+      "case_count": 42,
+      "bin_definition": {
+        "kind": "continuous",
+        "q33": 45.256583514409215,
+        "q67": 101.08337819001079
+      },
+      "sample_first_relative_rmse_pct_Heat3D_seed_mean": 2.779005741332127,
+      "sample_first_relative_rmse_pct_ThermFM_seed_mean": 2.531139155684825,
+      "sample_first_relative_rmse_pct_paired_difference_Heat3D_minus_ThermFM": 0.2478665856473019,
+      "rmse_K_Heat3D_seed_mean": 2.055952290773021,
+      "rmse_K_ThermFM_seed_mean": 1.7167659401508135,
+      "rmse_K_paired_difference_Heat3D_minus_ThermFM": 0.3391863506222077,
+      "true_hotspot_region_rmse_K_Heat3D_seed_mean": 4.347596049416602,
+      "true_hotspot_region_rmse_K_ThermFM_seed_mean": 2.757781340961988,
+      "true_hotspot_region_rmse_K_paired_difference_Heat3D_minus_ThermFM": 1.5898147084546137
+    },
+    {
+      "condition": "bottom_h_W_m2K",
+      "bin": "high",
+      "case_count": 43,
+      "bin_definition": {
+        "kind": "continuous",
+        "q33": 45.256583514409215,
+        "q67": 101.08337819001079
+      },
+      "sample_first_relative_rmse_pct_Heat3D_seed_mean": 4.650225626655822,
+      "sample_first_relative_rmse_pct_ThermFM_seed_mean": 2.6838284037760474,
+      "sample_first_relative_rmse_pct_paired_difference_Heat3D_minus_ThermFM": 1.9663972228797748,
+      "rmse_K_Heat3D_seed_mean": 3.299155411521057,
+      "rmse_K_ThermFM_seed_mean": 1.7471723529511152,
+      "rmse_K_paired_difference_Heat3D_minus_ThermFM": 1.551983058569942,
+      "true_hotspot_region_rmse_K_Heat3D_seed_mean": 5.8549583977610204,
+      "true_hotspot_region_rmse_K_ThermFM_seed_mean": 2.8832590788765247,
+      "true_hotspot_region_rmse_K_paired_difference_Heat3D_minus_ThermFM": 2.971699318884496
+    },
+    {
+      "condition": "material_conductivity_heterogeneity",
+      "bin": "low",
+      "case_count": 43,
+      "bin_definition": {
+        "kind": "continuous",
+        "q33": 1.3316857341679995,
+        "q67": 1.3478922909353492
+      },
+      "sample_first_relative_rmse_pct_Heat3D_seed_mean": 2.751770337810676,
+      "sample_first_relative_rmse_pct_ThermFM_seed_mean": 2.767020831451107,
+      "sample_first_relative_rmse_pct_paired_difference_Heat3D_minus_ThermFM": -0.015250493640431184,
+      "rmse_K_Heat3D_seed_mean": 1.9663930338161777,
+      "rmse_K_ThermFM_seed_mean": 1.9113635952512027,
+      "rmse_K_paired_difference_Heat3D_minus_ThermFM": 0.055029438564975,
+      "true_hotspot_region_rmse_K_Heat3D_seed_mean": 3.9285728602957146,
+      "true_hotspot_region_rmse_K_ThermFM_seed_mean": 2.661125183636909,
+      "true_hotspot_region_rmse_K_paired_difference_Heat3D_minus_ThermFM": 1.2674476766588056
+    },
+    {
+      "condition": "material_conductivity_heterogeneity",
+      "bin": "mid",
+      "case_count": 42,
+      "bin_definition": {
+        "kind": "continuous",
+        "q33": 1.3316857341679995,
+        "q67": 1.3478922909353492
+      },
+      "sample_first_relative_rmse_pct_Heat3D_seed_mean": 2.909008151985221,
+      "sample_first_relative_rmse_pct_ThermFM_seed_mean": 2.675956316554385,
+      "sample_first_relative_rmse_pct_paired_difference_Heat3D_minus_ThermFM": 0.23305183543083574,
+      "rmse_K_Heat3D_seed_mean": 2.272106577880927,
+      "rmse_K_ThermFM_seed_mean": 2.1289103345569926,
+      "rmse_K_paired_difference_Heat3D_minus_ThermFM": 0.14319624332393444,
+      "true_hotspot_region_rmse_K_Heat3D_seed_mean": 4.713747313876287,
+      "true_hotspot_region_rmse_K_ThermFM_seed_mean": 3.524321643064018,
+      "true_hotspot_region_rmse_K_paired_difference_Heat3D_minus_ThermFM": 1.1894256708122692
+    },
+    {
+      "condition": "material_conductivity_heterogeneity",
+      "bin": "high",
+      "case_count": 43,
+      "bin_definition": {
+        "kind": "continuous",
+        "q33": 1.3316857341679995,
+        "q67": 1.3478922909353492
+      },
+      "sample_first_relative_rmse_pct_Heat3D_seed_mean": 3.7128717085722047,
+      "sample_first_relative_rmse_pct_ThermFM_seed_mean": 2.350472357514779,
+      "sample_first_relative_rmse_pct_paired_difference_Heat3D_minus_ThermFM": 1.3623993510574257,
+      "rmse_K_Heat3D_seed_mean": 2.75674756664234,
+      "rmse_K_ThermFM_seed_mean": 1.6234593920333114,
+      "rmse_K_paired_difference_Heat3D_minus_ThermFM": 1.1332881746090286,
+      "true_hotspot_region_rmse_K_Heat3D_seed_mean": 5.429837548824114,
+      "true_hotspot_region_rmse_K_ThermFM_seed_mean": 2.8284657025464206,
+      "true_hotspot_region_rmse_K_paired_difference_Heat3D_minus_ThermFM": 2.6013718462776936
+    }
+  ]
+}

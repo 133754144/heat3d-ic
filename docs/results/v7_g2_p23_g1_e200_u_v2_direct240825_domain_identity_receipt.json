@@ -1,0 +1,89 @@
+{
+  "schema_version": "heat3d_v7_g2_p23_g1_e200_u_v2_direct240825_domain_identity_v1",
+  "status": "PASS_VALID_ONLY_SAME_DOMAIN",
+  "scope": "V7 G1 Full e200 x3 U-v2 direct240825 versus Therm-FM P22/P23 x3",
+  "execution": {
+    "repo_commit_sha_at_execution": "d9d961aa6970f60a45dea7995f1b82dab2e335d8",
+    "common_evaluator_sha256": "368430c0c6758dfd2dfd4f66cf1a57822c00183878ccfb88c2021c37446501a1",
+    "container_adapter_sha256": "36cb54fd100421416ed38c0e90981c1786994851bb58a319ca6ecf7b3ac8d8a6",
+    "condition_analysis_sha256": "e62cf6096b44141da10cee18b56f5c5661bc9c663e2dd92f1932b2c3ba7c765d",
+    "training_or_inference_started_this_phase": false,
+    "new_test_or_sealed_access": false
+  },
+  "authorized_domain": {
+    "dataset_id": "heat3d_v6_p1i_continuous_physics1024_v1",
+    "split_role": "valid_iid",
+    "case_count": 128,
+    "valid_manifest_sha256": "f42cca611b6c70551b153f4f887b2d47724d9082846e4b381cab4ad9c652e57c",
+    "source_split_manifest_sha256": "87aaa84af4b203d0a8ba93ed33b3757d46adc3143dad970371daa0f893ea491f",
+    "truth_archive_sha256": "49023ac1205b8e7cf7c5bf782b89fcdb34997704b3f9aa2fb2d46cf1a59163cb",
+    "grid": [65, 65, 57],
+    "nodes_per_case": 240825,
+    "value_kind": "deltaT_K",
+    "coordinates_sha256": "c293ae6a382deda78346b09a23cad7b9ce4adc3677233225c22ca076c600daa4",
+    "control_volume_sha256": "0bfe0b3ea5f4ce0c0b6e8b945121c58769d9a913b61ecc140bd262ed12a9d5da",
+    "layer_id_sha256": "36743975fa62fe0c08fee76a8e73ce115c905e27e5c697b2705d4bee07d890b9",
+    "identity_checks": {
+      "sample_ids_exactly_equal": true,
+      "truth_rows_exactly_equal": true,
+      "node_count_all_cases": true,
+      "coordinates_and_order_shared": true,
+      "truth_archive_shared": true,
+      "shape_only_comparison": false
+    }
+  },
+  "heat3d_g1_full_e200": {
+    "family": "V7 G1 Full_seed0/1/2",
+    "training_code_sha": "191a7a06a681556f575a1c04e2b61cb13363efe1",
+    "selection_rule": "frozen G1 valid_iid sample_first checkpoint; no reselection",
+    "g1_archive_manifest_sha256": "8c6ea7dca9cefddd676c8ce5d1f30855547ed273f70466549bfd8ae88f3305c7",
+    "checkpoints": {
+      "0": {
+        "sha256": "7ee050c946513004c3e33ce3b28c6fd246965ee4e95ff661eca3d888d5786517",
+        "path": "research_artifacts/v7_g1_formal_archive/raw/Full_seed0/params_best_sample_first.pkl",
+        "direct_prediction_sha256": "a261c9342b45b91b337d7a9e302fcb1275e8f5eece35f2387eca3b0356eba801",
+        "direct_receipt_sha256": "1e1bbcb486bb02e850d348001fd191369085eacf767e763ee48adb42540126f5"
+      },
+      "1": {
+        "sha256": "1821a8ea395e485e34e45ca4c08bf846e4217b4afb5fdd15b30d00a8d3a6f019",
+        "path": "research_artifacts/v7_g1_formal_archive/raw/Full_seed1/params_best_sample_first.pkl",
+        "direct_prediction_sha256": "4167d3bbdf508294708e02aa43115660536f1ed91ebe6e8846b0eac363c33e5d",
+        "direct_receipt_sha256": "8125fb9d97ec5bfcd58f0ced03c6ad9b77305dce42ba11b89bcb4e965c31417"
+      },
+      "2": {
+        "sha256": "2ed4c5d0a07fe696347877ac68ca50438be1fecadf83429b3090c83d529b151b",
+        "path": "research_artifacts/v7_g1_formal_archive/raw/Full_seed2/params_best_sample_first.pkl",
+        "direct_prediction_sha256": "0f67cb0393992a86cb5ac3fdbcc39311cf6df9598e1a173a1a9cc0aa05f66cea",
+        "direct_receipt_sha256": "2c43d498288225798a11043eed714867ffdca26805a7f175c87ff381776a3148"
+      }
+    },
+    "prediction_contract": {
+      "route": "U_v2_direct240825",
+      "archive_layout": "sample_ids + prediction_deltaT_K[128,240825], canonical x_y_z order",
+      "container_adapter": "lossless NPZ key=sample_id adapter; no value/order change",
+      "all_predictions_finite": true,
+      "optimizer_called": false,
+      "test_iid_read": false,
+      "sealed_read": false
+    },
+    "manifest_caveat": "The tracked G1 archive_manifest_v2 records H2 full-field as fail-closed and does not enumerate these retained direct-route sidecar binaries; each sidecar is nevertheless bound by its immutable receipt to the listed G1 checkpoint, code SHA, valid manifest and truth archive. Historical direct artifacts are used without re-inference."
+  },
+  "therm_fm_p22_p23": {
+    "family": "P22/P23 Therm-FM seed0/1/2",
+    "checkpoint_selection": "minimum valid normalized loss; metrics displayed at loss-selected checkpoint",
+    "adapter_contract_sha256": "b0f1333e58098f47a15f4ec093a6c167620c21c4a2c943e92641e5929d4c2a53",
+    "normalization_sha256": "76acbd1a09771f63de5f9ff400127d5d11871e7b702cfa12d70570b037644eec",
+    "checkpoints": {
+      "0": {"sha256": "f3d8fb189c4662ecd2f10f8637e2ee34a2d5ec8423d44df5ace302ea2f56cd2b", "prediction_sha256": "fa9d007fbaa76140f3de372ddf7d0fd14a7f5c7c5f5fcb219ec8a2504a882035"},
+      "1": {"sha256": "6e9cc8fe96ad1633c14766416f5caa060514cf4944edb7cfea235f0d23b65cc7", "prediction_sha256": "0ec05daf6e4985afb29bb8b204ec51c331bd60af18ee7312590c83a2f9558517"},
+      "2": {"sha256": "ba81fed391e100510aa35111feb2433411110251a806d355b32dfa0e8d10170e", "prediction_sha256": "e4f7e4d5c66cf8d9423a3868e3ef057dbd996ccd5a92370d644ef0358fd504c2"}
+    },
+    "representation": "dense 741-channel case-definition raster; native 65x65x57 output; evaluator transposes z_x_y to canonical x_y_z",
+    "external_pretraining": "Poseidon-T; not same-information-budget"
+  },
+  "forbidden_roles": {
+    "p1i_test_iid": "not read in this phase",
+    "sealed_iid": "not read in this phase",
+    "deepoheat_official100": "not read in this phase"
+  }
+}
