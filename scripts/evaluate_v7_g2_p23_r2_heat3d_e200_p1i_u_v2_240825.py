@@ -363,9 +363,21 @@ def main() -> int:
         output = runtime.apply(query_case)
         # Explicitly synchronize the result before host conversion and timing.
         jax.block_until_ready(output["deltaT_hat"])
-        prediction = np.asarray(output["deltaT_hat"], dtype=np.float64)[0, 0, :, 0]
+        raw_prediction = np.asarray(output["deltaT_hat"], dtype=np.float64)
+        prediction = raw_prediction[0, 0, :, 0]
         if prediction.shape != (NODE_COUNT,) or not np.all(np.isfinite(prediction)):
-            raise FloatingPointError(f"nonfinite/wrong-shape U-v2 output for {sample_id}")
+            finite = np.isfinite(raw_prediction)
+            finite_values = raw_prediction[finite]
+            bounds = (
+                (float(np.min(finite_values)), float(np.max(finite_values)))
+                if finite_values.size
+                else (None, None)
+            )
+            raise FloatingPointError(
+                f"nonfinite/wrong-shape U-v2 output for {sample_id}: "
+                f"raw_shape={raw_prediction.shape}, finite={int(np.count_nonzero(finite))}/"
+                f"{raw_prediction.size}, finite_bounds={bounds}"
+            )
         truth = truth_by_id[sample_id]
         row = metric_row(
             sample_id=sample_id,
