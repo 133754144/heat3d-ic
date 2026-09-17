@@ -1,0 +1,29 @@
+{
+  "schema_version": "heat3d_v7_g2_p23_r0_incident_remediation_v1",
+  "status": "AMENDMENT_ACCEPTED_VALID_ONLY_ROUTE",
+  "scope": "P23-R valid-only evidence remediation and replay",
+  "prior_incident_receipt": "docs/v7_g2_p23_test_access_incident.json",
+  "prior_incident_preserved": true,
+  "governance": {
+    "p1i_test_iid_role": "historical_legacy_opened_evidence_only",
+    "new_test_iid_labels_predictions_errors_read": false,
+    "new_test_iid_metrics_or_model_selection": false,
+    "sealed_iid_read": false,
+    "deepoheat_official100_read": false,
+    "old_mixed_role_csv_denylisted": true,
+    "incident_contaminated_model_selection": false,
+    "incident_contaminated_downstream_metrics": false
+  },
+  "remediated_route": {
+    "manifest": "configs/heat3d_v7/g2_p23_valid_only_case_manifest.json",
+    "role": "valid_iid",
+    "case_count": 128,
+    "truth_rows_from_frozen_split_metadata_only": true,
+    "prediction_replay_from_frozen_checkpoints_only": true,
+    "checkpoint_reselection": false,
+    "training": false,
+    "test_or_sealed_unlock": false
+  },
+  "readiness_before_replay": "P23_R_NEEDS_AMENDMENT_UNTIL_REPLAY_GATES_PASS",
+  "note": "This receipt authorizes only an independently staged valid-only route; it does not erase or rewrite the historical incident."
+}
