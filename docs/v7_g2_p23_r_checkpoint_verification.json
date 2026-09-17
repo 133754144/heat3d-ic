@@ -1,0 +1,51 @@
+{
+  "schema_version": "heat3d_v7_g2_p23_r_checkpoint_verification_v1",
+  "status": "PARTIAL_CHECKPOINT_SHA_PASS_WITH_MISSING_HEAT3D_SEEDS",
+  "authorized_role": "valid_iid_replay_only",
+  "checkpoints": {
+    "Heat3D": {
+      "seed0": {
+        "expected_sha256": "51567afe17e38cb6ed8c95c4dd39598e647c1699de9351358e7729fecc20b90e",
+        "path": "/home/xyh/myCodeGitOnly/heat3d-ic/output/heat3d_v6_p1i_runs/V6_06_V5best_P1i_seed0_reliable_B24/params_best_valid_point_global.pkl",
+        "observed_sha256": "51567afe17e38cb6ed8c95c4dd39598e647c1699de9351358e7729fecc20b90e",
+        "status": "PASS"
+      },
+      "seed1": {
+        "expected_sha256": "7197157969278d99648ef9b40d74005d759f32e52e9282e72a5586003d1e71f7",
+        "path": "/home/xyh/myCodeGitOnly/heat3d-ic/output/heat3d_v6_p1i_runs/V6_07_V5best_P1i_seed1_reliable_B24/params_best_valid_point_global.pkl",
+        "observed_sha256": null,
+        "status": "BLOCKED_MISSING_FROZEN_CHECKPOINT"
+      },
+      "seed2": {
+        "expected_sha256": "d67e0dac2e8ed8009ce7dcdf0b2de4543b10bc005c0bfaa51027ea721bb2ab49",
+        "path": "/home/xyh/myCodeGitOnly/heat3d-ic/output/heat3d_v6_p1i_runs/V6_08_V5best_P1i_seed2_reliable_B24/params_best_valid_point_global.pkl",
+        "observed_sha256": null,
+        "status": "BLOCKED_MISSING_FROZEN_CHECKPOINT"
+      }
+    },
+    "Therm-FM": {
+      "seed0": {
+        "expected_sha256": "f3d8fb189c4662ecd2f10f8637e2ee34a2d5ec8423d44df5ace302ea2f56cd2b",
+        "observed_sha256": "f3d8fb189c4662ecd2f10f8637e2ee34a2d5ec8423d44df5ace302ea2f56cd2b",
+        "path": "/home/xyh/myCodeGitOnly/heat3d-ic-g2/output/g2_p22_thermfm_seed0/best_checkpoint.pt",
+        "status": "PASS"
+      },
+      "seed1": {
+        "expected_sha256": "6e9cc8fe96ad1633c14766416f5caa060514cf4944edb7cfea235f0d23b65cc7",
+        "observed_sha256": "6e9cc8fe96ad1633c14766416f5caa060514cf4944edb7cfea235f0d23b65cc7",
+        "path": "/home/xyh/myCodeGitOnly/heat3d-ic-g2/output/g2_p22_thermfm_seed1/best_checkpoint.pt",
+        "status": "PASS"
+      },
+      "seed2": {
+        "expected_sha256": "ba81fed391e100510aa35111feb2433411110251a806d355b32dfa0e8d10170e",
+        "observed_sha256": "ba81fed391e100510aa35111feb2433411110251a806d355b32dfa0e8d10170e",
+        "path": "/home/xyh/myCodeGitOnly/heat3d-ic-g2/output/g2_p22_thermfm_seed2/best_checkpoint.pt",
+        "status": "PASS"
+      }
+    }
+  },
+  "no_retraining_substitution": true,
+  "test_iid_read": false,
+  "sealed_read": false,
+  "deepoheat_official100_read": false
+}

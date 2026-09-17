@@ -1,0 +1,86 @@
+{
+  "schema_version": "heat3d_v7_g2_p23_r_replay_status_v1",
+  "status": "P23_R_NEEDS_AMENDMENT",
+  "scope": "valid_iid=128 remediation replay; zero training and zero checkpoint reselection",
+  "governance_receipt": "docs/v7_g2_p23_r0_incident_remediation.json",
+  "governance_receipt_sha256": "00e20259e3e3e70e5c3ebbfc44b2dcaf731d481ea21941e6ecc911f935a3067e",
+  "evaluator": {
+    "script": "scripts/evaluate_v7_g2_p23_common_fullfield.py",
+    "script_sha256": "368430c0c6758dfd2dfd4f66cf1a57822c00183878ccfb88c2021c37446501a1",
+    "protocol": "configs/heat3d_v7/g2_p23_common_fullfield_protocol.json",
+    "protocol_sha256": "740abdd31f5854c217f4dfef554a6e0ca1bdb5749880b6e19b0a6fbb738e1553",
+    "synthetic_unit_self_check": "PASS"
+  },
+  "valid_only_manifest": {
+    "path": "configs/heat3d_v7/g2_p23_valid_only_case_manifest.json",
+    "sha256": "f42cca611b6c70551b153f4f887b2d47724d9082846e4b381cab4ad9c652e57c",
+    "role": "valid_iid",
+    "count": 128,
+    "condition_bins_sha256": "71468934ee8b99c2a2d805a138f436af7bc9450c80011316fccec1a4b1f415c5"
+  },
+  "checkpoint_verification": "docs/v7_g2_p23_r_checkpoint_verification.json",
+  "replay": {
+    "Therm-FM": {
+      "status": "PASS_VALID_ONLY_REPLAY_3_SEEDS",
+      "archives": {
+        "seed0": {"path": "/home/xyh/myCodeGitOnly/heat3d-ic-g2/output/g2_p23_replay/thermfm_seed0.npz", "sha256": "fa9d007fbaa76140f3de372ddf7d0fd14a7f5c7c5f5fcb219ec8a2504a882035", "receipt_sha256": "c07e5590491cfcc94be549625609f53792d8646114662a92d19f02bbc02b869c"},
+        "seed1": {"path": "/home/xyh/myCodeGitOnly/heat3d-ic-g2/output/g2_p23_replay/thermfm_seed1.npz", "sha256": "0ec05daf6e4985afb29bb8b204ec51c331bd60af18ee7312590c83a2f9558517", "receipt_sha256": "78dec8732e37e1e388e31c5d3be5d99f366f5f3318cd56ca680dfb9730c4fd6d"},
+        "seed2": {"path": "/home/xyh/myCodeGitOnly/heat3d-ic-g2/output/g2_p23_replay/thermfm_seed2.npz", "sha256": "e4f7e4d5c66cf8d9423a3868e3ef057dbd996ccd5a92370d644ef0358fd504c2", "receipt_sha256": "6c458137ec06a245cbe299ba11bea5e86a931c19812aa493a79b40e9f7b10c6e"}
+      },
+      "common_eval_json_sha256": "c5c68f1e2400dcb93cd17f0e89f3c0a82cbb23934abe7e101d12f7310df1bb07",
+      "common_eval_csv_sha256": "410bdece4a5f9f4120702021f37b2f55e55df5b12a3300fa825a0e985b5ed7fb",
+      "replay_sanity_sha256": "46a9231b45250763212dafd43918a435f919c46d74dbccb14d4cb14b1add4b5f",
+      "replay_sanity_status": "REPLAY_REPRODUCTION_PASS"
+    },
+    "Heat3D": {
+      "seed0": {"status": "PASS_VALID_ONLY_REPLAY", "path": "/home/xyh/myCodeGitOnly/heat3d-ic-g2/output/g2_p23_replay/heat3d_seed0_dense.npz", "sha256": "31876bfd32cda69a3980656a6733f9db52cf98285eab8061a4eac0d1fc1baf9c", "receipt_sha256": "aee69444887a82b45e23cdaf1d616978d3a00f3deca93d0b4c5ab9f24f1f0994"},
+      "seed1": {"status": "BLOCKED_MISSING_FROZEN_CHECKPOINT"},
+      "seed2": {"status": "BLOCKED_MISSING_FROZEN_CHECKPOINT"}
+    }
+  },
+  "available_partial_evaluation": {
+    "status": "PARTIAL_VALID_ONLY_DIAGNOSTIC",
+    "json_sha256": "9c5345f4ae676d364b8f93baa6b2b0b2b25074b99384933ec960d62264887f1a",
+    "csv_sha256": "9d04a2df6e147fc49d61868eff066a9d4be9774ea45a9717ec26ed27ddaa2d2e",
+    "artifact_version": "available_common_eval_partial_v2.json",
+    "note": "Heat3D seed0 plus Therm-FM seeds; not a three-seed Table B result."
+  },
+  "available_diagnostic_metrics_not_for_ranking": {
+    "Heat3D_seed0": {
+      "sample_first_relative_rmse_pct": 3.9642902278923375,
+      "point_global_relative_rmse_pct": 3.4598839259190743,
+      "cv_weighted_point_global_relative_rmse_pct": 3.9523241168001504,
+      "rmse_K": 2.7476178200501264,
+      "mae_K": 1.7399091510819482,
+      "peak_temperature_mae_K": 2.7086421251296997,
+      "peak_temperature_rmse_K": 4.150015006650825,
+      "true_hotspot_region_rmse_K": 5.122326336162723,
+      "seed_count": 1
+    },
+    "Therm-FM_seed_mean": {
+      "sample_first_relative_rmse_pct": 2.5972060345376353,
+      "point_global_relative_rmse_pct": 3.1489568402271666,
+      "cv_weighted_point_global_relative_rmse_pct": 3.1972481364164427,
+      "rmse_K": 2.5006994783729843,
+      "mae_K": 1.6363259453150867,
+      "peak_temperature_mae_K": 3.950270344813665,
+      "peak_temperature_rmse_K": 5.5718272900998045,
+      "true_hotspot_region_rmse_K": 3.98604538187764,
+      "seed_count": 3
+    }
+  },
+  "strict_p23_outputs": {
+    "common_fullfield": "BLOCKED_MISSING_HEAT3D_SEED1_SEED2",
+    "per_sample_6_archives": "BLOCKED_MISSING_HEAT3D_SEED1_SEED2",
+    "paired_bootstrap": "BLOCKED_NOT_RUN",
+    "condition_analysis": "BLOCKED_NOT_RUN",
+    "table_b": "BLOCKED_NOT_FROZEN",
+    "readiness": "P23_R_NEEDS_AMENDMENT"
+  },
+  "test_iid_read": false,
+  "sealed_read": false,
+  "deepoheat_official100_read": false,
+  "training": false,
+  "checkpoint_reselection": false,
+  "next_action": "Recover the exact frozen V6 seed1 and seed2 checkpoint artifacts; do not retrain or substitute."
+}

@@ -1,0 +1,14 @@
+{
+  "schema_version": "heat3d_v7_g2_p23_r_table_b_fullfield_transfer_v1",
+  "status": "BLOCKED_TABLE_B_NOT_FROZEN",
+  "domain": "valid_iid=128, 65x65x57=240825 nodes",
+  "models": ["Heat3D V6", "Therm-FM"],
+  "heat3d": {"seed0": "available_partial_diagnostic", "seed1": "missing_frozen_checkpoint", "seed2": "missing_frozen_checkpoint"},
+  "thermfm": {"seeds": [0, 1, 2], "common_eval_json_sha256": "c5c68f1e2400dcb93cd17f0e89f3c0a82cbb23934abe7e101d12f7310df1bb07", "metrics_at_frozen_loss_selected_checkpoint": {"sample_first_relative_rmse_pct": 2.5972060345376353, "point_global_relative_rmse_pct": 3.1489568402271666, "cv_weighted_point_global_relative_rmse_pct": 3.1972481364164427, "rmse_K": 2.5006994783729843, "mae_K": 1.6363259453150867, "peak_temperature_mae_K": 3.950270344813665, "peak_temperature_rmse_K": 5.5718272900998045, "true_hotspot_region_rmse_K": 3.98604538187764}, "seed_sd": {"sample_first_relative_rmse_pct": 0.2399296342144874, "point_global_relative_rmse_pct": 0.46034342859491767, "cv_weighted_point_global_relative_rmse_pct": 0.45142457559503124, "rmse_K": 0.3655752143229426, "mae_K": 0.19632996391913646, "peak_temperature_mae_K": 0.16286268414755148, "peak_temperature_rmse_K": 0.17995065465750198, "true_hotspot_region_rmse_K": 0.17039509107575154}},
+  "heat3d_seed0_diagnostic_metrics": {"sample_first_relative_rmse_pct": 3.9642902278923375, "point_global_relative_rmse_pct": 3.4598839259190743, "cv_weighted_point_global_relative_rmse_pct": 3.9523241168001504, "rmse_K": 2.7476178200501264, "mae_K": 1.7399091510819482, "peak_temperature_mae_K": 2.7086421251296997, "peak_temperature_rmse_K": 4.150015006650825, "true_hotspot_region_rmse_K": 5.122326336162723, "seed_count": 1, "not_for_ranking": true},
+  "publication_table": "not emitted; strict three-seed comparison is fail-closed",
+  "reason": "A Table B mean±SD and paired contrast cannot be formed without all six frozen prediction archives.",
+  "test_iid_read": false,
+  "sealed_read": false,
+  "deepoheat_official100_read": false
+}
