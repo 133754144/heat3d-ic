@@ -19,6 +19,15 @@ import h5py
 import numpy as np
 from scipy.spatial import cKDTree
 
+# Running a script by path places ``scripts/`` (rather than the repository
+# root) first on sys.path.  Make the frozen repository utility import explicit
+# so the remote invocation cannot depend on the caller's PYTHONPATH.
+import sys
+
+REPO_ROOT = Path(__file__).resolve().parents[1]
+if str(REPO_ROOT) not in sys.path:
+    sys.path.insert(0, str(REPO_ROOT))
+
 from rigno.heat3d_v6_full_field import build_reconstruction_map
 
 
