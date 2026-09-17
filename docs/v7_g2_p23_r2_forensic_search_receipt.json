@@ -1,0 +1,120 @@
+{
+  "schema_version": "heat3d_v7_g2_p23_r2_forensic_search_v1",
+  "generated_at": "2026-09-17T16:45:14+08:00",
+  "repo_commit_sha": "6388db39136c614b39f2c5693de7b581bb59cbc4",
+  "target_remote_branch": "research/v7-g2-baselines",
+  "host": "devbox",
+  "scope": "P23-R2 read-only forensic recovery of frozen Heat3D V6 P1i seed1/seed2 checkpoints",
+  "search_policy": {
+    "read_only": true,
+    "training": false,
+    "evaluator_modified": false,
+    "checkpoint_modified": false,
+    "checkpoint_substitution": false,
+    "checkpoint_reselection": false,
+    "full_home_hash": false,
+    "prediction_values_read": false,
+    "test_iid_read": false,
+    "sealed_read": false,
+    "deepoheat_official100_read": false
+  },
+  "target_checkpoints": {
+    "seed1": {
+      "run": "V6_07_V5best_P1i_seed1_reliable_B24",
+      "expected_sha256": "7197157969278d99648ef9b40d74005d759f32e52e9282e72a5586003d1e71f7",
+      "canonical_path": "/home/xyh/myCodeGitOnly/heat3d-ic/output/heat3d_v6_p1i_runs/V6_07_V5best_P1i_seed1_reliable_B24/params_best_valid_point_global.pkl",
+      "status": "NOT_FOUND",
+      "recovery_copy_created": false
+    },
+    "seed2": {
+      "run": "V6_08_V5best_P1i_seed2_reliable_B24",
+      "expected_sha256": "d67e0dac2e8ed8009ce7dcdf0b2de4543b10bc005c0bfaa51027ea721bb2ab49",
+      "canonical_path": "/home/xyh/myCodeGitOnly/heat3d-ic/output/heat3d_v6_p1i_runs/V6_08_V5best_P1i_seed2_reliable_B24/params_best_valid_point_global.pkl",
+      "status": "NOT_FOUND",
+      "recovery_copy_created": false
+    }
+  },
+  "search_roots": [
+    "/home/xyh/myCodeGitOnly/heat3d-ic",
+    "/home/xyh/myCodeGitOnly/heat3d-ic-g2",
+    "/home/xyh/myCodeGitOnly/heat3d-ic-gate6g",
+    "/home/xyh/myCode/3D IC Heat",
+    "/home/xyh/.cache",
+    "/home/xyh/Sync",
+    "/home/xyh/output",
+    "/home/xyh/myData",
+    "/home/xyh/models",
+    "/home/xyh/myModel",
+    "/home/xyh/uscwc-9qsbv",
+    "/tmp",
+    "/var/tmp",
+    "/mnt/wslg/distro/home/xyh",
+    "/mnt/c/Users"
+  ],
+  "search_categories": [
+    {
+      "category": "filename_candidates",
+      "patterns": ["V6_07", "V6_08", "seed1", "seed2", "71971579", "d67e0dac", "params_best_valid_point_global.pkl", "*.pkl", "*.pickle", "*.ckpt", "*.pt", "*.tar", "*.tar.gz", "*.zip"],
+      "result": "No V6_07/V6_08 checkpoint file or target-SHA-named file found; only V6_06 seed0 checkpoint and unrelated experiments were present."
+    },
+    {
+      "category": "candidate_directories",
+      "paths": [
+        "/home/xyh/myCodeGitOnly/heat3d-ic/output/heat3d_v6_p1i_runs",
+        "/home/xyh/myCodeGitOnly/heat3d-ic/output/heat3d_v6_p1i_archives",
+        "/home/xyh/myCodeGitOnly/heat3d-ic/output/heat3d_v6_p1i_smoke",
+        "/home/xyh/myCodeGitOnly/heat3d-ic/output/v6_supplemental_publication_8a81261/work/S1",
+        "/home/xyh/myCodeGitOnly/heat3d-ic/output/v6_supplemental_publication_8a81261/work/S2",
+        "/home/xyh/myCodeGitOnly/heat3d-ic/output/v6_supplemental_publication_8a81261/work/S3",
+        "/home/xyh/myCodeGitOnly/heat3d-ic/output/v6_supplemental_publication_4c0e355",
+        "/home/xyh/myCodeGitOnly/heat3d-ic/output/v6_supplemental_publication_db7c123",
+        "/home/xyh/myCodeGitOnly/heat3d-ic/.git/worktrees",
+        "/home/xyh/myCodeGitOnly/heat3d-ic-g2/.git/worktrees",
+        "/home/xyh/myCodeGitOnly/heat3d-ic-gate6g/.git/worktrees",
+        "/home/xyh/.cache",
+        "/tmp",
+        "/var/tmp"
+      ],
+      "result": "Only V6_06 seed0 output, V6_06 smoke, and a V6_05 failed legacy export were found in the V6 P1i roots; no seed1/seed2 output directory or checkpoint appeared."
+    },
+    {
+      "category": "u_v2_receipts",
+      "paths": [
+        "/home/xyh/myCodeGitOnly/heat3d-ic/output/v6_supplemental_publication_8a81261/work/S1/U_v2_direct240825",
+        "/home/xyh/myCodeGitOnly/heat3d-ic/output/v6_supplemental_publication_8a81261/work/S2/U_v2_direct240825",
+        "/home/xyh/myCodeGitOnly/heat3d-ic/output/v6_supplemental_publication_8a81261/work/S3/U_v2_direct240825",
+        "/home/xyh/myCodeGitOnly/heat3d-ic/output/v6_supplemental_publication_8a81261/work/S1/U_v2_16384_reconstruction",
+        "/home/xyh/myCodeGitOnly/heat3d-ic/output/v6_supplemental_publication_8a81261/work/S2/U_v2_16384_reconstruction",
+        "/home/xyh/myCodeGitOnly/heat3d-ic/output/v6_supplemental_publication_8a81261/work/S3/U_v2_16384_reconstruction"
+      ],
+      "unique_checkpoint_sha256_observed": ["51567afe17e38cb6ed8c95c4dd39598e647c1699de9351358e7729fecc20b90e"],
+      "interpretation": "All inspected S1/S2/S3 U-v2 receipts bind to the V6 seed0 checkpoint. They are provenance clues only and cannot substitute for V6 seed1/seed2 canonical checkpoints or predictions."
+    },
+    {
+      "category": "text_receipts_logs_commands",
+      "result": "The V6 P1i output log present is seed0 only. Its configuration audit records seed1/seed2 as planned WSL2 replications, but no corresponding seed1/seed2 log, output, or checkpoint file is present on devbox."
+    },
+    {
+      "category": "git_history",
+      "result": "git log --all --full-history finds V6_07/V6_08 YAML additions only; no binary checkpoint is tracked in repository history or LFS."
+    }
+  ],
+  "sha_verification": {
+    "seed0_reference_candidate": {
+      "path": "/home/xyh/myCodeGitOnly/heat3d-ic/output/heat3d_v6_p1i_runs/V6_06_V5best_P1i_seed0_reliable_B24/params_best_valid_point_global.pkl",
+      "size_bytes": 10792948,
+      "mtime": "2026-08-02 14:07:26.454572529 +0800",
+      "sha256": "51567afe17e38cb6ed8c95c4dd39598e647c1699de9351358e7729fecc20b90e",
+      "identity": "V6_06 seed0; not a seed1/seed2 substitute"
+    },
+    "target_files_hashed": ["seed0 reference only"],
+    "target_files_missing_before_hash": ["seed1 canonical checkpoint", "seed2 canonical checkpoint"]
+  },
+  "historical_prediction_policy": {
+    "u_v2_predictions": "not canonical P23 predictions; not used for Table B",
+    "historical_seed0_prediction": "does not establish seed1/seed2 checkpoint identity",
+    "replay_allowed": false
+  },
+  "final_status": "FORENSIC_RECOVERY_EXHAUSTED_CHECKPOINT_NOT_RECOVERED",
+  "next_action": "Recover the exact two frozen files from their original WSL2/source storage or an independently retained immutable archive. Do not retrain, substitute, or rerun P23-R until both target SHA256 values pass."
+}

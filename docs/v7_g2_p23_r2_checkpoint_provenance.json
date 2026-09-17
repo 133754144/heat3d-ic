@@ -1,0 +1,51 @@
+{
+  "schema_version": "heat3d_v7_g2_p23_r2_checkpoint_provenance_v1",
+  "generated_at": "2026-09-17T16:45:14+08:00",
+  "repo_commit_sha": "6388db39136c614b39f2c5693de7b581bb59cbc4",
+  "target_remote_branch": "research/v7-g2-baselines",
+  "checkpoint_role": "V6 P1i frozen point_global_best canonical identity",
+  "expected": {
+    "seed1": {
+      "config_id": "V6_07_V5best_P1i_seed1_reliable_B24",
+      "expected_sha256": "7197157969278d99648ef9b40d74005d759f32e52e9282e72a5586003d1e71f7",
+      "observed_candidates": [],
+      "recovery_status": "NOT_FOUND"
+    },
+    "seed2": {
+      "config_id": "V6_08_V5best_P1i_seed2_reliable_B24",
+      "expected_sha256": "d67e0dac2e8ed8009ce7dcdf0b2de4543b10bc005c0bfaa51027ea721bb2ab49",
+      "observed_candidates": [],
+      "recovery_status": "NOT_FOUND"
+    }
+  },
+  "reference_only": {
+    "seed0": {
+      "config_id": "V6_06_V5best_P1i_seed0_reliable_B24",
+      "path": "/home/xyh/myCodeGitOnly/heat3d-ic/output/heat3d_v6_p1i_runs/V6_06_V5best_P1i_seed0_reliable_B24/params_best_valid_point_global.pkl",
+      "sha256": "51567afe17e38cb6ed8c95c4dd39598e647c1699de9351358e7729fecc20b90e",
+      "role": "existing seed0 reference; never a seed1/seed2 substitute"
+    }
+  },
+  "u_v2_provenance": {
+    "direct240825_and_16384_receipt_groups": ["S1", "S2", "S3"],
+    "unique_checkpoint_sha256": ["51567afe17e38cb6ed8c95c4dd39598e647c1699de9351358e7729fecc20b90e"],
+    "canonical_seed1_seed2_evidence": false,
+    "prediction_substitution_allowed": false
+  },
+  "recovery": {
+    "seed1_copy": null,
+    "seed2_copy": null,
+    "copy_sha_verification": "NOT_APPLICABLE",
+    "status": "FORENSIC_RECOVERY_EXHAUSTED_CHECKPOINT_NOT_RECOVERED"
+  },
+  "downstream": {
+    "heat3d_seed1_seed2_replay": "BLOCKED",
+    "six_model_seed_archives": "NOT_GENERATED",
+    "table_b": "BLOCKED",
+    "paired_bootstrap": "BLOCKED",
+    "condition_analysis": "BLOCKED",
+    "claim_audit": "BLOCKED_FOR_NEW_COMPARISON",
+    "test_or_sealed_unlock": false
+  },
+  "next_action": "Recover exact seed1/seed2 files from original WSL2/source storage or immutable archive; then independently verify both target SHA256 values before any frozen valid-only replay."
+}
