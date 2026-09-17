@@ -133,7 +133,7 @@ def one_case_metrics(pred: np.ndarray, truth: np.ndarray, weights: np.ndarray) -
     }
 
 
-def summarize(rows: list[dict[str, Any]]) -> dict[str, Any]:
+def summarize(rows: list[dict[str, Any]], require_three_seeds: bool = True) -> dict[str, Any]:
     metrics = (
         "sample_first_relative_rmse_pct",
         "point_global_relative_rmse_pct",
@@ -191,10 +191,10 @@ def summarize(rows: list[dict[str, Any]]) -> dict[str, Any]:
     aggregate: dict[str, Any] = {}
     for model in sorted({r["model"] for r in rows}):
         seeds = [s for s in seed_summaries if s["model"] == model]
-        if len(seeds) != 3:
+        if require_three_seeds and len(seeds) != 3:
             raise ValueError(f"P23 requires three frozen seeds for {model}, got {len(seeds)}")
         aggregate[model] = {
-            "n_training_seeds": 3,
+            "n_training_seeds": len(seeds),
             "dispersion_label": "SD across training seeds",
             "metrics_mean": {
                 metric: float(np.mean([s["metrics"][metric] for s in seeds]))
@@ -220,6 +220,11 @@ def main() -> int:
     )
     parser.add_argument("--output-json", type=Path, required=True)
     parser.add_argument("--output-csv", type=Path, required=True)
+    parser.add_argument(
+        "--allow-partial",
+        action="store_true",
+        help="Emit a diagnostic partial valid-only artifact; never a complete P23 comparison.",
+    )
     args = parser.parse_args()
 
     cases = load_valid_cases(args.valid_cases)
@@ -262,10 +267,14 @@ def main() -> int:
                     }
                     row.update(one_case_metrics(pred, truth, weights))
                     rows.append(row)
-        summary = summarize(rows)
+        summary = summarize(rows, require_three_seeds=not args.allow_partial)
         payload = {
             "schema_version": "heat3d_v7_g2_p23_common_fullfield_evaluation_v1",
-            "status": "COMPLETE_VALID_ONLY" if len(rows) else "EMPTY",
+            "status": (
+                "PARTIAL_VALID_ONLY_DIAGNOSTIC"
+                if args.allow_partial and len(rows)
+                else ("COMPLETE_VALID_ONLY" if len(rows) else "EMPTY")
+            ),
             "authorized_role": "valid_iid",
             "valid_case_count": len(cases),
             "nodes_per_sample": NODE_COUNT,
@@ -276,6 +285,7 @@ def main() -> int:
             "test_iid_read": False,
             "sealed_read": False,
             "deepoheat_official100_read": False,
+            "partial_diagnostic_only": bool(args.allow_partial),
             "rows": rows,
             **summary,
         }
