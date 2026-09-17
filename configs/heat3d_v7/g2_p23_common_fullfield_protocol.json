@@ -21,8 +21,8 @@
     "nodes_per_sample": 240825,
     "grid": [65, 65, 57],
     "units": "deltaT_K",
-    "valid_case_manifest": "REQUIRED_SEPARATE_VALID_ONLY_CASE_MANIFEST",
-    "valid_case_manifest_sha256": null,
+    "valid_case_manifest": "configs/heat3d_v7/g2_p23_valid_only_case_manifest.json",
+    "valid_case_manifest_sha256": "f42cca611b6c70551b153f4f887b2d47724d9082846e4b381cab4ad9c652e57c",
     "test_or_sealed_rows_materialized": false
   },
   "identities": {
@@ -111,7 +111,9 @@
     "bin_rule": "valid-case input-only quantiles Q0-Q33, Q33-Q67, Q67-Q100; edges frozen before joining any model error",
     "edge_source": "authorized valid-only case-definition manifest",
     "prediction_or_accuracy_used_for_bins": false,
-    "status": "NOT_EXECUTED_VALID_ONLY_CASE_MANIFEST_AND_INCIDENT_AMENDMENT_REQUIRED",
+    "bin_receipt": "configs/heat3d_v7/g2_p23_condition_bins_receipt.json",
+    "bin_receipt_sha256": "71468934ee8b99c2a2d805a138f436af7bc9450c80011316fccec1a4b1f415c5",
+    "status": "FROZEN_BEFORE_MODEL_ERROR; EVALUATION_PENDING",
     "no_pattern_label_until_run": true
   },
   "publication_tables": {
@@ -136,7 +138,7 @@
     "final_sensitivity": "may be reported separately when artifacts are available"
   },
   "readiness": {
-    "decision": "P23_NEEDS_AMENDMENT",
+    "decision": "P23_R_REPLAY_IN_PROGRESS",
     "blockers": [
       "accidental read of mixed-role legacy CSV recorded in test-access incident receipt",
       "V6 seed1 and seed2 per-sample prediction archives are not available in this worktree",

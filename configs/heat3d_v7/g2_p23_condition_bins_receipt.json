@@ -1,0 +1,62 @@
+{
+  "schema_version": "heat3d_v7_g2_p23_condition_bins_receipt_v1",
+  "status": "FROZEN_BEFORE_MODEL_ERROR",
+  "source_manifest": "configs/heat3d_v7/g2_p23_valid_only_case_manifest.json",
+  "source_manifest_sha256": "f42cca611b6c70551b153f4f887b2d47724d9082846e4b381cab4ad9c652e57c",
+  "case_count": 128,
+  "discrete_bins": {
+    "source_count": {
+      "low": {"inclusive_range": [3, 5], "case_count": 45},
+      "mid": {"inclusive_range": [6, 7], "case_count": 32},
+      "high": {"inclusive_range": [8, 10], "case_count": 51}
+    },
+    "k_region_count": {
+      "low": {"inclusive_range": [2, 3], "case_count": 31},
+      "mid": {"inclusive_range": [4, 5], "case_count": 38},
+      "high": {"inclusive_range": [6, 8], "case_count": 59}
+    }
+  },
+  "continuous_bins": {
+    "quantile_method": "numpy.quantile(method=linear) on valid-only input metadata; low <= Q33, mid > Q33 and <= Q67, high > Q67",
+    "total_power_W": {
+      "q0": 2.0838014554651068,
+      "q33": 5.57166855786286,
+      "q67": 8.678269918745148,
+      "q100": 14.659899517570572,
+      "case_counts": {"low": 43, "mid": 42, "high": 43}
+    },
+    "source_power_heterogeneity": {
+      "q0": 0.0353190355368736,
+      "q33": 0.2188784416848707,
+      "q67": 0.2958272839976763,
+      "q100": 0.4604987646032045,
+      "case_counts": {"low": 43, "mid": 42, "high": 43}
+    },
+    "top_h_W_m2K": {
+      "q0": 503.6403686223479,
+      "q33": 749.6606974011661,
+      "q67": 1157.0601550662582,
+      "q100": 1584.3632223551842,
+      "case_counts": {"low": 43, "mid": 42, "high": 43}
+    },
+    "bottom_h_W_m2K": {
+      "q0": 20.24141948196649,
+      "q33": 45.256583514409215,
+      "q67": 101.08337819001079,
+      "q100": 196.23378765778594,
+      "case_counts": {"low": 43, "mid": 42, "high": 43}
+    },
+    "material_conductivity_heterogeneity": {
+      "definition": "control-volume-weighted population SD of log10((kx*ky*kz)^(1/3))",
+      "q0": 1.2990321335614505,
+      "q33": 1.3316857341679995,
+      "q67": 1.3478922909353492,
+      "q100": 1.3758424503201963,
+      "case_counts": {"low": 43, "mid": 42, "high": 43}
+    }
+  },
+  "model_error_read": false,
+  "test_iid_read": false,
+  "sealed_read": false,
+  "deepoheat_official100_read": false
+}
