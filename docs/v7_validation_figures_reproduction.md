@@ -1,5 +1,38 @@
 # V7 validation visualization reproduction
 
+## 当前交付：完整 FVM reference（替代下方历史稀疏图）
+
+P1i 最新 PNG/PDF 使用完整 240825 点 FVM 真值，原生 65×65×57 网格直接提取
+65×65 切片；sample=v6p1if1_0003，z=2.83125 mm，下层硅片，按完整 FVM 峰值选层。
+Heat3D Full seed0 从冻结 e156 checkpoint 重新执行 G2 使用的 U-v2-direct240825。
+RIGNO、GINO、Transolver 保持已重新推理的 1024 原生点，并在同层用薄板 RBF
+（smoothing=0）插值/外推至相同 65×65 切片。37.2% 查询位置在该层支撑凸包外，
+按用户要求保留外推，不设灰色遮罩。Reference 本身没有插值或外推。
+全部 reference 数组及 RGBA 映射完全一致，整组统一温度范围，每图独立色条。
+误差现在是 dense-query 或 sparse-interpolated prediction 减去真实 dense FVM；
+不同原始查询分辨率已在每行标明，不作为新的同分辨率 benchmark 排名。
+
+验证：full_fields.h5 SHA256=49023ac1205b8e7cf7c5bf782b89fcdb34997704b3f9aa2fb2d46cf1a59163cb；
+每个原生坐标精确匹配完整网格点，原生真值与完整 FVM 对应点一致；切片均有限且无 mask。
+Heat3D 新的完整推理与历史同域结果最大差异 0.0307617 K，相对 L2 差异 3.81027e-5，
+没有使用旧预测代替新推理。DeepOHeat 图保持上一版。
+
+### 最新密集推理复现命令
+
+```bash
+source ~/miniconda3/etc/profile.d/conda.sh
+conda activate rigno
+python /tmp/export_v7_p1i_dense_visualization.py --repo /home/xyh/myCodeGitOnly/heat3d-ic --archive /home/xyh/myCodeGitOnly/heat3d-ic/data/heat3d_v6_p1i_continuous_physics1024_v1_full_fields/full_fields.h5 --subset /home/xyh/myCodeGitOnly/heat3d-ic/data/heat3d_v6_p1i_continuous_physics1024_v1 --checkpoint /tmp/v7_vis_Full_seed0.pkl --formal-receipt /tmp/v7_full_formal_receipt.json --route-config /tmp/v7_dense_route_config.json --output /tmp/v7_p1i_dense_visualization_20260918
+```
+
+冻结 route-config 源于 G1 archive 的 h2_fullfield_240825_native/U_v2_direct240825/Full_seed0/run_config.json；
+副本在本地图目录 dense_route_config.json。正式 receipt 源于 formal_21_runs/Full_seed0/v7_g1_formal_receipt.json。
+复现脚本放入命令所指 /tmp 路径，output 需选未存在的目录。运行代码 commit=2de1bf9339a2f1b4fbb05804b7bd9c37a9abf676。
+重新绘图仍使用下方通用命令；检测到 P1i_FVM.npz 后自动走完整 reference 绘图入口。
+
+## 以下为历史导出和审计记录（稀疏 reference/灰色遮罩已被替代）
+
+
 本次重新加载 6 个 checkpoint，在 devbox RTX 5070 上进行推理；没有训练、solver 或 test/sealed 读取。
 
 ## 样本与展示口径

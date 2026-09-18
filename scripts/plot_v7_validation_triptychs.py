@@ -105,5 +105,10 @@ def draw(root, names, basename, title):
 
 if __name__=='__main__':
     p=argparse.ArgumentParser();p.add_argument('--artifacts',type=Path,required=True);p.add_argument('--group',choices=['p1i','deepoheat','all'],default='all');a=p.parse_args()
-    if a.group in ['p1i','all']: draw(a.artifacts,['Full','RIGNO','GINO','Transolver'],'V7_P1i_comparison','V7 G1 / G2 · P1i validation case')
+    if a.group in ['p1i','all']:
+        if (a.artifacts/'P1i_FVM.npz').exists():
+            import subprocess,sys
+            subprocess.run([sys.executable,str(Path(__file__).with_name('plot_v7_p1i_dense_reference.py')),'--artifacts',str(a.artifacts)],check=True)
+        else:
+            draw(a.artifacts,['Full','RIGNO','GINO','Transolver'],'V7_P1i_comparison','V7 G1 / G2 · P1i validation case')
     if a.group in ['deepoheat','all']: draw(a.artifacts,['Heat3D-DeepOHeat','DeepOHeat'],'V7_DeepOHeat_comparison','V7 G2 · DeepOHeat validation case')
