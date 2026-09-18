@@ -64,9 +64,21 @@ def main():
             row=P1iRoleDataset(a.p1i_root,manifest,'valid_iid')[0]
             model=(build_gino(.15,.033,use_open3d=True,use_torch_scatter=True) if a.model=='GINO' else build_transolver(a.upstream)).to(device)
             checkpoint=torch.load(a.checkpoint,map_location=device,weights_only=False)
+            if checkpoint['model_name']!=a.model or checkpoint['seed']!=0:
+                raise ValueError('checkpoint model/seed mismatch')
+            if row['sample_id']!=sid or not np.allclose(row['coords'].numpy(),coords,rtol=0,atol=1e-9):
+                raise ValueError('sample/coordinate ordering mismatch')
+            if not all(torch.equal(v,checkpoint['normalization'][k].cpu()) for k,v in stats.items()):
+                raise ValueError('checkpoint normalization differs from supplied frozen statistics')
             model.load_state_dict(checkpoint['model']); model.eval()
             c,f,_,_,local=normalize(row,stats,device)
             with torch.no_grad(): pred=(predict(a.model,model,c,f,latent_queries(32).to(device) if a.model=='GINO' else None)*local['target_std']+local['target_mean']).cpu().numpy().reshape(-1)
+            if checkpoint.get('reload_probe_valid_sample_id')==sid:
+                probe=checkpoint['reload_probe_prediction'].cpu().numpy().reshape(-1)
+                meta['checkpoint_probe_max_abs_K']=float(np.max(np.abs(probe-pred)))
+                meta['checkpoint_probe_relative_L2']=float(np.linalg.norm(probe-pred)/np.linalg.norm(probe))
+                if meta['checkpoint_probe_relative_L2']>1e-3:
+                    raise ValueError('fresh output differs materially from checkpoint probe')
             meta.update(epoch=checkpoint.get('epoch'), hardware=torch.cuda.get_device_name(), normalization_sha256=sha(ROOT/'docs/v7_g2_p3_p1i_train_statistics.json'))
         else:
             import jax

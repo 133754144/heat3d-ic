@@ -6,9 +6,9 @@
 
 - P1i：`v6p1if1_0003`，`valid_iid` 首行，seed 0。Heat3D G1 Full 与 canonical vanilla RIGNO；GINO/Transolver 为 G2 正式 best。
 - DeepOHeat-v1：`dhv1_volume_valid_00084`，source index 84，seed 0；Heat3D 为固定 e600，DeepOHeat 为 matched-768 validation-best。
-- P1i：1024 原生点，同层 167 点 thin-plate RBF（smoothing=0）展示为 256×256；不是 65536 点推理，也不是密集 FVM 真值。37.3% 展示网格在支撑凸包外，属于外推。真实值和预测值使用相同插值。虚线框来自 sample_meta.json 中该层真实 q_blocks。
+- P1i：1024 原生点，同层 167 点 thin-plate RBF（smoothing=0）展示为 256×256；不是 65536 点推理，也不是密集 FVM 真值。37.3% 展示网格在支撑凸包外，修正版已统一屏蔽为灰色，不再显示外推温度。真实值和预测值使用相同插值。虚线框来自 sample_meta.json 中该层真实 q_blocks。
 - DeepOHeat：571256 点完整直接输出，精确提取 101×101 的 z=0.12 切片，无场值平滑。
-- 每行真实/预测共用色谱与范围，每个面板分别附色条；跨行温度范围可不同。误差共用零中心对称范围。无误差裁剪。
+- 整组真实/预测统一色谱与范围，每个面板分别附色条；同组 reference 的数据和 RGBA 像素映射必须完全一致。误差共用零中心对称范围。无误差裁剪。
 - 图中 relative L2 是整个原生/全场样本的非 CV 加权相对 L2，不是切片误差或多样本平均。单例不能替代 benchmark 排名。
 - 新的 G1 forward 与归档 native 预测最大差异：Full 0.0098724 K、RIGNO 0.0303192 K；因此不声称 bitwise replay。checkpoint SHA256 完全一致。
 
@@ -104,3 +104,31 @@ python3 scripts/plot_v7_validation_triptychs.py --artifacts research_artifacts/v
 
 分支 `codex/v7-validation-figures`，从 `2960ab5` 建立。新增两份 inference/plot 脚本及本复现说明；个人 skill 已更新并通过 quick_validate。`AGENTS.md` 已跟踪。远端原研究工作树没有 pull/reset 或源码改写，临时推理文件仅放 `/tmp/v7_visualization_20260918/`。本地/远端 data、output、checkpoints、logs 原始目录均未写入。
 后续如需进一步验证空间保真度，可单独比较 P1i 原生支撑插值与同一验证样本的 dense FVM 切片。
+
+## 2026-09-18 reference 与模型输出复核
+
+上一版每行 union-range 使相同 reference 显示成不同颜色，这是绘图错误。
+已改为整组 union-range，每面板保留独立色条；两组所有 reference 的 RGBA
+SHA256 分别逐行完全一致。样本、坐标、真实值及 layer_id 也逐数组相等。
+另将 P1i 同层支撑凸包外的 37.3% 区域统一屏蔽，避免外推制造空间结构。
+未改动六个模型的原始预测；核验记录在 artifact 目录的 render_audit.json、
+checkpoint_probe_audit.json、deepoheat_axis_audit.json、verification.json。
+
+| 模型 | 独立核验 | 最大差异 K |
+| --- | --- | ---: |
+| G1 Full | 归档同样本预测 | 0.0098724 |
+| G1 vanilla RIGNO | 归档同样本预测 | 0.0303192 |
+| GINO | best checkpoint 内同样本 reload probe；所有归一化张量逐元素一致 | 0.0162506 |
+| Transolver | best checkpoint 内同样本 reload probe；所有归一化张量逐元素一致 | 0 |
+| DeepOHeat | 独立完整网格 forward | 0.0087202 |
+
+DeepOHeat 正式 evaluator 得到该样本 CV-relative RMSE 2.28487039%，
+导出数组重新计算为 2.28490191%，差异 0.00003152 个百分点；这与图中非 CV
+加权 relative L2 2.28358% 是不同指标。27 点子网格查询差异为 0.0164986 K，
+保留该数值差异，不声称 bitwise deterministic。上游输出轴定义为 bijky，
+坐标为 meshgrid(indexing=ij) 后 C-order 展平，没有发现转置或样本错配。
+
+原始全样本平均偏差分别为 RIGNO -15.9692 K、GINO -35.4629 K、
+Transolver -32.3599 K、DeepOHeat -0.57998 K，远大于上述重放差异。
+现有证据支持这些低估存在于冻结模型输出，不能将其修饰成绘图正常的预测。
+本复核不评估原训练过程的最优性，也不将单个验证样本升级为模型排名。
