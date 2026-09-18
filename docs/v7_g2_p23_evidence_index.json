@@ -1,6 +1,6 @@
 {
   "schema_version": "heat3d_v7_g2_p23_evidence_index_v1",
-  "status": "PARTIAL_VALID_ONLY_EVIDENCE_P23_NEEDS_AMENDMENT",
+  "status": "P23_VALID_ONLY_CLOSED_P1I_PRE_CLOSEOUT",
   "protocol_artifacts": {
     "identity_manifest": "docs/v7_g2_p23_model_identity_manifest.json",
     "common_fullfield_protocol": "configs/heat3d_v7/g2_p23_common_fullfield_protocol.json",
@@ -19,22 +19,24 @@
     },
     "paired_bootstrap": {
       "path": "scripts/analyze_v7_g2_p23_paired_bootstrap.py",
-      "sha256": "fbe152c3b55c6100f8e6ee55fe3dd13fa033720371c355b7a60b42106a7332ca"
+      "sha256": "fbe152c3b55c6100f8e6ee55fe3dd13fa033720371c355b7a60b42106a7332ca",
+      "legacy_status": "SUPERSEDED_ESTIMAND_AUDIT_ONLY",
+      "corrected_path": "scripts/analyze_v7_g2_p1i_paired_bootstrap.py"
     },
     "synthetic_metric_check": "PASS; no P1i/test data used"
   },
   "result_artifacts": {
     "per_sample_metrics": {
-      "path": "docs/v7_g2_p23_per_sample_metrics.json",
-      "status": "NOT_GENERATED"
+      "path": "docs/results/v7_g2_p23_g1_e200_u_v2_direct240825_vs_thermfm_common_eval.json",
+      "status": "COMPLETE_VALID_ONLY"
     },
     "paired_bootstrap": {
-      "path": "docs/v7_g2_p23_paired_bootstrap_result.json",
-      "status": "NOT_EXECUTED_FAIL_CLOSED"
+      "path": "docs/results/v7_g2_p1i_corrected_paired_bootstrap.json",
+      "status": "COMPLETE_VALID_ONLY_CORRECTED_ESTIMAND"
     },
     "condition_analysis": {
-      "path": "docs/v7_g2_p23_condition_analysis.json",
-      "status": "PREREGISTERED_NOT_EXECUTED_FAIL_CLOSED"
+      "path": "docs/results/v7_g2_p23_g1_e200_u_v2_direct240825_condition_analysis.json",
+      "status": "COMPLETE_VALID_ONLY"
     }
   },
   "governance": {
@@ -43,12 +45,12 @@
     "sealed_read": false,
     "deepoheat_official100_read": false,
     "evaluation_unlock": false,
-    "g1_modified": false
+    "g1_modified": false,
+    "current_valid_only_route": "independently staged sidecar/common-evaluator route; no archive manifest rewrite"
   },
   "blocker_summary": [
-    "P23 hard-boundary incident requires reviewer-approved remediation.",
-    "V6 seed1/seed2 per-sample prediction archives are unavailable in this worktree.",
-    "Therm-FM per-sample valid-only predictions are not materialized.",
-    "No independently staged valid-only case manifest with truth-row indices is available."
+    "G1 archive manifest does not enumerate retained direct240825 sidecar; post-hoc provenance receipt is required in the publication package.",
+    "P24 sealed evaluation still requires a separate reviewer-approved evaluation-only unlock.",
+    "No implementation/scientific blocker remains for the current valid-only comparison."
   ]
 }

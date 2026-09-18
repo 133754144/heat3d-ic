@@ -1,0 +1,25 @@
+{
+  "baseline_contract": "valid_iid=128, 240825 nodes, coordinate hash and truth-row identity",
+  "deepoheat_official100_read": false,
+  "schema_version": "heat3d_v7_g2_p1i_negative_domain_gate_v1",
+  "sealed_read": false,
+  "status": "PASS_FAIL_CLOSED_NEGATIVE_TESTS",
+  "test_iid_read": false,
+  "tests": [
+    {
+      "error": "truth_row_mapping_mismatch:invalid_sample_id_not_in_prediction_archive",
+      "name": "sample_id_mutation",
+      "status": "EXPECTED_FAIL"
+    },
+    {
+      "error": "coordinates_sha256_mismatch",
+      "name": "coordinate_order_mutation",
+      "status": "EXPECTED_FAIL"
+    },
+    {
+      "error": "truth_row_mapping_mismatch:v6p1if1_0003",
+      "name": "truth_row_mapping_mutation",
+      "status": "EXPECTED_FAIL"
+    }
+  ]
+}

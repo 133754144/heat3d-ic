@@ -1,0 +1,58 @@
+{
+  "schema_version": "heat3d_v7_g2_p23_g1_direct240825_posthoc_provenance_v1",
+  "status": "POSTHOC_PROVENANCE_RECONSTRUCTED_SIDECAR_ONLY",
+  "purpose": "Reconstruct provenance for retained G1 direct240825 sidecars without rewriting the historical G1 archive manifest.",
+  "historical_g1_archive_manifest_sha256": "8c6ea7dca9cefddd676c8ce5d1f30855547ed273f70466549bfd8ae88f3305c7",
+  "training_code_sha": "191a7a06a681556f575a1c04e2b61cb13363efe1",
+  "domain": {
+    "split_role": "valid_iid",
+    "case_count": 128,
+    "nodes_per_case": 240825,
+    "valid_manifest_sha256": "f42cca611b6c70551b153f4f887b2d47724d9082846e4b381cab4ad9c652e57c",
+    "truth_archive_sha256": "49023ac1205b8e7cf7c5bf782b89fcdb34997704b3f9aa2fb2d46cf1a59163cb",
+    "route": "U_v2_direct240825",
+    "value_kind": "deltaT_K",
+    "node_order": "canonical x_y_z",
+    "test_iid_read": false,
+    "sealed_read": false,
+    "deepoheat_official100_read": false
+  },
+  "reconstruction_method": {
+    "source": "retained historical sidecar under prior cbb8 worktree",
+    "source_receipts": "seed-specific immutable direct-route receipts",
+    "copy_operation": "lossless byte copy to devbox staging; SHA reverified after copy",
+    "container_adapter": "lossless NPZ key=sample_id adapter; no numeric/order transformation",
+    "archive_manifest_rewritten": false,
+    "checkpoint_inference_repeated": false
+  },
+  "sidecars": {
+    "seed0": {
+      "original_path": "/Users/xuyihua/.codex/worktrees/cbb8/3D IC Heat/research_artifacts/v7_g1_formal_archive/h2_fullfield_240825_native/U_v2_direct240825/Full_seed0/predictions_best.npz",
+      "size_bytes": 90966891,
+      "mtime_epoch": 1788384054,
+      "sha256": "a261c9342b45b91b337d7a9e302fcb1275e8f5eece35f2387eca3b0356eba801",
+      "checkpoint_sha256": "7ee050c946513004c3e33ce3b28c6fd246965ee4e95ff661eca3d888d5786517",
+      "direct_receipt_sha256": "1e1bbcb486bb02e850d348001fd191369085eacf767e763ee48adb42540126f5",
+      "devbox_copy": "/home/xyh/g2_staging_p23_g1_direct240825/heat3d_seed0_u_v2_direct240825.npz"
+    },
+    "seed1": {
+      "original_path": "/Users/xuyihua/.codex/worktrees/cbb8/3D IC Heat/research_artifacts/v7_g1_formal_archive/h2_fullfield_240825_native/U_v2_direct240825/Full_seed1/predictions_best.npz",
+      "size_bytes": 91311503,
+      "mtime_epoch": 1788384618,
+      "sha256": "4167d3bbdf508294708e02aa43115660536f1ed91ebe6e8846b0eac363c33e5d",
+      "checkpoint_sha256": "1821a8ea395e485e34e45ca4c08bf846e4217b4afb5fdd15b30d00a8d3a6f019",
+      "direct_receipt_sha256": "8125fb9d97ec5bfcd58f0ced03c6ad9b77305dce42ba11b89bcb4e965c31417",
+      "devbox_copy": "/home/xyh/g2_staging_p23_g1_direct240825/heat3d_seed1_u_v2_direct240825.npz"
+    },
+    "seed2": {
+      "original_path": "/Users/xuyihua/.codex/worktrees/cbb8/3D IC Heat/research_artifacts/v7_g1_formal_archive/h2_fullfield_240825_native/U_v2_direct240825/Full_seed2/predictions_best.npz",
+      "size_bytes": 91151268,
+      "mtime_epoch": 1788385179,
+      "sha256": "0f67cb0393992a86cb5ac3fdbcc39311cf6df9598e1a173a1a9cc0aa05f66cea",
+      "checkpoint_sha256": "2ed4c5d0a07fe696347877ac68ca50438be1fecadf83429b3090c83d529b151b",
+      "direct_receipt_sha256": "2c43d498288225798a11043eed714867ffdca26805a7f175c87ff381776a3148",
+      "devbox_copy": "/home/xyh/g2_staging_p23_g1_direct240825/heat3d_seed2_u_v2_direct240825.npz"
+    }
+  },
+  "interpretation": "This receipt supports frozen historical sidecar identity and common-evaluator reproduction only. It is not a claim that the current G1 archive manifest enumerated or that the checkpoints were re-inferred in this phase."
+}

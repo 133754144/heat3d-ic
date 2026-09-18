@@ -1,0 +1,130 @@
+{
+  "schema_version": "heat3d_v7_g2_p1i_corrected_paired_bootstrap_v1",
+  "status": "COMPLETE_VALID_ONLY_CORRECTED_ESTIMAND",
+  "comparison": "Heat3D - Therm-FM",
+  "unit": "physical case resampled with replacement",
+  "n_cases": 128,
+  "n_training_seeds_per_model": 3,
+  "resamples": 10000,
+  "bootstrap_seed": 230023,
+  "interval": "percentile 95 percent CI",
+  "conditional_on": "frozen three-seed cohort",
+  "seed_aggregation": "for each resample, compute the common-evaluator estimator separately per seed, then average the three seed estimates",
+  "sufficient_statistics": [
+    "sse",
+    "truth_sse",
+    "cv_sse",
+    "cv_truth_energy",
+    "absolute_error_sum",
+    "node_count",
+    "hotspot_sse",
+    "hotspot_count"
+  ],
+  "estimator_contract": {
+    "point_global_relative_rmse_pct": "100*sqrt(sum SSE / sum truth_SSE)",
+    "cv_weighted_point_global_relative_rmse_pct": "100*sqrt(sum CV_SSE / sum CV_truth_energy)",
+    "rmse_K": "sqrt(sum SSE / sum node_count)",
+    "mae_K": "sum absolute_error / sum node_count",
+    "true_hotspot_region_rmse_K": "sqrt(sum hotspot_SSE / sum hotspot_count)",
+    "sample_first_relative_rmse_pct": "mean of per-case CV-weighted relative RMSE",
+    "peak_temperature_mae_K": "mean per-case absolute peak error",
+    "peak_temperature_rmse_K": "sqrt(mean per-case peak error squared)"
+  },
+  "point_estimate_matches_main_table": {
+    "Heat3D": {
+      "sample_first_relative_rmse_pct": 0.0,
+      "point_global_relative_rmse_pct": 0.0,
+      "cv_weighted_point_global_relative_rmse_pct": 0.0,
+      "rmse_K": 0.0,
+      "mae_K": 0.0,
+      "peak_temperature_mae_K": 0.0,
+      "peak_temperature_rmse_K": 0.0,
+      "true_hotspot_region_rmse_K": 0.0
+    },
+    "Therm-FM": {
+      "sample_first_relative_rmse_pct": 0.0,
+      "point_global_relative_rmse_pct": 0.0,
+      "cv_weighted_point_global_relative_rmse_pct": 0.0,
+      "rmse_K": 0.0,
+      "mae_K": 0.0,
+      "peak_temperature_mae_K": 0.0,
+      "peak_temperature_rmse_K": 0.0,
+      "true_hotspot_region_rmse_K": 0.0
+    }
+  },
+  "main_table_difference": {
+    "sample_first_relative_rmse_pct": 0.5290279527892645,
+    "point_global_relative_rmse_pct": 0.3296624965582984,
+    "cv_weighted_point_global_relative_rmse_pct": 0.18815900256448304,
+    "rmse_K": 0.2617968028812361,
+    "mae_K": 0.4612697705873472,
+    "peak_temperature_mae_K": -0.1475001474221549,
+    "peak_temperature_rmse_K": -0.3669660549638154,
+    "true_hotspot_region_rmse_K": 1.7322440867836915
+  },
+  "per_metric": {
+    "sample_first_relative_rmse_pct": {
+      "observed_mean_difference": 0.5290279527892645,
+      "ci95": [
+        0.17511775328386736,
+        0.8827925090931723
+      ]
+    },
+    "point_global_relative_rmse_pct": {
+      "observed_mean_difference": 0.3296624965582984,
+      "ci95": [
+        -0.4929432699193635,
+        1.1634004620597072
+      ]
+    },
+    "cv_weighted_point_global_relative_rmse_pct": {
+      "observed_mean_difference": 0.18815900256448304,
+      "ci95": [
+        -0.681378392019947,
+        1.080140995321559
+      ]
+    },
+    "rmse_K": {
+      "observed_mean_difference": 0.2617968028812361,
+      "ci95": [
+        -0.4025306152708296,
+        0.9028583117587234
+      ]
+    },
+    "mae_K": {
+      "observed_mean_difference": 0.4612697705873472,
+      "ci95": [
+        0.11336961483556444,
+        0.7809307084041424
+      ]
+    },
+    "peak_temperature_mae_K": {
+      "observed_mean_difference": -0.1475001474221549,
+      "ci95": [
+        -0.9029575124382972,
+        0.5714301620920498
+      ]
+    },
+    "peak_temperature_rmse_K": {
+      "observed_mean_difference": -0.3669660549638154,
+      "ci95": [
+        -1.3181657139535017,
+        0.5459456429454705
+      ]
+    },
+    "true_hotspot_region_rmse_K": {
+      "observed_mean_difference": 1.7322440867836915,
+      "ci95": [
+        0.9537999712279274,
+        2.4435839790317924
+      ]
+    }
+  },
+  "legacy_bootstrap_sha256": "40cdf1418514d04c85d45f83ab03f458c879af5dbcb3c758fb91c27abdc986d6",
+  "legacy_bootstrap_status": "SUPERSEDED_ESTIMAND_AUDIT_ONLY",
+  "per_case_artifact_sha256": "7f1806f8b987e3afeda02019afe62cb7e6444a3d08d6b29cf888f6803c068de3",
+  "common_eval_sha256": "98829db6308c598ccdfe42d8d95f2bb15dbf14a30d45b316a70223efed13f140",
+  "test_iid_read": false,
+  "sealed_read": false,
+  "deepoheat_official100_read": false
+}

@@ -1,0 +1,60 @@
+{
+  "schema_version": "heat3d_v7_g2_p1i_precloseout_v1",
+  "status": "G2_DEVELOPMENT_FREEZE_RECOMMENDATION",
+  "scope": "P1i valid_iid=128, 240825-node full-field, Heat3D G1 e200 sidecar versus Therm-FM frozen three-seed cohort",
+  "training": false,
+  "tuning": false,
+  "checkpoint_reselection": false,
+  "new_test_iid_access": false,
+  "sealed_access": false,
+  "deepoheat_official100_access": false,
+  "evidence_closure": {
+    "historical_fail_closed_commit": "d9d961aa6970f60a45dea7995f1b82dab2e335d8",
+    "sidecar_common_evaluator_commit": "2960ab52ba90cea3ac4d321d36333835e3271808",
+    "d9_checkpoint_inference_status": "FAIL_CLOSED_PRESERVED",
+    "2960_pass_scope": "frozen historical sidecar identity and common-evaluator reproduction only",
+    "checkpoint_inference_reproduction": false,
+    "posthoc_receipt": "docs/results/v7_g2_p23_g1_direct240825_posthoc_provenance_receipt.json"
+  },
+  "domain": {
+    "split_role": "valid_iid",
+    "case_count": 128,
+    "nodes_per_case": 240825,
+    "grid": [65, 65, 57],
+    "valid_manifest_sha256": "f42cca611b6c70551b153f4f887b2d47724d9082846e4b381cab4ad9c652e57c",
+    "truth_archive_sha256": "49023ac1205b8e7cf7c5bf782b89fcdb34997704b3f9aa2fb2d46cf1a59163cb",
+    "domain_identity": "PASS_VALID_ONLY_SAME_DOMAIN",
+    "negative_gate_tests": "PASS_FAIL_CLOSED_NEGATIVE_TESTS"
+  },
+  "statistical_closure": {
+    "legacy_bootstrap": "SUPERSEDED_ESTIMAND_AUDIT_ONLY",
+    "corrected_bootstrap": "docs/results/v7_g2_p1i_corrected_paired_bootstrap.json",
+    "corrected_bootstrap_sha256": "781edcbd8d22b3b6dda2bde3cb97317a0b39be78fc41a277f811d20c9af964db",
+    "point_estimate_matches_main_table": true,
+    "case_bootstrap_resamples": 10000,
+    "bootstrap_seed": 230023,
+    "seed_dispersion": "SD across training seeds"
+  },
+  "artifact_sha256": {
+    "field_shape_mechanism": "da097186a4c740275598e69346197b76519a2eecd5dfd9b0d5564b730c7d6af4",
+    "negative_domain_gate": "ab1e2d79bf7b2fccfdd2be5703968d789ce1a1da1bebf36f6692576e7b68b584",
+    "posthoc_provenance": "1530a4c315ac0b473ea1bed5bb6936c50e653c5dee61c01ecc694af95e2eb49c",
+    "corrected_bootstrap": "781edcbd8d22b3b6dda2bde3cb97317a0b39be78fc41a277f811d20c9af964db"
+  },
+  "field_shape_diagnostics": {
+    "artifact": "docs/results/v7_g2_p1i_field_shape_mechanism.json",
+    "definition": "rigno/heat3d_v2_field_shape_diagnostics.py; Corr=100*centered correlation; Amp=100*amplitude ratio; top_k=5",
+    "aggregate": {
+      "Heat3D": {"corr_pct_mean": 98.10221305098946, "corr_pct_sd": 0.21242623437305533, "amp_pct_mean": 96.09835421511535, "amp_pct_sd": 0.3789808731947146, "amp_abs_error_pct_mean": 3.901645784884655, "top_k_overlap_pct_mean": 1.3541666666666667, "hotspot_rmse_case_mean_K": 4.690539334179349},
+      "Therm-FM": {"corr_pct_mean": 97.47010352315522, "corr_pct_sd": 0.19297371045895587, "amp_pct_mean": 123.02096264116933, "amp_pct_sd": 2.618981776058457, "amp_abs_error_pct_mean": 23.020962641169344, "top_k_overlap_pct_mean": 2.1875, "hotspot_rmse_case_mean_K": 3.000577477457593}
+    },
+    "interpretation": "Field-shape correlation is similar; the visible mechanism difference is amplitude calibration and hotspot localization, while RMSE/MAE/hotspot diagnostics favor Therm-FM on this frozen valid cohort."
+  },
+  "readiness": {
+    "g2_development_freeze": "RECOMMENDED",
+    "freeze_scope": ["checkpoints", "evaluator", "metric_contract", "selection_rules", "claim_set"],
+    "p24_sealed_preregistration": "READY_FOR_REVIEW_NOT_UNLOCKED",
+    "remaining_blocker": "G1 archive manifest does not enumerate the retained direct sidecar; post-hoc receipt preserves this governance caveat.",
+    "next_action": "human review of P24 evaluation-only preregistration; no new training or tuning"
+  }
+}

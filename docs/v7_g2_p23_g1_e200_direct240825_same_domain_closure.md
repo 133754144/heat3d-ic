@@ -36,6 +36,11 @@
   sample-first/peak 定义与 P23 的 CV-weighted sample-first、`abs(max(pred)-max(truth))` peak
   定义分开记录，不把语义不同的数值强行相等。
 
+本轮后续审计保留了 `d9d961a` 的 checkpoint→P1i inference `FAIL_CLOSED`。`2960ab5` 的
+`PASS` 仅表示冻结 historical direct240825 sidecar 的身份绑定与 common-evaluator reproduction，
+不表示本阶段重新从 checkpoint 完成了 inference reproduction。三份 sidecar 的 post-hoc provenance
+重建见 `docs/results/v7_g2_p23_g1_direct240825_posthoc_provenance_receipt.json`，且没有回写原 G1 archive manifest。
+
 ## Unified common evaluator
 
 所有 `±` 均为 **SD across training seeds（训练随机种子间标准差）**；不是把
@@ -57,17 +62,24 @@
 
 ## Paired case bootstrap
 
-每个 case 先在三个 training seeds 内求均值，再以 physical case 为单位进行 10,000 次 paired
-bootstrap（seed `230023`）。差值定义为 `Heat3D − Therm-FM`，区间为 percentile 95% CI，
-结论条件化于冻结的三 seed cohort。
+每个 physical case 的三 seed 结果保持冻结；corrected bootstrap 在每次 case resample 后，
+对每个 seed 重新汇总与主表相同的 sufficient-statistics estimator，再对三个 seed estimate
+取均值。因此 bootstrap point estimate 与主 aggregate table 一致。旧版逐 case RMSE 平均的
+receipt 保留为 `SUPERSEDED_ESTIMAND_AUDIT_ONLY`。
+
+10,000 次 paired bootstrap 使用 seed `230023`，差值定义为 `Heat3D − Therm-FM`，区间为
+percentile 95% CI，结论条件化于冻结的三 seed cohort。
 
 | 指标 | observed difference | 95% CI |
 |---|---:|---:|
 | sample-first relative RMSE % | 0.5290 | [0.1751, 0.8828] |
-| RMSE K | 0.4462 | [0.0996, 0.7635] |
+| point-global relative RMSE % | 0.3297 | [-0.4929, 1.1634] |
+| CV-weighted point-global relative RMSE % | 0.1882 | [-0.6814, 1.0801] |
+| RMSE K | 0.2618 | [-0.4025, 0.9029] |
 | MAE K | 0.4613 | [0.1134, 0.7809] |
 | peak-temperature absolute error K | −0.1475 | [−0.9030, 0.5714] |
-| true-hotspot-region RMSE K | 1.6900 | [1.2293, 2.1391] |
+| peak-temperature RMSE K | −0.3670 | [−1.3182, 0.5459] |
+| true-hotspot-region RMSE K | 1.7322 | [0.9538, 2.4436] |
 
 这些是预注册 paired estimates，不自动转写为普遍或统计学 superiority claim。
 
@@ -98,6 +110,7 @@ hotspot 指标差值整体偏向 Therm-FM，但 peak-temperature absolute error 
 - 统一评估：`docs/results/v7_g2_p23_g1_e200_u_v2_direct240825_vs_thermfm_common_eval.json`
 - 逐 case 表：同名 `.csv`
 - paired bootstrap：`docs/results/v7_g2_p23_g1_e200_u_v2_direct240825_paired_bootstrap.json`
+- corrected paired bootstrap：`docs/results/v7_g2_p1i_corrected_paired_bootstrap.json`
 - reproduction gate：`docs/results/v7_g2_p23_g1_e200_u_v2_direct240825_reproduction_gate.json`
 - 三份无损容器适配 receipt 与 prediction spec：同目录
 

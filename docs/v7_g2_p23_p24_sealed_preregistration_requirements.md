@@ -9,4 +9,8 @@ P23 只列要求，不打开 sealed IID。未来单独的 evaluation-only unlock
 5. valid-only checkpoint selection 已冻结，test/sealed 只做一次 evaluation-only 读取；
 6. 明确不允许根据 test 结果重训、改模型或改统计规则。
 
-P23 当前没有满足这些条件，也没有执行任何 unlock。
+P1i valid-only evaluator/domain/metric closure 已完成，且已生成
+`docs/v7_g2_p1i_precloseout_status.md`；因此 P24 可进入 reviewer review。
+但是本阶段仍未满足“正式 unlock 已获批准”的治理条件，尤其是 G1 direct sidecar 的
+manifest enumeration caveat 与历史 incident remediation 必须在 unlock 前被明确接受。
+本轮没有执行任何 unlock。
