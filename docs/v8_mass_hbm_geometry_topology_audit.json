@@ -1,0 +1,50 @@
+{
+  "schema_version": "heat3d-v8-mass-hbm-geometry-topology-audit-v1",
+  "date": "2026-09-19",
+  "status": "PHASE1_READONLY_AUDIT_COMPLETE",
+  "paper_facts": {
+    "fig3": "cross-scale package/die/interface/material representation",
+    "fig8": ["2.5D", "3D-P", "3D-V"],
+    "fig9": "structure-aware initial mesh followed by temperature-gradient/hotspot-aware adaptation",
+    "fig10": "architecture-dependent heat-flow paths",
+    "fig11": "internal liquid-cooling channels between vertical memory groups",
+    "regular_cuboid_guaranteed": false
+  },
+  "raw_facts": {
+    "case_count": 314,
+    "all_stored_cells_positive_finite_k": true,
+    "all_fields_cover_declared_structured_shape": true,
+    "explicit_inactive_or_void_mask_present": false,
+    "computational_domain": "full_axis_aligned_structured_bounding_box",
+    "physical_region_topology": "masked_subregions_embedded_in_computational_box",
+    "external_boundary": "xyz_extrema_axis_normals",
+    "internal_sink_case_count": 232,
+    "internal_sink_topology": "aggregate_only_missing_per_cell_and_per_face_map",
+    "lc_region_mask_audit": "counts_only"
+  },
+  "geometry_fingerprint": {
+    "target_independent": true,
+    "case_identity_excluded": true,
+    "formal_split_frozen": false,
+    "case_count": 314,
+    "unique_geometry_count": 74,
+    "cases_per_geometry_quantiles": {"min": 1, "q25": 1, "median": 1, "q75": 9, "max": 23},
+    "cases_per_geometry_histogram": {"1": 42, "2": 1, "3": 7, "4": 1, "5": 1, "6": 1, "7": 1, "9": 11, "10": 2, "11": 1, "12": 2, "16": 2, "18": 1, "23": 1},
+    "shape_14x130x130_case_count": 260,
+    "shape_14x130x130_unique_geometry_count": 54,
+    "architecture_family_count_metadata_only": 4
+  },
+  "inference": {
+    "p1i_11d_boundary_schema": "NO_GO",
+    "v8_generic_boundary_schema": "CONDITIONAL_GO_MODEL_SCHEMA_CHANGE",
+    "candidate_a": "node_aggregated_continuous_face_moments_lossy",
+    "candidate_b": "boundary_virtual_nodes_and_face_edges_recommended_formal_direction",
+    "lc_adapter": "FAIL_CLOSED_UNTIL_SPATIAL_SINK_TOPOLOGY_EXISTS",
+    "categorical_architecture_material_workload_model_inputs_used": false
+  },
+  "author_questions": [
+    "Is solver_geometry initial, final temperature-adapted, or a separate non-adapted reduced-order grid?",
+    "Provide per-cell/per-face LC sink topology, area, normal, sink temperature and conductance.",
+    "Provide the upstream pre-solve region/material map including void, filler and coolant semantics."
+  ]
+}

@@ -1,0 +1,202 @@
+{
+  "adapter_round_trip": {
+    "bc_sink_coverage": "EXTERNAL_FULL_BOX_FACES_FROM_RAW_SOLVER_GEOMETRY",
+    "cell_count_exact": true,
+    "cell_volume_sum_m3": 2.433600000000001e-05,
+    "coordinate_reconstruction": "exact_spacing_extent_with_documented_zero_origin_translation",
+    "integrated_power_W": 574.3759262999838,
+    "interface_double_count_guard": "PASS_HOMOGENIZED_IN_EFFECTIVE_K_EXPLICIT_TBR_FORBIDDEN",
+    "metadata_total_power_W": 574.3759262999839,
+    "no_clipping": true,
+    "no_nan_inf": true,
+    "physical_domain_mask_exact": "all_exported_cells_computational_no_raw_inactive_mask",
+    "power_relative_error": 1.9793106311743278e-16,
+    "status": "PASS",
+    "unit_guessing": false
+  },
+  "cell_count": 59150,
+  "checkpoint_written": false,
+  "classification": "ENGINEERING_DIAGNOSTIC_NOT_PUBLICATION_LATENCY",
+  "devbox_or_gpu_used": false,
+  "formal_training": false,
+  "forward_backward": {
+    "all_gradient_norms_finite": true,
+    "all_tensors_finite": true,
+    "final_loss": 0.023896072059869766,
+    "first_gradient_norm": 3.658687114715576,
+    "initial_loss": 0.13084743916988373,
+    "last_gradient_norm": 0.15602023899555206,
+    "learning_rate": 0.001,
+    "loss_ratio": 0.1826254469439381,
+    "not_model_accuracy": true,
+    "optimizer_update_succeeded": true,
+    "output_shape": [
+      1,
+      1,
+      1024,
+      1
+    ],
+    "status": "PASS",
+    "steps": 50,
+    "target_shape": [
+      1,
+      1,
+      1024,
+      1
+    ],
+    "wall_seconds": 17.942262457683682
+  },
+  "full_field_query": {
+    "backend": "sparse_kdtree_v1",
+    "cache_first_call_miss": true,
+    "cache_hits": 1,
+    "cache_misses": 8,
+    "cache_repeat_call_hit": true,
+    "chunk_concatenation_ordering_exact": true,
+    "chunk_count": 8,
+    "chunk_size": 8192,
+    "metadata_build_seconds": 0.16599704325199127,
+    "network_forward_seconds": 11.573308372870088,
+    "output_finite": true,
+    "point_count": 59150,
+    "query_contract": "1024-point support encoder plus output-local query-physics encoder and sparse r2p decoder",
+    "query_local_physics_provenance": "Track-A ORACLE permitted; must be replaced by PRE_SOLVE fields for Track-B",
+    "status": "PASS"
+  },
+  "graph": {
+    "config": {
+      "coverage_repair_policy": "nearest_rnode",
+      "discrete_graph_backend": "sparse_kdtree_v1",
+      "discrete_graph_chunk_size": 2048,
+      "min_physical_coverage": 1,
+      "node_coordinate_encoding": "raw",
+      "node_coordinate_freqs": 1,
+      "overlap_factor_p2r": 1.0,
+      "overlap_factor_r2p": 1.0,
+      "periodic": false,
+      "radius_policy": "discrete_physical_coverage",
+      "repair_p2r": true,
+      "repair_r2p": true,
+      "reuse_exact_p2r_for_r2p": true,
+      "rmesh_levels": 1,
+      "subsample_factor": 4.0
+    },
+    "dense_pairwise_used": false
+  },
+  "input": {
+    "categorical_architecture_material_workload_inputs_used": false,
+    "feature_provenance": {
+      "boundary_area_over_volume_1_m": "PRE_SOLVE",
+      "cell_volume_m3": "PRE_SOLVE",
+      "interface_G_nx_over_volume_W_m3K": "ORACLE",
+      "interface_G_ny_over_volume_W_m3K": "ORACLE",
+      "interface_G_nz_over_volume_W_m3K": "ORACLE",
+      "interface_G_over_volume_W_m3K": "ORACLE",
+      "k_x_W_mK": "ORACLE",
+      "k_y_W_mK": "ORACLE",
+      "k_z_W_mK": "ORACLE",
+      "prescribed_flux_power_over_volume_W_m3": "PRE_SOLVE",
+      "q_W_m3": "ORACLE",
+      "sink_G_deltaT_over_volume_W_m3": "PRE_SOLVE",
+      "sink_G_nx_over_volume_W_m3K": "PRE_SOLVE",
+      "sink_G_nxnx_over_volume_W_m3K": "PRE_SOLVE",
+      "sink_G_nxny_over_volume_W_m3K": "PRE_SOLVE",
+      "sink_G_nxnz_over_volume_W_m3K": "PRE_SOLVE",
+      "sink_G_ny_over_volume_W_m3K": "PRE_SOLVE",
+      "sink_G_nyny_over_volume_W_m3K": "PRE_SOLVE",
+      "sink_G_nynz_over_volume_W_m3K": "PRE_SOLVE",
+      "sink_G_nz_over_volume_W_m3K": "PRE_SOLVE",
+      "sink_G_nznz_over_volume_W_m3K": "PRE_SOLVE",
+      "sink_G_over_volume_W_m3K": "PRE_SOLVE"
+    },
+    "local_feature_names": [
+      "k_x_W_mK",
+      "k_y_W_mK",
+      "k_z_W_mK",
+      "q_W_m3",
+      "cell_volume_m3",
+      "boundary_area_over_volume_1_m",
+      "sink_G_over_volume_W_m3K",
+      "sink_G_deltaT_over_volume_W_m3",
+      "prescribed_flux_power_over_volume_W_m3",
+      "sink_G_nx_over_volume_W_m3K",
+      "sink_G_ny_over_volume_W_m3K",
+      "sink_G_nz_over_volume_W_m3K",
+      "sink_G_nxnx_over_volume_W_m3K",
+      "sink_G_nyny_over_volume_W_m3K",
+      "sink_G_nznz_over_volume_W_m3K",
+      "sink_G_nxny_over_volume_W_m3K",
+      "sink_G_nxnz_over_volume_W_m3K",
+      "sink_G_nynz_over_volume_W_m3K",
+      "interface_G_over_volume_W_m3K",
+      "interface_G_nx_over_volume_W_m3K",
+      "interface_G_ny_over_volume_W_m3K",
+      "interface_G_nz_over_volume_W_m3K"
+    ],
+    "normalization": "declared fixed physics scales plus sign*log1p; no clipping/refit"
+  },
+  "model": {
+    "config": {
+      "concatenate_t": false,
+      "concatenate_tau": false,
+      "cond_norm_hidden_size": 16,
+      "conditioned_normalization": false,
+      "edge_latent_size": 16,
+      "mlp_hidden_layers": 1,
+      "node_latent_size": 16,
+      "num_outputs": 1,
+      "p_edge_masking": 0.0,
+      "processor_steps": 2
+    },
+    "parameter_count": 11459
+  },
+  "output_representation": {
+    "case_physics_reference": "recommended when computed only from pre-solve sink temperatures/conductances",
+    "global_fixed_T_ref": "insufficient for varying and multiple sink temperatures",
+    "raw_absolute_T": "valid but translation-sensitive across sink temperatures",
+    "reference_is_label_derived": false,
+    "reference_temperature_K": 293.15,
+    "used": "(T - raw external ambient reference)/100K",
+    "v7_native_shape_scale": "not adopted as V8 contract in this smoke; requires multi-sink/general-BC reformulation"
+  },
+  "process": {
+    "engineering_peak_rss_gate_bytes": 2147483648,
+    "engineering_peak_rss_gate_pass": true,
+    "peak_rss_bytes": 1006567424,
+    "peak_rss_note": "macOS resource.ru_maxrss reports bytes",
+    "peak_rss_raw_platform_units": 1006567424,
+    "total_wall_seconds": 37.34046874940395
+  },
+  "sample_id": "Exp0_SolverAcceleration/6765682094df176c/repeat_01",
+  "schema_version": "heat3d-v8-mass-hbm-p2a-smoke-v1",
+  "selected_case": "cases/Exp0_SolverAcceleration/6765682094df176c/repeat_01",
+  "support": {
+    "N_in": 1024,
+    "candidate_counts": {
+      "bulk_volume": 43388,
+      "heat_source": 4240,
+      "material_interface": 0,
+      "thermal_boundary_sink": 11522
+    },
+    "class_counts": {
+      "bulk_volume": 512,
+      "heat_source": 256,
+      "material_interface": 0,
+      "thermal_boundary_sink": 256
+    },
+    "classes": [
+      "heat_source",
+      "material_interface",
+      "thermal_boundary_sink",
+      "bulk_volume"
+    ],
+    "coverage_fraction": {
+      "bulk_volume": 0.01180049783350235,
+      "heat_source": 0.06037735849056604,
+      "material_interface": 1.0,
+      "thermal_boundary_sink": 0.022218364867210554
+    },
+    "selection_contract": "mask_and_control_volume_only; excludes T, gradT, hotspot, final refinement, field amplitudes and model error",
+    "track_a_source_mask_note": "converged-q nonzero topology only; no q amplitude/T/gradT/hotspot; forbidden for Track-B"
+  }
+}

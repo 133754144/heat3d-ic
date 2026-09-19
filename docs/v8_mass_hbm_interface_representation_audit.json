@@ -1,0 +1,30 @@
+{
+  "schema_version": "heat3d-v8-mass-hbm-interface-audit-v1",
+  "date": "2026-09-19",
+  "status": "DOUBLE_COUNT_GUARD_IMPLEMENTED",
+  "paper_facts": {
+    "conductivity": "k(T,sigma)",
+    "interface_resistance": "Rint(T,sigma)",
+    "exported_indexing_defined_by_paper": false
+  },
+  "raw_facts": {
+    "case_count": 314,
+    "representation_counts": {"explicit_series_z": 53, "rotated_homogenized_tensor": 261},
+    "explicit_series_z_nonzero_tbr_cases": 53,
+    "explicit_series_z_safe_guard_cases": 53,
+    "rotated_homogenized_tensor_zero_tbr_cases": 261,
+    "homogenized_and_nonzero_explicit_tbr_cases": 0,
+    "orientation_indexing": "map[z_face,y,x] between cell[z,y,x] and cell[z+1,y,x]",
+    "review_required_cases": ["cases/Baseline/3d_v_hbm/full_coupling"]
+  },
+  "inference": {
+    "double_count_risk": "homogenized_k_plus_explicit_rint_for_same_interface_is_forbidden",
+    "track_a_homogenized": "GO_ONLY_IF_EXPLICIT_MAP_EXACTLY_ZERO",
+    "track_a_explicit": "CONDITIONAL_GO_ONLY_WITH_RAW_PASS_GUARD",
+    "track_b": "NO_GO_PENDING_PRE_SOLVE_FACE_MAP",
+    "candidate_a": "node_G_over_V_and_signed_normal_moments_lossy",
+    "candidate_b": "paired_interface_edge_recommended",
+    "half_cell_plus_rint_formula_frozen": false
+  },
+  "provenance": {"final_k": "ORACLE", "final_rint": "ORACLE", "temperature": "LABEL"}
+}

@@ -1,0 +1,47 @@
+{
+  "schema_version": "heat3d-v8-mass-hbm-presolve-reconstruction-audit-v1",
+  "date": "2026-09-19",
+  "status": "TRACK_B_FAIL_CLOSED_PARTIAL_RECONSTRUCTION",
+  "paper_facts": {
+    "input_classes": ["architecture", "geometry", "material", "boundary", "workload"],
+    "coupled_updates": ["k(T,sigma)", "Rint(T,sigma)", "leakage", "refresh_power"]
+  },
+  "raw_facts": {
+    "case_count": 314,
+    "nominal_material_table_cases": 314,
+    "iteration0_component_power_cases": 314,
+    "nominal_explicit_rint_table_cases": 53,
+    "external_bc_cases": 314,
+    "internal_sink_aggregate_only_cases": 232,
+    "spatial_presolve_material_map_present": false,
+    "spatial_iteration0_q_map_present": false,
+    "complete_nominal_interface_face_mask_present": false,
+    "per_cell_internal_sink_map_present": false
+  },
+  "reconstruction": {
+    "geometry0": "PARTIAL_NUMERIC_GRID_PRESENT_TARGET_INDEPENDENCE_UNCONFIRMED",
+    "k0": "BLOCKED_NO_SPATIAL_MATERIAL_REGION_MAP",
+    "q0": "BLOCKED_NO_ITERATION0_VOLUMETRIC_MAP_OR_SOURCE_MASK",
+    "Rint0": "BLOCKED_PARTIAL_TABLES_NO_COMPLETE_FACE_MASK",
+    "BC0_external": "RECONSTRUCTABLE",
+    "BC0_internal": "BLOCKED_NO_SPATIAL_SINK_TOPOLOGY"
+  },
+  "output_representation": {
+    "recommendation": "T_minus_case_physics_reference",
+    "reference_constraint": "pre_solve_sink_temperatures_and_conductances_only",
+    "label_derived_reference_allowed": false,
+    "v7_native_shape_scale_reused_unchanged": false
+  },
+  "inference": {
+    "track_b_training": "NO_GO",
+    "oracle_gate": "FAIL_CLOSED",
+    "final_k_q_rint_as_track_b_inputs": "FORBIDDEN"
+  },
+  "author_questions": [
+    "Provide pre-solve material/region-id field and nominal-table mapping.",
+    "Provide iteration-0 volumetric power or deterministic component-to-cell injection masks.",
+    "Provide nominal interface face mask and orientation/index convention.",
+    "Provide per-cell/per-face internal sink topology and coupling-update semantics.",
+    "State whether exported geometry is initial or temperature-adapted."
+  ]
+}
