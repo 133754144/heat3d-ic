@@ -11,7 +11,8 @@
     "ref": "origin/codex/g2-curated-integration",
     "sha": "23098098657694e1e71ee9a45cfb27c7bb85a0d7",
     "remote_pushed": true,
-    "history_preserved": true
+    "history_preserved": true,
+    "final_sync_commit": "71de2f3a4c8d3f5cfad1cbe7e0e65c2f62664422"
   },
   "superseded_gate": {
     "direct_parent_gate": "SUPERSEDED_INVALID_GATE",
@@ -23,7 +24,7 @@
     "curated_tip_before_final_sync": "23098098657694e1e71ee9a45cfb27c7bb85a0d7",
     "ancestor": true,
     "behind": 0,
-    "ahead": 3,
+    "ahead": 4,
     "status": "PASS"
   },
   "allowlist_diff_audit": {
@@ -35,13 +36,15 @@
       "necessary metric / provenance contracts",
       "integration allowlist and integration receipt"
     ],
+    "changed_path_count": 30,
+    "allowlist_path_count": 30,
     "unexpected_paths": [],
     "large_data_checkpoint_prediction_output_present": false,
     "temporary_staging_or_P1_P23_forensic_clutter_present": false,
-    "status": "PENDING_FINAL_SYNC_VERIFICATION"
+    "status": "PASS_ALLOWLIST_EXACT"
   },
   "integration_decision": "FINAL_SYNC_ALLOWED",
-  "research_v7_action": "awaiting final-sync tests then fast-forward only",
+  "research_v7_action": "final-sync complete; awaiting tests then fast-forward only",
   "governance": {
     "test_iid": "historical/documented plus visualization-only; no new access in this audit",
     "sealed": "unopened",
