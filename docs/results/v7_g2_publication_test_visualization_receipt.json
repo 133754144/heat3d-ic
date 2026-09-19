@@ -1,0 +1,38 @@
+{
+  "schema_version": "heat3d_v7_g2_publication_test_visualization_receipt_v1",
+  "status": "PASS_VISUALIZATION_ONLY_TEST_INFERENCE",
+  "created_at": "2026-09-19",
+  "selection_receipt": "docs/results/v7_g2_publication_figure_selection_receipt.json",
+  "selection_receipt_sha256": "3dc968ecf6ec06cf70f03eed8e42ac53478b1c2d298ab34335589a49dce3a4ac",
+  "plotting_protocol": "configs/heat3d_v7/g2_publication_figure_selection_protocol.json",
+  "plotting_protocol_sha256": "b6e1207d103b70aee3818126460ba23db68dc656a06c2451f203412fae568b27",
+  "fixture": "research_artifacts/v7_g2_publication_figures/selected_cases_compact.npz",
+  "fixture_sha256": "863cbf3153671e1dad0ca047f8ed81d3f7592566f2e3edd023a014b04dfdc10b",
+  "visualization_only": true,
+  "used_for_model_selection": false,
+  "used_for_checkpoint_selection": false,
+  "used_for_claim_or_color_policy_changes": false,
+  "test_iid_access": "fixed_sample_visualization_only",
+  "sealed_access": false,
+  "deepoheat_official100_access": false,
+  "training": false,
+  "optimizer_called": false,
+  "grid": [65, 65, 57],
+  "nodes": 240825,
+  "layout": "canonical x_y_z flattened; exact z slice",
+  "cases": [
+    {"sample_id": "v6p1if1_0740", "label": "typical_median", "z_index": 39, "heat3d_receipt": "research_artifacts/v7_g2_publication_figures/heat3d_seed0_v6p1if1_0740.json", "heat3d_output_sha256": "95d5154d897d15e5f30a593546e6c5a5348a68ad0346743b1f16c5b202884a00", "heat3d_prediction_sha256": "24b89d16d4e1fa89d185407c3b05f9942889924782da726845de5e32954ec4a4", "thermfm_receipt": "research_artifacts/v7_g2_publication_figures/thermfm_seed0_v6p1if1_0740.json", "thermfm_output_sha256": "c6e7a9f774f90fd74b7e4b2cede3aaaf0cdc081e4d7ad5860aef55b5d108c28b", "thermfm_prediction_sha256": "93657a95e54ba5e1438c2662b43829429a3740498ea8ddca4c900ed2a3fbb549"},
+    {"sample_id": "v6p1if1_0571", "label": "high_power", "z_index": 39, "heat3d_receipt": "research_artifacts/v7_g2_publication_figures/heat3d_seed0_v6p1if1_0571.json", "heat3d_output_sha256": "808271a46e05afff04d445b3a3cf073114c1a2deed4c435b74f564b3bf619a90", "heat3d_prediction_sha256": "fa097648d18f0454f950f488ca6f3fcf1c77f7762611cc162d6bf4d2f6338e88", "thermfm_receipt": "research_artifacts/v7_g2_publication_figures/thermfm_seed0_v6p1if1_0571.json", "thermfm_output_sha256": "6beb0b8e7437082f2218527bb268ac3bb90f79e4f2feba4a089ec69d5bfaef38", "thermfm_prediction_sha256": "859937326e88edf83c0d477878e9405c42f5cb6099fe4bb6c5662b4cd57c7426"},
+    {"sample_id": "v6p1if1_0871", "label": "strong_material_or_high_htc", "z_index": 27, "heat3d_receipt": "research_artifacts/v7_g2_publication_figures/heat3d_seed0_v6p1if1_0871.json", "heat3d_output_sha256": "6aa5cd4a3416b061d99e25c86bf487371cea9ff8cc2cd6a4f8d32102eb4e594e", "heat3d_prediction_sha256": "a8e19e50dea661fbd8d85dc8dc2e85abc14545242e8935c14c8e33e58ec37a31", "thermfm_receipt": "research_artifacts/v7_g2_publication_figures/thermfm_seed0_v6p1if1_0871.json", "thermfm_output_sha256": "c89d5661e69783bbd7b4e4f2f2a4800e849c6b754d74f6ffc7f02288a0ea0ac58fd", "thermfm_prediction_sha256": "f39023687785c7e36bd3c4e169fc01a40507c55416f8d5f2598dd99a42ae186e"}
+  ],
+  "figures": {
+    "audit_json": "research_artifacts/v7_g2_publication_figures/rendered/publication_figure_audit.json",
+    "audit_json_sha256": "cb075d1387aceca96d4e7ae271e7bffab8cd145d209cbb0d6f774e7fe77be189",
+    "valid_cases": ["v6p1if1_0163", "v6p1if1_0467", "v6p1if1_0650"],
+    "test_cases": ["v6p1if1_0740", "v6p1if1_0571", "v6p1if1_0871"],
+    "temperature_scale": "per-case reference slice min/max shared by reference and both predictions",
+    "error_scale": "per-case pooled absolute-error 99th percentile with fixed minimum 5 K, shared across panels",
+    "interpolation": false,
+    "per_model_rescaling": false
+  }
+}

@@ -14,6 +14,9 @@
 - valid-only archive index and SHA receipts；
 - P1i performance report and plotting audit；
 - valid figures regenerated with exact dense policy and native diagnostic policy；
+- input-only valid/test figure selection receipt frozen before test inference；
+- valid and one-time test_iid visualization-only exact-dense figures；
+- Therm-FM z_x_y -> x_y_z layout and slice-metric consistency audit；
 - JSON parse, Python compile, evaluator synthetic and negative-gate tests pass。
 
 保留的 fail-closed / governance items：
@@ -21,7 +24,8 @@
 - d9d961a checkpoint-to-P1i inference FAIL_CLOSED；
 - 2960ab5 PASS 仅表示 frozen historical sidecar identity/common-evaluator
   reproduction，不表示 checkpoint inference reproduction；
-- 没有新的 test_iid 数值证据，sealed 和 DeepOHeat official100 未访问；
-- test visualization 因固定 prediction archive 缺失而 blocked；
-- archive 尚无独立 off-host replica；
+- test_iid 仅按冻结 selection receipt 做了一次 visualization-only inference；其结果不进入
+  model selection、checkpoint selection、claim、Table A/B 或 bootstrap；
+- sealed 和 DeepOHeat official100 未访问；
+- independent off-host publication archive receipt is tracked separately；
 - 不在本地 merge 到 research/v7，以避免修改 G1 主线；需人工审查后再决定。

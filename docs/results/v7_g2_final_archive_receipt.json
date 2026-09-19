@@ -10,7 +10,19 @@
     "remote_engineering_archive": "/home/xyh/myCodeGitOnly/heat3d-ic-g2/output/_engineering_archives/g2_final_evidence_20260919",
     "remote_source_outputs": "/home/xyh/myCodeGitOnly/heat3d-ic-g2/output"
   },
-  "backup_policy": "Large checkpoints remain at persistent source archive paths; small remote prediction archives were mirrored into the new engineering archive. No independent off-host replica was created in this closeout.",
+  "backup_policy": "Source archives are retained; an independent devbox off-host publication mirror was created and verified by a complete SHA256 manifest. The mirror is not used for model selection.",
+  "offhost_backup": {
+    "status": "PASS_SHA256_VERIFIED",
+    "host": "devbox",
+    "path": "/home/xyh/myCodeGitOnly/heat3d-ic-g2/output/_engineering_archives/g2_final_publication_offhost_20260919",
+    "manifest_path": "/home/xyh/myCodeGitOnly/heat3d-ic-g2/output/_engineering_archives/g2_final_publication_offhost_20260919/archive_manifest.json",
+    "manifest_sha256": "52ceb5056d1f86394f74ba3756920acce82b02b783de2e56f612aa927a12c9da",
+    "file_count": 39,
+    "total_bytes": 2542773110,
+    "verified_at": "2026-09-19",
+    "contents": ["Heat3D V7 P1i-e200 checkpoints/native predictions/U-v2 sidecars", "GINO/Transolver/Therm-FM checkpoints and comparison predictions", "publication specs, receipts, report, and fixed visualization artifacts"],
+    "source_artifacts_deleted": false
+  },
   "entries": [
     {"role":"Heat3D_V7_P1i_e200_checkpoint_best","seed":0,"path":"/Users/xuyihua/.codex/worktrees/cbb8/3D IC Heat/research_artifacts/v7_g1_formal_archive/formal_21_runs/Full_seed0/params_best_sample_first.pkl","sha256":"7ee050c946513004c3e33ce3b28c6fd246965ee4e95ff661eca3d888d5786517","backup_status":"PERSISTENT_LOCAL_SOURCE_ARCHIVE_VERIFIED"},
     {"role":"Heat3D_V7_P1i_e200_checkpoint_best","seed":1,"path":"/Users/xuyihua/.codex/worktrees/cbb8/3D IC Heat/research_artifacts/v7_g1_formal_archive/formal_21_runs/Full_seed1/params_best_sample_first.pkl","sha256":"1821a8ea395e485e34e45ca4c08bf846e4217b4afb5fdd15b30d00a8d3a6f019","backup_status":"PERSISTENT_LOCAL_SOURCE_ARCHIVE_VERIFIED"},

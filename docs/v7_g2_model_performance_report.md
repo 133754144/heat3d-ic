@@ -4,9 +4,10 @@
 
 本报告只汇总已经冻结的 valid-only 证据。P1i 主比较使用同一
 valid_iid=128、同一 truth archive 和明确分开的评价域；DeepOHeat 数据集结果只
-作为 supplemental comparison，不能与 P1i 主表混排。test_iid 在本轮只获得
-visualization-only 授权，但没有可核验的固定 V7 G2 prediction archive，因此没有
-读取、推理或生成 test 图；sealed IID 仍锁定，DeepOHeat official100 也未访问。
+作为 supplemental comparison，不能与 P1i 主表混排。test_iid 在本轮只按先冻结的
+input-only selection receipt 做了一次 visualization-only inference；这些 prediction、
+slice metrics 和图像不进入模型选择、checkpoint selection、Table A/B、bootstrap 或
+任何 accuracy claim。sealed IID 仍锁定，DeepOHeat official100 也未访问。
 
 所有均值和离散度均写作 **mean ± SD across training seeds**（训练随机种子间标准
 差），不是把 3×128 个值当作独立重复。所有结果来自冻结 checkpoint、prediction
@@ -173,10 +174,15 @@ Unsupported claims:
 - docs/results/v7_g2_final_plotting_audit.json
 
 当前状态为 G2_VALID_ONLY_EVIDENCE_CLOSED、G2_DEVELOPMENT_COMPLETE、
-P24_READY_FOR_REVIEW_NOT_UNLOCKED。archive index 和 SHA receipt 已完成，但
-large checkpoints 仍位于 persistent source paths，本 closeout 未创建独立
-off-host backup；这属于 artifact-hygiene follow-up，不改变 valid-only
-numerical evidence。
+P24_READY_FOR_REVIEW_NOT_UNLOCKED。figure selection、exact-dense plotting audit
+和 visualization-only receipt 见：
+
+- docs/results/v7_g2_publication_figure_selection_receipt.json
+- docs/results/v7_g2_publication_test_visualization_receipt.json
+- docs/results/v7_g2_publication_figure_audit.json
+
+这些 test 图不改变任何 valid-only 数值证据；sealed 仍未解锁。archive receipt
+另行记录 source 与 independent off-host backup 状态。
 
 本分支与 canonical remote 的关系已冻结为
 codex/v7-g2-baselines-finalize closeout branch based on
