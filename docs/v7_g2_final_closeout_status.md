@@ -33,4 +33,4 @@
 
 本轮 visualization、archive 与 allowlist-only curated integration 均已通过；
 `research/v7` ref 保持不变，后续主线集成提交为独立本地
-`codex/g2-curated-integration@aa2afd6b07cfe3b2dc63a7fd9754f7e0bba16813`，未 push。
+`codex/g2-curated-integration@23098098657694e1e71ee9a45cfb27c7bb85a0d7`，未 push。
