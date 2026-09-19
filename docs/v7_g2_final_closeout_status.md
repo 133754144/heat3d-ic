@@ -2,6 +2,7 @@
 
 状态：
 
+- V7_G2_FULL_CLOSEOUT_COMPLETE
 - G2_VALID_ONLY_EVIDENCE_CLOSED
 - G2_DEVELOPMENT_COMPLETE
 - P24_READY_FOR_REVIEW_NOT_UNLOCKED
@@ -29,3 +30,7 @@
 - sealed 和 DeepOHeat official100 未访问；
 - independent off-host publication archive receipt is tracked separately；
 - 不在本地 merge 到 research/v7，以避免修改 G1 主线；需人工审查后再决定。
+
+本轮 visualization、archive 与 allowlist-only curated integration 均已通过；
+`research/v7` ref 保持不变，后续主线集成提交为独立本地
+`codex/g2-curated-integration@aa2afd6b07cfe3b2dc63a7fd9754f7e0bba16813`，未 push。

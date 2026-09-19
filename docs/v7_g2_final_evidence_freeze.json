@@ -1,7 +1,7 @@
 {
   "schema_version": "heat3d_v7_g2_final_evidence_freeze_v1",
   "status": "G2_VALID_ONLY_EVIDENCE_CLOSED",
-  "status_flags": ["G2_VALID_ONLY_EVIDENCE_CLOSED", "G2_DEVELOPMENT_COMPLETE", "P24_READY_FOR_REVIEW_NOT_UNLOCKED"],
+  "status_flags": ["G2_VALID_ONLY_EVIDENCE_CLOSED", "G2_DEVELOPMENT_COMPLETE", "P24_READY_FOR_REVIEW_NOT_UNLOCKED", "V7_G2_FULL_CLOSEOUT_COMPLETE"],
   "branch": "codex/v7-g2-baselines-finalize",
   "branch_relationship": {
     "closeout_branch": "codex/v7-g2-baselines-finalize",
@@ -12,6 +12,16 @@
   },
   "scope": "P1i valid_iid-only final evidence lock; no training, tuning, reselection, or new test/sealed access",
   "p24": "READY_FOR_REVIEW_NOT_UNLOCKED",
+  "final_closeout": {
+    "status": "V7_G2_FULL_CLOSEOUT_COMPLETE",
+    "publication_report": "docs/v7_g2_model_performance_report.md",
+    "publication_figure_audit": "docs/results/v7_g2_publication_figure_audit.json",
+    "test_visualization_receipt": "docs/results/v7_g2_publication_test_visualization_receipt.json",
+    "offhost_archive_manifest_sha256": "52ceb5056d1f86394f74ba3756920acce82b02b783de2e56f612aa927a12c9da",
+    "curated_integration_commit": "aa2afd6b07cfe3b2dc63a7fd9754f7e0bba16813",
+    "research_v7_ref_modified": false,
+    "push_performed": false
+  },
   "domain": {
     "dataset_id": "heat3d_v6_p1i_continuous_physics1024_v1",
     "dataset_manifest_sha256": "f19987c659968c2ac14eade1f1ef7e206c8f7eeb94f58fde5897d6e765978514",
