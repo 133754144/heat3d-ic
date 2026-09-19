@@ -1,0 +1,62 @@
+{
+  "schema_version": "heat3d_v7_g2_claim_reconciliation_v1",
+  "status": "TABLE_B_CLAIM_RECONCILIATION_PASS",
+  "created_at": "2026-09-19",
+  "scope": "Read-only reconciliation of frozen P1i valid-only Table B evidence; no inference or checkpoint changes",
+  "governance": {
+    "new_training": false,
+    "checkpoint_reselection": false,
+    "new_test_iid_access": false,
+    "sealed_access": false,
+    "deepoheat_official100_access": false,
+    "historical_test_iid_status": "documented historical and visualization-only access; not an untouched split",
+    "sealed_status": "unopened final confirmatory holdout"
+  },
+  "frozen_evidence": {
+    "prediction_spec": "docs/v7_g2_final_evidence_prediction_specs.json",
+    "aggregate": "docs/results/v7_g2_final_evidence_aggregates.json",
+    "bootstrap": "docs/results/v7_g2_final_bootstrap_amendment.json",
+    "common_evaluator": "scripts/evaluate_v7_g2_p23_common_fullfield.py",
+    "common_evaluator_sha256": "368430c0c6758dfd2dfd4f66cf1a57822c00183878ccfb88c2021c37446501a1",
+    "valid_manifest_sha256": "f42cca611b6c70551b153f4f887b2d47724d9082846e4b381cab4ad9c652e57c",
+    "truth_archive_sha256": "49023ac1205b8e7cf7c5bf782b89fcdb34997704b3f9aa2fb2d46cf1a59163cb",
+    "valid_case_count": 128,
+    "node_count_per_case": 240825,
+    "heat3d_layout": "flat canonical x_y_z sidecar; posthoc immutable sidecar binding, not re-inferred",
+    "thermfm_layout": "z_x_y source layout transposed once to canonical evaluator x_y_z",
+    "sample_ids_and_truth_rows_shared": true,
+    "coordinate_order_shared": true
+  },
+  "metric_definitions": {
+    "peak_temperature_absolute_error_K": "abs(max(T_pred) - max(T_true)) per sample",
+    "peak_temperature_mae_K": "mean of the per-sample scalar peak absolute errors",
+    "peak_temperature_rmse_K": "sqrt(mean of squared per-sample scalar peak absolute errors))",
+    "true_hotspot_region_rmse_K": "field RMSE restricted to the top 1% (2409) nodes ranked by T_true within each sample",
+    "true_hotspot_top1_overlap_pct": "predicted-vs-true top-1% hotspot localization overlap; auxiliary localization diagnostic",
+    "dispersion": "mean ± SD across training seeds; not case or seed×case independent-sample SD"
+  },
+  "final_table_b_conclusion": {
+    "thermfm": "lower sample-first relative RMSE, MAE, and true-hotspot-region RMSE on the frozen valid cohort",
+    "heat3d": "slightly lower scalar peak error, higher Corr_point/Corr_CV and higher true-hotspot top-1% overlap",
+    "ci": "point-global/RMSE differences and peak-error differences have paired case-bootstrap intervals crossing zero; sample-first/MAE/hotspot intervals favor Therm-FM descriptively under the frozen cohort",
+    "claim_boundary": "no overall winner and no same-information-budget claim"
+  },
+  "superseded_wording": [
+    {
+      "source": "docs/v7_g2_final_table_b_fullfield240825.md",
+      "old_wording": "true-hotspot top-1% overlap and the raw peak RMSE",
+      "reason": "peak metric was not explicitly separated from hotspot-region field error or localization overlap",
+      "replacement": "peak MAE/RMSE are scalar max-temperature errors; hotspot RMSE is truth-top-1% field error; top-1% overlap is localization"
+    },
+    {
+      "source": "historical V7/G2 wording search",
+      "old_wording": "unqualified peak/hotspot accuracy language",
+      "reason": "could be read as equating scalar peak accuracy with hotspot-region accuracy",
+      "replacement": "all final claims use the explicit metric definitions above; no direct numerical conflation was found in the frozen Table B values"
+    }
+  ],
+  "historical_bridge": {
+    "artifact": "docs/results/v7_g2_historical_metric_bridge_appendix.json",
+    "role": "appendix-only explanation of evidence evolution; not a re-ranking"
+  }
+}

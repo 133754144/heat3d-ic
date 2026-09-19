@@ -4,10 +4,12 @@
 
 本报告只汇总已经冻结的 valid-only 证据。P1i 主比较使用同一
 valid_iid=128、同一 truth archive 和明确分开的评价域；DeepOHeat 数据集结果只
-作为 supplemental comparison，不能与 P1i 主表混排。test_iid 在本轮只按先冻结的
-input-only selection receipt 做了一次 visualization-only inference；这些 prediction、
-slice metrics 和图像不进入模型选择、checkpoint selection、Table A/B、bootstrap 或
-任何 accuracy claim。sealed IID 仍锁定，DeepOHeat official100 也未访问。
+作为 supplemental comparison，不能与 P1i 主表混排。`test_iid` 已有 documented
+historical access，并按先冻结的 input-only selection receipt 做过一次
+visualization-only inference；这些 prediction、slice metrics 和图像不进入模型选择、
+checkpoint selection、Table A/B、bootstrap 或任何 accuracy claim，本轮没有新的 test
+访问。`sealed IID` 仍未打开，是当前唯一的最终 confirmatory holdout；DeepOHeat
+official100 也未访问。
 
 所有均值和离散度均写作 **mean ± SD across training seeds**（训练随机种子间标准
 差），不是把 3×128 个值当作独立重复。所有结果来自冻结 checkpoint、prediction
@@ -120,14 +122,16 @@ statistical superiority.
 
 | regime | training cases | supervision / checkpoint | full-field sample-first rel RMSE % | role |
 |---|---:|---|---:|---|
-| DeepOHeat-full-minus-valid128 | 99,872 | native PDE/BC; validation-selected best | 1.146688 ± 0.038323 | supplemental held-out native recipe |
-| DeepOHeat-768 | 768 | native PDE/BC; validation-selected best | 1.305167 ± 0.268321 | supplemental same physical-case count |
-| Heat3D-768-e600 | 768 | supervised labels; fixed e600 endpoint, U-v2 direct-query | 0.709888 ± 0.007765 | supplemental method-native adaptation |
+| DeepOHeat-full-minus-valid128 | 99,872 | native PDE/BC; validation-selected best | 1.146688 ± 0.038323 | large-data regime reference |
+| DeepOHeat-768 | 768 | native PDE/BC; validation-selected best | 1.305167 ± 0.268321 | same physical-case count arm |
+| Heat3D-768-e600 | 768 | supervised labels; fixed e600 endpoint, U-v2 direct-query | 0.709888 ± 0.007765 | same physical-case count arm |
 | DeepOHeat-v2 | — | official code/data not available | not reported | paper/design-loop track |
 
-Table C 是 data-regime/physical-case comparison，不是 same-information-budget 或
-same-compute comparison；DeepOHeat 使用 PDE/BC physics-informed full mesh，而
-Heat3D 使用 supervised temperature labels 与 sparse conditioning。
+Table C 的主配对是 `DeepOHeat-768 vs Heat3D-768-e600`（same physical-case
+count）；`DeepOHeat-full-minus-valid128` 是 99,872-case large-data regime
+reference。该表不是 same-information-budget 或 same-compute comparison；DeepOHeat
+使用 PDE/BC physics-informed full mesh，而 Heat3D 使用 supervised temperature
+labels 与 sparse conditioning。
 
 ## 5. Key findings and claim boundaries
 
@@ -140,7 +144,10 @@ Heat3D 使用 supervised temperature labels 与 sparse conditioning。
   平均值较低；Heat3D 的 Corr_point/Corr_CV 更高，且 U-v2 显示约 -1.94 K
   signed bias、field_std_ratio 0.963。Therm-FM 的 Amp_range 约 123% 而
   Amp_CVRMS 约 100%，说明 range overshoot 与 CV-scale calibration 不是同一现象。
-  当前证据不支持一个方法的 overall winner。
+  按冻结的 case-bootstrap，Therm-FM 的 sample-first、MAE 和 hotspot-region RMSE
+  较低；point-global/RMSE 差值 CI 跨 0。Heat3D 的标量 peak error 略低、Corr 与
+  true-hotspot top-1% overlap 较高，但 peak-error CI 跨 0。这里不指定 overall
+  winner，也不作 same-information-budget claim。
 - Table C 显示 Heat3D-768-e600 在该 supplemental DeepOHeat domain 上的 U-v2
   full-field 数值低于两种 DeepOHeat cohort；由于 modality、PDE/BC information、
   label budget 和 compute 不同，只能称 data-regime evidence。
@@ -153,6 +160,23 @@ Supported claims:
    dense-input Therm-FM 可以被同域报告，且机制差异可复核。
 3. Heat3D 的 U-v2 full-field 误差包含可见的负偏置/幅度校准问题；这是 diagnostic
    evidence，不是调参授权。
+
+## Appendix — historical metric bridge (not a re-ranking)
+
+该桥接仅解释 V6 historical full-field、V7 P1i-e200 U-v2 与 Therm-FM 证据如何演化，
+不回写 Table A/B 的 cohort 身份，也不把不同训练制度变成统一预算。V7 e200 相对
+V6 并非所有指标均改善，禁止写成 uniformly dominates V6。机器可读值见
+`docs/results/v7_g2_historical_metric_bridge_appendix.json`；V6 三指标公式桥接见
+`docs/v7_g2_p23_v6_metric_semantic_bridge.json`。
+
+| cohort | point-global rel RMSE % | sample-first rel RMSE % | peak RMSE K | role |
+|---|---:|---:|---:|---|
+| Heat3D V6 historical full-field | 3.4426 ± 0.0584 | 3.9583 ± 0.0097 | 3.7746 ± 0.3785 | Tier 1 historical canonical |
+| Heat3D V7 P1i-e200 U-v2 | 3.4786 ± 0.1728 | 3.1262 ± 0.1772 | 5.2049 ± 0.1105 | Tier 2 replayable reference |
+| Therm-FM Poseidon-T | 3.1490 ± 0.4603 | 2.5972 ± 0.2399 | 5.5718 ± 0.1800 | Tier 2 pretrained transfer |
+
+这里的 `±` 均为 SD across training seeds；该表只用于解释结论演化，不能作为
+跨 cohort 重新排名，也不支持 V7 e200 uniformly dominates V6 的表述。
 
 Unsupported claims:
 
@@ -171,6 +195,10 @@ Unsupported claims:
 - docs/results/v7_g2_final_p8_hierarchical_bootstrap_native.json
 - docs/results/v7_g2_final_bootstrap_amendment.json
 - docs/results/v7_g2_final_archive_receipt.json
+- docs/results/v7_g2_cross_host_backup_receipt.json
+- docs/results/v7_g2_claim_reconciliation_receipt.json
+- docs/results/v7_g2_historical_metric_bridge_appendix.json
+- docs/results/v7_g2_curated_integration_audit.json
 - docs/results/v7_g2_final_plotting_audit.json
 
 当前状态为 G2_VALID_ONLY_EVIDENCE_CLOSED、G2_DEVELOPMENT_COMPLETE、
@@ -182,9 +210,12 @@ P24_READY_FOR_REVIEW_NOT_UNLOCKED。figure selection、exact-dense plotting audi
 - docs/results/v7_g2_publication_figure_audit.json
 
 这些 test 图不改变任何 valid-only 数值证据；sealed 仍未解锁。archive receipt
-另行记录 source 与 independent off-host backup 状态。
+另行记录 source 与跨主机 backup 状态；Mac 临时镜像的持久化限制另有注明。
 
 本分支与 canonical remote 的关系已冻结为
 codex/v7-g2-baselines-finalize closeout branch based on
 research/v7-g2-baselines@07e0f959caf1ca493f7a3fee3505e6240d107027。
-为保护正在维护的 G1/research/v7 主线，本地没有执行 merge，也没有 push。
+`codex/g2-curated-integration@230980986...` 已按原样推送到 GitHub，但其 tip 的
+direct parent 不是要求的 `research/v7@365576d...`，且 allowlist 中记录的 source
+commit 相对当前 finalize ref 已过时；因此 curated integration audit
+`BLOCKED_FAIL_CLOSED`，没有修改或 fast-forward `research/v7`，也没有创建 closeout tag。

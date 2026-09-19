@@ -18,7 +18,16 @@ design: Heat3D uses its frozen valid-iid selection; Therm-FM reports
 independent optimum for each physical metric.  Per-seed diagnostics include
 `mean |Amp_range-1|`, `mean |Amp_CVRMS-1|`, `scale_log_error` mean/RMSE,
 signed temperature bias, field standard-deviation ratio, legacy top-5 overlap,
-true-hotspot top-1% overlap and the raw peak RMSE.
+Metric meanings are fixed: peak MAE/RMSE are the MAE/RMSE of the per-sample
+scalar `abs(max(T_pred)-max(T_true))`; hotspot RMSE is field RMSE on the truth
+top-1% (2409 nodes) region; true-hotspot top-1% overlap is a localization
+metric. They must not be conflated.
+
+The reconciled conclusion is descriptive: Therm-FM is lower on sample-first,
+MAE, and hotspot-region RMSE; Heat3D has slightly lower scalar peak error and
+higher correlation/true-hotspot overlap; point-global/RMSE and peak-error paired
+intervals cross zero. There is no overall winner and no same-information-budget
+claim.
 
 The retained Heat3D sidecars are bound through immutable per-seed receipts and
 are not re-inferred in this phase.  The historical checkpoint→P1i replay

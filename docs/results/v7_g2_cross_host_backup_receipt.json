@@ -1,0 +1,35 @@
+{
+  "schema_version": "heat3d_v7_g2_cross_host_backup_receipt_v1",
+  "status": "PASS_CROSS_FAULT_DOMAIN_WITH_EPHEMERAL_MAC_MIRROR",
+  "created_at": "2026-09-19",
+  "source_host": "devbox / XYH-Desktop",
+  "source_root": "/home/xyh/myCodeGitOnly/heat3d-ic-g2/output/_engineering_archives/g2_final_publication_offhost_20260919",
+  "source_manifest_sha256": "18492db30fcb0ca36dec5fd8e67aea02f90378377005553207aba1705fb76446",
+  "source_file_count": 39,
+  "source_total_bytes": 2542763999,
+  "backup_host": "Mac-mini-M4.local",
+  "backup_root": "/private/tmp/g2_cross_host_backup_20260919",
+  "backup_manifest_sha256": "b74167c993dd2ccd1d5da1b4e0a1988bf9be21a724060945a135df3280628386",
+  "backup_file_count_including_manifest": 40,
+  "backup_total_bytes_including_manifest": 2542771925,
+  "nonmanifest_files_verified_against_source_manifest": 39,
+  "verification": "All 39 source-listed artifacts matched size and SHA256 after devbox→Mac copy; source archive was not modified",
+  "fault_domain_check": {
+    "source_host": "devbox",
+    "backup_host": "Mac-mini-M4.local",
+    "independent_host": true,
+    "same_home_path_copy": false,
+    "status": "PASS"
+  },
+  "persistence_qualifier": "Mac /private/tmp is an ephemeral local mirror; a durable NAS or persistent Mac archive should be created before long-term publication release",
+  "contents": [
+    "Heat3D V7 P1i-e200 checkpoint/prediction/U-v2 sidecar",
+    "GINO/Transolver/Therm-FM checkpoint and prediction artifacts",
+    "publication metadata and visualization artifacts"
+  ],
+  "test_governance": {
+    "test_iid": "historical and visualization-only artifacts retained; no new test access in this audit",
+    "sealed": "unopened",
+    "deepoheat_official100": "not accessed"
+  }
+}

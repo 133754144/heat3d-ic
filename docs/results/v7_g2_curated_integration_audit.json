@@ -1,0 +1,52 @@
+{
+  "schema_version": "heat3d_v7_g2_curated_integration_audit_v1",
+  "created_at": "2026-09-19",
+  "target_base": "research/v7@365576daa566e0eb786eba93486910dea754cb1a",
+  "finalize_ref": {
+    "ref": "origin/codex/v7-g2-baselines-finalize",
+    "expected_sha": "0ea90345ab3ace8c129256c0b7f3ff266cd9a147",
+    "remote_sha": "0ea90345ab3ace8c129256c0b7f3ff266cd9a147",
+    "status": "PASS"
+  },
+  "curated_ref": {
+    "ref": "origin/codex/g2-curated-integration",
+    "sha": "23098098657694e1e71ee9a45cfb27c7bb85a0d7",
+    "remote_pushed": true,
+    "direct_parent": "24bfe4b9568af13797b4604ee5f711f47cc0af21",
+    "required_direct_parent": "365576daa566e0eb786eba93486910dea754cb1a",
+    "direct_parent_gate": "FAIL",
+    "required_base_is_ancestor": true,
+    "source_commit_recorded_by_curated_allowlist": "d74328ee5092b227aa216ff1bed1c84483e115d1",
+    "current_finalize_sha": "0ea90345ab3ace8c129256c0b7f3ff266cd9a147",
+    "source_alignment_gate": "FAIL_STALE_SOURCE_COMMIT_IN_CURATED_RECEIPT"
+  },
+  "allowlist_diff_audit": {
+    "command": "git diff origin/research/v7..origin/codex/g2-curated-integration --name-status",
+    "changed_path_count": 24,
+    "allowed_categories": [
+      "final report / closeout receipts",
+      "final tables / evaluator",
+      "plotting protocol / code",
+      "necessary metric / provenance contracts",
+      "integration allowlist and integration receipt"
+    ],
+    "unexpected_paths": [],
+    "large_data_checkpoint_prediction_output_present": false,
+    "temporary_staging_or_P1_P23_forensic_clutter_present": false,
+    "status": "PASS_ALLOWLIST_CONTENT"
+  },
+  "integration_decision": "BLOCKED_FAIL_CLOSED",
+  "blocking_reasons": [
+    "curated tip direct parent is not research/v7@365576d; it is a later curated commit",
+    "curated receipt source_commit is stale relative to the verified finalize ref 0ea90345"
+  ],
+  "research_v7_action": "NOT_MODIFIED; no fast-forward performed",
+  "closeout_tag": "NOT_CREATED_UNTIL_PARENT_AND_SOURCE_ALIGNMENT_PASS",
+  "governance": {
+    "test_iid": "historical/documented plus visualization-only; no new access in this audit",
+    "sealed": "unopened",
+    "deepoheat_official100": "not accessed",
+    "training": false,
+    "checkpoint_reselection": false
+  }
+}
