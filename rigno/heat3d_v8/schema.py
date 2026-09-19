@@ -17,6 +17,13 @@ class ProvenanceClass(str, Enum):
     METADATA = "METADATA"
 
 
+class SupportProvenance(str, Enum):
+    """Whether support strata can exist before the coupled solve."""
+
+    ORACLE_SUPPORT = "ORACLE_SUPPORT"
+    PRE_SOLVE_SUPPORT = "PRE_SOLVE_SUPPORT"
+
+
 @dataclass(frozen=True)
 class V8BoundaryRepresentation:
     """Generic Robin/flux boundary faces plus a node-aggregated candidate.

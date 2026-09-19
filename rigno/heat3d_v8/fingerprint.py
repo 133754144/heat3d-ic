@@ -1,4 +1,9 @@
-"""Target-independent MASS-HBM geometry fingerprint."""
+"""Label-array-independent MASS-HBM geometry fingerprint.
+
+The payload includes ``solver_geometry.json``.  Until its initial-versus-final
+mesh provenance is confirmed, this utility makes no strict target-independent
+claim.
+"""
 
 from __future__ import annotations
 
@@ -16,6 +21,7 @@ class GeometryFingerprint:
     payload: dict[str, Any]
     included_sources: tuple[str, ...]
     excluded_sources: tuple[str, ...]
+    independence_claim: str
 
 
 def _read_json(path: Path) -> Any:
@@ -118,5 +124,9 @@ def geometry_fingerprint(case_dir: str | Path) -> GeometryFingerprint:
             "workload/model/phase",
             "case identity",
             "architecture label",
+        ),
+        independence_claim=(
+            "LABEL_ARRAY_INDEPENDENT; STRICT_TARGET_INDEPENDENCE_UNCONFIRMED_"
+            "BECAUSE_SOLVER_GEOMETRY_MESH_PROVENANCE_IS_UNKNOWN"
         ),
     )

@@ -7,6 +7,8 @@ import hashlib
 
 import numpy as np
 
+from .schema import SupportProvenance
+
 
 SUPPORT_CLASSES = (
     "heat_source",
@@ -24,6 +26,7 @@ class V8SupportSelection:
     candidate_counts: dict[str, int]
     coverage_fraction: dict[str, float]
     seed: int
+    provenance: SupportProvenance
     selection_contract: str
 
 
@@ -39,19 +42,23 @@ def select_v8_support(
     boundary_sink_mask: np.ndarray,
     control_volume_m3: np.ndarray,
     sample_id: str,
+    support_provenance: SupportProvenance,
     count: int = 1024,
     seed: int = 0,
 ) -> V8SupportSelection:
     """Select four physics strata using masks and geometry only.
 
-    The function deliberately has no temperature, gradient, hotspot, final
-    refinement, power amplitude, conductivity amplitude or model-error input.
+    The selection algorithm deliberately has no temperature, gradient,
+    hotspot, final refinement, power amplitude, conductivity amplitude or
+    model-error input.  This does not make an ORACLE-derived candidate mask
+    deployable; callers must state support provenance explicitly.
     Masks are made disjoint with boundary > interface > source priority, then
     the remainder is bulk.  Equal initial quotas are redistributed when a
     stratum is smaller than its quota.
     """
 
     volume = np.asarray(control_volume_m3, dtype=np.float64).reshape(-1)
+    provenance = SupportProvenance(support_provenance)
     n = volume.size
     if count < 1 or count > n:
         raise ValueError("support count must be between 1 and cell count")
@@ -126,8 +133,9 @@ def select_v8_support(
         candidate_counts=candidate_counts,
         coverage_fraction=coverage,
         seed=int(seed),
+        provenance=provenance,
         selection_contract=(
-            "mask_and_control_volume_only; excludes T, gradT, hotspot, final "
-            "refinement, field amplitudes and model error"
+            f"{provenance.value}; mask_and_control_volume_only; excludes direct "
+            "T, gradT, hotspot, final refinement, field amplitudes and model error"
         ),
     )

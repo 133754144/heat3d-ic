@@ -3,17 +3,35 @@ from __future__ import annotations
 import csv
 import json
 from pathlib import Path
+from types import SimpleNamespace
 
 import numpy as np
 import pytest
 
-from rigno.heat3d_v8.adapter import _coordinates_and_volume
-from rigno.heat3d_v8.boundary import BOUNDARY_NODE_FEATURES, aggregate_boundary_faces
+from rigno.heat3d_v8.adapter import (
+    CORE_LOCAL_FEATURES,
+    V8_PHYSICAL_SCALE_FEATURES,
+    _coordinates_and_volume,
+    physical_scale_features,
+)
+from rigno.heat3d_v8.bridge import build_canonical_bridge
+from rigno.heat3d_v8.boundary import (
+    BOUNDARY_NODE_FEATURES,
+    aggregate_boundary_faces,
+    cuboid_external_faces,
+)
 from rigno.heat3d_v8.fingerprint import geometry_fingerprint
 from rigno.heat3d_v8.geometry import masked_cells, validate_domain_mask
-from rigno.heat3d_v8.interface import load_interface_representation
+from rigno.heat3d_v8.interface import INTERFACE_NODE_FEATURES, load_interface_representation
 from rigno.heat3d_v8.query import QueryChunk, concatenate_query_chunks
-from rigno.heat3d_v8.schema import ProvenanceClass, reject_oracle_features
+from rigno.heat3d_v8.schema import (
+    MassHBMCase,
+    ProvenanceClass,
+    SupportProvenance,
+    V8InterfaceRepresentation,
+    V8OraclePhysicsView,
+    reject_oracle_features,
+)
 from rigno.heat3d_v8.support import select_v8_support
 
 
@@ -74,6 +92,76 @@ def test_cell_volume_and_power_conservation() -> None:
     assert np.isclose(np.sum(q * volume), expected)
 
 
+def test_physical_scale_features_preserve_real_extent() -> None:
+    small = SimpleNamespace(case=SimpleNamespace(geometry_metadata={
+        "x_extent_mm": 65.0, "y_extent_mm": 65.0, "z_extent_mm": 1.51,
+    }))
+    tall = SimpleNamespace(case=SimpleNamespace(geometry_metadata={
+        "x_extent_mm": 65.0, "y_extent_mm": 65.0, "z_extent_mm": 5.76,
+    }))
+    first = physical_scale_features(small)
+    second = physical_scale_features(tall)
+    assert tuple(first) == V8_PHYSICAL_SCALE_FEATURES
+    assert np.isclose(first["log_Lx_m"], np.log(0.065))
+    assert first["log_Lz_m"] != second["log_Lz_m"]
+    assert first["log_domain_volume_m3"] != second["log_domain_volume_m3"]
+
+
+def _canonical_view(tmp_path: Path) -> V8OraclePhysicsView:
+    geometry = {
+        "shape_zyx": [2, 2, 2], "dx_m": 0.5, "dy_m": 0.5,
+        "z_cell_thicknesses_m": [0.25, 0.25],
+        "x_extent_mm": 1000.0, "y_extent_mm": 1000.0, "z_extent_mm": 500.0,
+    }
+    coords, volume = _coordinates_and_volume(geometry)
+    boundary = cuboid_external_faces(
+        shape_zyx=(2, 2, 2), dx_m=0.5, dy_m=0.5,
+        z_cell_thicknesses_m=np.asarray([0.25, 0.25]),
+        top_h_W_m2K=10.0, bottom_h_W_m2K=10.0, side_h_W_m2K=1.0,
+        ambient_temperature_K=300.0, control_volume_m3=volume,
+        reference_temperature_K=300.0,
+    )
+    interface = V8InterfaceRepresentation(
+        mode="rotated_homogenized_tensor",
+        lower_cell_index=np.empty(0, dtype=np.int64),
+        upper_cell_index=np.empty(0, dtype=np.int64),
+        area_m2=np.empty(0), normal=np.empty((0, 3)), tbr_m2K_W=np.empty(0),
+        conductance_W_K=np.empty(0), node_feature_names=INTERFACE_NODE_FEATURES,
+        node_features=np.zeros((8, len(INTERFACE_NODE_FEATURES))),
+        provenance={name: ProvenanceClass.ORACLE for name in INTERFACE_NODE_FEATURES},
+        double_count_guard="PASS", explicit_feature_safe=False,
+    )
+    k = np.full((8, 3), 10.0)
+    q = np.full(8, 1.0e8)
+    local = np.column_stack((k, q, volume, boundary.node_features, interface.node_features))
+    names = CORE_LOCAL_FEATURES + BOUNDARY_NODE_FEATURES + INTERFACE_NODE_FEATURES
+    provenance = {
+        **{name: ProvenanceClass.ORACLE for name in CORE_LOCAL_FEATURES[:4]},
+        "cell_volume_m3": ProvenanceClass.PRE_SOLVE,
+        **dict(boundary.provenance), **dict(interface.provenance),
+    }
+    case = MassHBMCase(
+        dataset_root=tmp_path, case_directory="synthetic", sample_id="synthetic",
+        architecture_metadata="metadata_only", shape_zyx=(2, 2, 2), coords_m=coords,
+        control_volume_m3=volume, valid_cell_mask=np.ones(8, dtype=bool),
+        geometry_metadata=geometry, boundary=boundary, interface=interface,
+    )
+    return V8OraclePhysicsView(
+        case=case, k_diag_W_mK=k, q_W_m3=q,
+        target_temperature_K=np.full(8, 310.0), local_feature_names=names,
+        local_features=local, feature_provenance=provenance,
+        metadata={"reference_temperature_K": 300.0},
+    )
+
+
+def test_canonical_bridge_is_zero_u_all_physics_c(tmp_path: Path) -> None:
+    bridge = build_canonical_bridge(_canonical_view(tmp_path))
+    assert np.all(np.asarray(bridge.inputs.u) == 0.0)
+    assert bridge.inputs.c.shape == (1, 1, 8, 27)
+    assert bridge.condition_feature_names[-5:] == V8_PHYSICAL_SCALE_FEATURES
+    assert not np.any(np.asarray(bridge.inputs.u) == np.asarray(bridge.inputs.c[..., :1]))
+
+
 def test_future_track_b_rejects_oracle() -> None:
     with pytest.raises(ValueError, match="final_k"):
         reject_oracle_features(
@@ -115,13 +203,14 @@ def _fingerprint_fixture(root: Path) -> Path:
     return root
 
 
-def test_geometry_fingerprint_target_independence(tmp_path: Path) -> None:
+def test_geometry_fingerprint_label_array_independence(tmp_path: Path) -> None:
     case = _fingerprint_fixture(tmp_path / "case")
     first = geometry_fingerprint(case)
     (case / "temperature_output" / "temperature_map.npy").write_bytes(b"different-label")
     second = geometry_fingerprint(case)
     assert first.sha256 == second.sha256
     assert "architecture label" in second.excluded_sources
+    assert second.independence_claim.startswith("LABEL_ARRAY_INDEPENDENT")
 
 
 def test_geometry_fingerprint_ignores_geometry_case_identity(tmp_path: Path) -> None:
@@ -146,6 +235,7 @@ def test_support_selection_target_independence() -> None:
         boundary_sink_mask=np.arange(n) < 300,
         control_volume_m3=np.linspace(1.0, 2.0, n),
         sample_id="synthetic",
+        support_provenance=SupportProvenance.PRE_SOLVE_SUPPORT,
         count=1024,
         seed=7,
     )
@@ -156,6 +246,7 @@ def test_support_selection_target_independence() -> None:
     second = select_v8_support(**kwargs)
     assert np.array_equal(first.indices, second.indices)
     assert sum(first.class_counts.values()) == 1024
+    assert first.provenance == SupportProvenance.PRE_SOLVE_SUPPORT
 
 
 def test_chunked_query_ordering() -> None:

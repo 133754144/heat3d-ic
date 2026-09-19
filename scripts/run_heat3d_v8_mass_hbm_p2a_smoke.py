@@ -22,6 +22,7 @@ if str(REPO_ROOT) not in sys.path:
 
 from rigno.heat3d_v8 import (  # noqa: E402
     MassHBMReadOnlyAdapter,
+    SupportProvenance,
     normalize_oracle_local_features,
     select_v8_support,
 )
@@ -187,6 +188,7 @@ def main() -> int:
         boundary_sink_mask=boundary_mask,
         control_volume_m3=view.case.control_volume_m3,
         sample_id=view.case.sample_id,
+        support_provenance=SupportProvenance.ORACLE_SUPPORT,
         count=args.support_count,
         seed=0,
     )
@@ -347,6 +349,7 @@ def main() -> int:
         },
         "support": {
             "N_in": int(args.support_count),
+            "provenance": support.provenance.value,
             "classes": list(support.class_counts),
             "class_counts": support.class_counts,
             "candidate_counts": support.candidate_counts,

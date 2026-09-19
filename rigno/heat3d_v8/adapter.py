@@ -22,6 +22,14 @@ CORE_LOCAL_FEATURES = (
     "cell_volume_m3",
 )
 
+V8_PHYSICAL_SCALE_FEATURES = (
+    "log_Lx_m",
+    "log_Ly_m",
+    "log_Lz_m",
+    "log_xy_area_m2",
+    "log_domain_volume_m3",
+)
+
 
 def _read_json(path: Path) -> dict[str, Any]:
     return json.loads(path.read_text(encoding="utf-8"))
@@ -237,3 +245,36 @@ def normalize_oracle_local_features(view: V8OraclePhysicsView) -> np.ndarray:
     if not np.all(np.isfinite(transformed)):
         raise ValueError("normalized V8 local features are not finite")
     return transformed.astype(np.float32)
+
+
+def physical_scale_features(view: V8OraclePhysicsView) -> dict[str, float]:
+    """Return V7-Full-aligned physical scales from declared case extents."""
+
+    geometry = view.case.geometry_metadata
+    lx = float(geometry["x_extent_mm"]) * 1.0e-3
+    ly = float(geometry["y_extent_mm"]) * 1.0e-3
+    lz = float(geometry["z_extent_mm"]) * 1.0e-3
+    values = (lx, ly, lz, lx * ly, lx * ly * lz)
+    if any(not np.isfinite(value) or value <= 0.0 for value in values):
+        raise ValueError("physical extents/area/volume must be finite and positive")
+    return dict(zip(V8_PHYSICAL_SCALE_FEATURES, np.log(values), strict=True))
+
+
+def canonical_oracle_condition(
+    view: V8OraclePhysicsView,
+) -> tuple[np.ndarray, tuple[str, ...], dict[str, ProvenanceClass]]:
+    """Build P2B condition ``c`` with local physics plus broadcast scale."""
+
+    local = normalize_oracle_local_features(view)
+    scale = physical_scale_features(view)
+    scale_row = np.asarray([scale[name] for name in V8_PHYSICAL_SCALE_FEATURES], dtype=np.float32)
+    broadcast = np.broadcast_to(scale_row, (len(local), len(scale_row)))
+    condition = np.concatenate([local, broadcast], axis=1)
+    names = view.local_feature_names + V8_PHYSICAL_SCALE_FEATURES
+    provenance = {
+        **dict(view.feature_provenance),
+        **{name: ProvenanceClass.PRE_SOLVE for name in V8_PHYSICAL_SCALE_FEATURES},
+    }
+    if condition.shape != (len(local), len(names)) or not np.all(np.isfinite(condition)):
+        raise ValueError("canonical V8 condition construction failed")
+    return condition, names, provenance

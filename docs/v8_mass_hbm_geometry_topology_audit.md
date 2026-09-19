@@ -27,9 +27,9 @@ The read-only scan covered all 314 exported cases.
 - 232 LC-V cases contain nonempty internal-sink audit records.  The handoff gives aggregate physical-sink cell count, conductance, and sink temperature but no per-cell indices, face areas, normals, or connectivity.  Internal sink topology is therefore not reconstructable.
 - The selected non-LC smoke case has 59,150 cells (`14×65×65`), a full computational mask, 12,090 exterior faces incident on 11,522 cells, and no unresolved internal sink.
 
-### Target-independent geometry fingerprint
+### Label-array-independent geometry fingerprint
 
-The fingerprint hashes only numeric grid/cell geometry, component placement topology, material/interface topology, boundary/cooling topology, and geometry design parameters.  It explicitly excludes temperature, final `k/q/Rint`, hotspot/refinement fields, workload/model/phase, architecture labels, and all case identifiers including `geometry_case_id`.
+The fingerprint hashes numeric grid/cell geometry, component placement topology, material/interface topology, boundary/cooling topology, and geometry design parameters. It explicitly excludes temperature arrays, final `k/q/Rint`, hotspot/refinement fields, workload/model/phase, architecture labels, and all case identifiers including `geometry_case_id`. Because it still consumes `solver_geometry.json`, and the exported mesh's initial-versus-temperature-adapted provenance remains unconfirmed, it is only **label-array-independent**, not yet strictly target-independent.
 
 | Quantity | Result |
 |---|---:|

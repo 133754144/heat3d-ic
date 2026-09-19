@@ -1,0 +1,253 @@
+{
+  "branch_baseline": "8c3e06b5ad647ecc5572cedc0d013fc61ae2dc8c",
+  "cases": [
+    {
+      "adapter_status": "PASS",
+      "case_directory": "cases/Exp0_SolverAcceleration/6765682094df176c/repeat_01",
+      "cell_count": 59150,
+      "explicit_interface_condition_nonzero": false,
+      "explicit_interface_face_count": 0,
+      "final_sample_loss": 0.02060832269489765,
+      "full_field_query": {
+        "backend": "sparse_kdtree_v1",
+        "cache_first_miss": true,
+        "cache_repeat_hit": true,
+        "chunk_count": 4,
+        "chunk_size": 16384,
+        "dense_pairwise_used": false,
+        "metadata_build_seconds": 0.13746858574450016,
+        "network_forward_seconds": 7.571485540829599,
+        "ordering_exact": true,
+        "output_finite": true,
+        "point_count": 59150,
+        "status": "PASS"
+      },
+      "geometry_fingerprint": "43d8011d707307ea5d22fd13b938c08045a1a49cbdfdcbe0f5e5486a52f44e0b",
+      "geometry_fingerprint_claim": "LABEL_ARRAY_INDEPENDENT; STRICT_TARGET_INDEPENDENCE_UNCONFIRMED_BECAUSE_SOLVER_GEOMETRY_MESH_PROVENANCE_IS_UNKNOWN",
+      "initial_sample_loss": 0.02628771774470806,
+      "interface_double_count_guard": "PASS_HOMOGENIZED_IN_EFFECTIVE_K_EXPLICIT_TBR_FORBIDDEN",
+      "interface_mode": "rotated_homogenized_tensor",
+      "loss_ratio": 0.783952534198761,
+      "physical_extents_m": {
+        "Lx": 0.065,
+        "Ly": 0.065,
+        "Lz": 0.005760000000000002
+      },
+      "power_relative_error": 1.9793106311743278e-16,
+      "sample_id": "Exp0_SolverAcceleration/6765682094df176c/repeat_01",
+      "scale_features": {
+        "log_Lx_m": -2.7333680090865,
+        "log_Ly_m": -2.7333680090865,
+        "log_Lz_m": -5.156817804274337,
+        "log_domain_volume_m3": -10.623553822447336,
+        "log_xy_area_m2": -5.466736018173
+      },
+      "shape_zyx": [
+        14,
+        65,
+        65
+      ],
+      "support_class_counts": {
+        "bulk_volume": 512,
+        "heat_source": 256,
+        "material_interface": 0,
+        "thermal_boundary_sink": 256
+      },
+      "support_provenance": "ORACLE_SUPPORT"
+    },
+    {
+      "adapter_status": "PASS",
+      "case_directory": "cases/Exp0_SolverAcceleration/2f7b8b6c5aee5687/repeat_01",
+      "cell_count": 71825,
+      "explicit_interface_condition_nonzero": true,
+      "explicit_interface_face_count": 6624,
+      "final_sample_loss": 0.03293207287788391,
+      "full_field_query": {
+        "backend": "sparse_kdtree_v1",
+        "cache_first_miss": true,
+        "cache_repeat_hit": true,
+        "chunk_count": 5,
+        "chunk_size": 16384,
+        "dense_pairwise_used": false,
+        "metadata_build_seconds": 0.15840387530624866,
+        "network_forward_seconds": 8.286753041669726,
+        "ordering_exact": true,
+        "output_finite": true,
+        "point_count": 71825,
+        "status": "PASS"
+      },
+      "geometry_fingerprint": "afc2fe85ccef41f568cf8c92f089c009a0a348c16c58b16923281adaf4a38573",
+      "geometry_fingerprint_claim": "LABEL_ARRAY_INDEPENDENT; STRICT_TARGET_INDEPENDENCE_UNCONFIRMED_BECAUSE_SOLVER_GEOMETRY_MESH_PROVENANCE_IS_UNKNOWN",
+      "initial_sample_loss": 0.05328607186675072,
+      "interface_double_count_guard": "PASS_EXPLICIT_INTERFACE_ONLY_BONDING_REPRESENTATION",
+      "interface_mode": "explicit_series_z",
+      "loss_ratio": 0.6180240511894226,
+      "physical_extents_m": {
+        "Lx": 0.065,
+        "Ly": 0.065,
+        "Lz": 0.0015099999999999996
+      },
+      "power_relative_error": 3.9722129123539985e-16,
+      "sample_id": "Exp0_SolverAcceleration/2f7b8b6c5aee5687/repeat_01",
+      "scale_features": {
+        "log_Lx_m": -2.7333680090865,
+        "log_Ly_m": -2.7333680090865,
+        "log_Lz_m": -6.495645628155304,
+        "log_domain_volume_m3": -11.962381646328303,
+        "log_xy_area_m2": -5.466736018173
+      },
+      "shape_zyx": [
+        17,
+        65,
+        65
+      ],
+      "support_class_counts": {
+        "bulk_volume": 256,
+        "heat_source": 256,
+        "material_interface": 256,
+        "thermal_boundary_sink": 256
+      },
+      "support_provenance": "ORACLE_SUPPORT"
+    }
+  ],
+  "classification": "ENGINEERING_SMOKE_NOT_ACCURACY_NOT_FORMAL_TRAINING",
+  "contract": {
+    "c": "all_27_v8_physics_features",
+    "canonical_bridge_status": "PASS",
+    "condition_feature_names": [
+      "k_x_W_mK",
+      "k_y_W_mK",
+      "k_z_W_mK",
+      "q_W_m3",
+      "cell_volume_m3",
+      "boundary_area_over_volume_1_m",
+      "sink_G_over_volume_W_m3K",
+      "sink_G_deltaT_over_volume_W_m3",
+      "prescribed_flux_power_over_volume_W_m3",
+      "sink_G_nx_over_volume_W_m3K",
+      "sink_G_ny_over_volume_W_m3K",
+      "sink_G_nz_over_volume_W_m3K",
+      "sink_G_nxnx_over_volume_W_m3K",
+      "sink_G_nyny_over_volume_W_m3K",
+      "sink_G_nznz_over_volume_W_m3K",
+      "sink_G_nxny_over_volume_W_m3K",
+      "sink_G_nxnz_over_volume_W_m3K",
+      "sink_G_nynz_over_volume_W_m3K",
+      "interface_G_over_volume_W_m3K",
+      "interface_G_nx_over_volume_W_m3K",
+      "interface_G_ny_over_volume_W_m3K",
+      "interface_G_nz_over_volume_W_m3K",
+      "log_Lx_m",
+      "log_Ly_m",
+      "log_Lz_m",
+      "log_xy_area_m2",
+      "log_domain_volume_m3"
+    ],
+    "config": "configs/heat3d_v8/v8_p2b_canonical.json",
+    "physical_scale_ambiguity_removed": true,
+    "physical_scale_features": [
+      "log_Lx_m",
+      "log_Ly_m",
+      "log_Lz_m",
+      "log_xy_area_m2",
+      "log_domain_volume_m3"
+    ],
+    "query_contract": "1024 sparse global conditioning support plus query-local physical coefficients",
+    "scale_features_distinct": true,
+    "support_is_not_total_physics_read_count": true,
+    "u": "zero_delta_field"
+  },
+  "execution": {
+    "backend": "cpu",
+    "checkpoint_written": false,
+    "devbox_used": false,
+    "formal_training": false,
+    "gpu_used": false
+  },
+  "explicit_tbr_path": {
+    "double_count_guard_required": true,
+    "status": "PASS"
+  },
+  "geometry_fingerprint": {
+    "claim": "LABEL_ARRAY_INDEPENDENT_ONLY",
+    "formal_split_frozen": false,
+    "reason": "solver_geometry mesh provenance is unconfirmed",
+    "strict_target_independence": false
+  },
+  "model": {
+    "conditioned_normalization": false,
+    "decoder_bypass": "all V8 condition features",
+    "edge_latent_size": 96,
+    "global_context_feature_names": [
+      "log_P_operator_W",
+      "q_weighted_local_kz_W_mK",
+      "q_weighted_inverse_kz_mK_W",
+      "log_source_concentration",
+      "source_z_centroid_normalized",
+      "log_harmonic_kx_W_mK",
+      "log_harmonic_ky_W_mK",
+      "log_harmonic_kz_W_mK",
+      "log_anisotropy_xy_over_z",
+      "log_Lx_m",
+      "log_Ly_m",
+      "log_Lz_m",
+      "log_xy_area_m2",
+      "log_domain_volume_m3",
+      "log_total_boundary_area_m2",
+      "log_total_sink_G_W_K",
+      "sink_G_weighted_T_offset_K_over_100K",
+      "boundary_cv_fraction"
+    ],
+    "mlp_hidden_layers": 2,
+    "node_latent_size": 96,
+    "parameter_count": 849062,
+    "processor_steps": 6,
+    "v7_full_capacity_migration": "PASS"
+  },
+  "optimization": {
+    "accuracy_claim": false,
+    "final_joint_loss": 0.026770196855068207,
+    "first_gradient_norm": 1.4115961790084839,
+    "initial_joint_loss": 0.039786893874406815,
+    "joint_loss_ratio": 0.6728395819664001,
+    "last_gradient_norm": 0.7966395616531372,
+    "learning_rate": 0.0001,
+    "status": "PASS",
+    "steps": 20,
+    "wall_seconds": 34.920051792636514
+  },
+  "process": {
+    "peak_rss_bytes": 1360248832,
+    "timing_classification": "ENGINEERING_DIAGNOSTIC_NOT_PUBLICATION_LATENCY"
+  },
+  "query_equivalence": {
+    "rows": [
+      {
+        "atol": 1e-06,
+        "max_abs_difference": 0.0,
+        "pass": true,
+        "rtol": 1e-06,
+        "sample_id": "Exp0_SolverAcceleration/6765682094df176c/repeat_01"
+      },
+      {
+        "atol": 1e-06,
+        "max_abs_difference": 0.0,
+        "pass": true,
+        "rtol": 1e-06,
+        "sample_id": "Exp0_SolverAcceleration/2f7b8b6c5aee5687/repeat_01"
+      }
+    ],
+    "status": "PASS",
+    "support_equals_query": true
+  },
+  "schema_version": "heat3d_v8_p2b_two_sample_smoke_v1",
+  "status": "PASS",
+  "support_provenance": {
+    "deployable_claim": false,
+    "future_track_b_required": "PRE_SOLVE_SUPPORT",
+    "reason": "heat-source candidate topology is final-q nonzero mask",
+    "status": "PASS",
+    "target_independent_claim": false,
+    "used": "ORACLE_SUPPORT"
+  }
+}
