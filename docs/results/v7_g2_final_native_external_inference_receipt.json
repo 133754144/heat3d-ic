@@ -1,0 +1,62 @@
+{
+  "schema_version": "heat3d_v7_g2_final_native_external_inference_receipt_v1",
+  "status": "COMPLETE_VALID_ONLY_INFERENCE",
+  "scope": "P1i valid_iid=128 native1024 prediction export for Table A",
+  "dataset_id": "heat3d_v6_p1i_continuous_physics1024_v1",
+  "dataset_manifest_sha256": "f19987c659968c2ac14eade1f1ef7e206c8f7eeb94f58fde5897d6e765978514",
+  "split_manifest_sha256": "87aaa84af4b203d0a8ba93ed33b3757d46adc3143dad970371daa0f893ea491f",
+  "valid_case_count": 128,
+  "prediction_domain": "native1024",
+  "models": {
+    "GINO": {
+      "upstream_repo": "neuraloperator/neuraloperator",
+      "upstream_commit_sha": "00b7d86f8d74ff0af55da53eb585fe26df9c71f0",
+      "repo_commit_sha": "f9b36ef6ab8f5e775de52f043c696a756aa4be0a",
+      "runner_sha256": "cbc634ee1782ba15342b4aa67d2a0ea1e3eb0faf6b9caf508a55068c8b2e5977",
+      "launch_manifest_sha256": "bebf116e91b921a4c121d617cb0b6a8e0bb5459c7627204ac977616bda9a1409",
+      "checkpoint_sha256_by_seed": {
+        "0": "9ae1485065a14c86cc28cfe1d279faddfbeda701b51ef418cf2b0461b83c55e8",
+        "1": "da0c499609d6ed51c248bba1df0128a39eb64bbb47a58dd9099722dca819b46f",
+        "2": "ace5c92f181099db12c8989df5eef88b239796927789c1a7639b12a3e824e4d1"
+      },
+      "prediction_sha256_by_seed": {
+        "0": "648b6dcbd9d0f892d9643e01c2a111036f702e66960346017fafea5f7cb4d3e8",
+        "1": "6929cc685f9e70e91178437f29af2257a9f94de03ace1862b06e294c7b1c2172",
+        "2": "5a551e06af3ad5f717229bee03dbf4c2cffc352c892a81a1ef4a5a8505ce860b"
+      },
+      "representation": "coords + 11 physical features, Open3D FixedRadiusSearch/torch-scatter, latent 32^3, r_in=0.15, r_out=0.033",
+      "optimizer_constructed": false,
+      "test_iid_read": false,
+      "sealed_read": false
+    },
+    "Transolver": {
+      "upstream_repo": "thuml/Transolver",
+      "upstream_commit_sha": "75e0f67643806a81cd1d3f6adc88dd8c02416fe7",
+      "repo_commit_sha": "3f306cc49f1fca10787a3e9aa4fac0935eebbf52",
+      "runner_sha256": "235fed17156b75b1015e3c8547a24b78077e8f435a2be27de320ecc3ab653a55",
+      "launch_manifest_sha256": "af0a35abb6db0f908d46a783d67423fbdec1ae5f8a496e65e92f254f61737a91",
+      "checkpoint_sha256_by_seed": {
+        "0": "f70ad7b897b2e1831a0f06b9300907ceb904a4d646cd7d7a8b8f949bdd0256eb",
+        "1": "75d8a61556935ff6609620b0670a14af8a4b5e6482a559b45092bdb75c142ccd",
+        "2": "6110ecc97bcdc1eb597bfe0c318d22ea048a9ce9da868daf23d43347d8ed89cb"
+      },
+      "prediction_sha256_by_seed": {
+        "0": "0666c81831e18af798ebe7bd081bce36b08b3bc5a553e4f196b6ea2a2368f55a",
+        "1": "e137abac40c1c1d75b519e7097b42c244247e37421d47703a33fbf4607a0ca77",
+        "2": "c44531c62604790a91c1c6dc42f3cc38d456ca69716ef5234de828bf2ed9e5cc"
+      },
+      "representation": "native point tokens, coords + 11 physical features, official Physics-Attention path",
+      "optimizer_constructed": false,
+      "test_iid_read": false,
+      "sealed_read": false
+    }
+  },
+  "inference_runner": {
+    "script": "scripts/export_v7_g2_frozen_native_predictions.py",
+    "script_sha256": "e875ccc3fb0033bea589cc484b431ef1b0449b05a9fb95db437a240312f98b50",
+    "valid_only": true,
+    "checkpoint_reselection": false,
+    "training_started": false,
+    "deepoheat_official100_read": false
+  }
+}

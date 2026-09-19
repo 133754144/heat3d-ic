@@ -1,0 +1,35 @@
+{
+  "schema_version": "heat3d_v7_g2_final_v4_v5_shape_definition_audit_v1",
+  "status": "PASS_DEFINITION_AUDITED",
+  "v4": {
+    "source": "rigno/heat3d_v2_field_shape_diagnostics.py",
+    "source_sha256": "cdcf1bf2de02452a18a097fe71b69edd292a6d5a994bc70fed45240093798734",
+    "Corr_point_pct": "100 * unweighted centered spatial correlation",
+    "Amp_range_pct": "100 * (max(pred)-min(pred)) / (max(true)-min(true))",
+    "top_k_overlap": "legacy top-k set overlap; final evaluator reports top-5",
+    "aggregation": "per-sample metric first, then seed-level mean/SD"
+  },
+  "v5": {
+    "shape_scale_source": "rigno/heat3d_v5_shape_scale.py",
+    "shape_scale_source_sha256": "8ceb5ea95265eb4d56bb246ad850576b60ace0fd5007f8028aae34f1d8cc58e5",
+    "metric_source": "rigno/heat3d_v5_metrics.py",
+    "metric_source_sha256": "df59fe9df738a6b2568a8eb6c67b3a8d303f8255b6122a54eccfe099b1bae265",
+    "Corr_CV_pct": "100 * control-volume-weighted centered spatial correlation",
+    "Amp_CVRMS_pct": "100 * CV_RMS(pred) / CV_RMS(true)",
+    "scale_log_error": "log(CV_RMS(pred) / CV_RMS(true))",
+    "aggregation": "per-sample CV metric first, then seed-level mean/SD"
+  },
+  "final_evaluator_mapping": {
+    "script": "scripts/evaluate_v7_g2_final_evidence.py",
+    "script_sha256": "9d0db5971d67c07ac79dbe55aa7437a4c4f3a9694b44a6cd44f5726d81e3f074",
+    "Corr_point_pct": "corr_point_pct",
+    "Amp_range_pct": "amp_range_pct",
+    "Corr_CV_pct": "corr_cv_pct",
+    "Amp_CVRMS_pct": "amp_cvrms_pct",
+    "hotspot": "top 1% nodes by T_true within each sample",
+    "nodes_per_full_field_case": 240825,
+    "hotspot_nodes_per_full_field_case": 2409,
+    "synthetic_identity_and_scaling_tests": "PASS"
+  },
+  "naming_rule": "Bare Corr/Amp labels are prohibited in final tables; every field is V4 or V5 qualified."
+}

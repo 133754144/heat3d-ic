@@ -1,0 +1,16 @@
+{
+  "schema_version": "heat3d_v7_g2_final_negative_domain_gate_receipt_v1",
+  "status": "PASS_FAIL_CLOSED_NEGATIVE_TESTS",
+  "source_receipt_sha256": "ab1e2d79bf7b2fccfdd2be5703968d789ce1a1da1bebf36f6692576e7b68b584",
+  "mutations": {
+    "sample_id": "EXPECTED_FAIL",
+    "coordinate_order": "EXPECTED_FAIL",
+    "truth_row_mapping": "EXPECTED_FAIL"
+  },
+  "evaluator": "scripts/evaluate_v7_g2_final_evidence.py",
+  "valid_manifest_only": true,
+  "test_iid_read": false,
+  "sealed_read": false,
+  "deepoheat_official100_read": false,
+  "interpretation": "Domain-identity and reproduction gates fail closed under deliberate ID/order/row corruption."
+}

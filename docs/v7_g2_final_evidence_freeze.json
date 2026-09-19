@@ -1,0 +1,130 @@
+{
+  "schema_version": "heat3d_v7_g2_final_evidence_freeze_v1",
+  "status": "G2_DEVELOPMENT_COMPLETE_VALID_ONLY_EVIDENCE_CLOSED",
+  "branch": "codex/v7-g2-baselines-finalize",
+  "scope": "P1i valid_iid-only final evidence lock; no training, tuning, reselection, or new test/sealed access",
+  "p24": "READY_FOR_REVIEW_NOT_UNLOCKED",
+  "domain": {
+    "dataset_id": "heat3d_v6_p1i_continuous_physics1024_v1",
+    "dataset_manifest_sha256": "f19987c659968c2ac14eade1f1ef7e206c8f7eeb94f58fde5897d6e765978514",
+    "split_manifest_sha256": "87aaa84af4b203d0a8ba93ed33b3757d46adc3143dad970371daa0f893ea491f",
+    "valid_manifest_sha256": "f42cca611b6c70551b153f4f887b2d47724d9082846e4b381cab4ad9c652e57c",
+    "truth_archive_sha256": "49023ac1205b8e7cf7c5bf782b89fcdb34997704b3f9aa2fb2d46cf1a59163cb",
+    "valid_role": "valid_iid",
+    "valid_case_count": 128,
+    "native_nodes_per_case": 1024,
+    "full_grid": [65, 65, 57],
+    "full_nodes_per_case": 240825,
+    "hotspot_definition": "top 1% nodes by T_true within each sample (2409 nodes)",
+    "coordinates_and_order_shared": true,
+    "truth_rows_shared": true
+  },
+  "table_a": {
+    "title": "Table A: Heat3D V7 P1i-e200 vs GINO vs Transolver, native1024 valid-only",
+    "models": ["Heat3D_V7_P1i_e200", "GINO", "Transolver"],
+    "aggregate_artifact": "docs/results/v7_g2_final_evidence_aggregates.json",
+    "prediction_spec_artifact": "docs/results/v7_g2_final_evidence_prediction_specs.json",
+    "external_inference_receipt": "docs/results/v7_g2_final_native_external_inference_receipt.json",
+    "evaluator_output_sha256": "2f6d313c4296d8b48c768d7c2f635f8a61e5ddf385497db212c17d403001f871",
+    "domain": "native1024",
+    "checkpoint_selection": "frozen per-seed valid_iid selections; no reselection",
+    "cross_domain_ranking": false
+  },
+  "table_b": {
+    "title": "Table B: Heat3D V7 P1i-e200 + U-v2 vs Therm-FM, full-field240825 valid-only",
+    "models": ["Heat3D_V7_P1i_e200_U_v2_direct240825", "Therm-FM_PoseidonT_transfer"],
+    "aggregate_artifact": "docs/results/v7_g2_final_evidence_aggregates.json",
+    "prediction_spec_artifact": "docs/results/v7_g2_final_evidence_prediction_specs.json",
+    "evaluator_output_sha256": "89d93b99f7749565f9abc59b12d58c180e770c091bed3a889648e8a8c43c1692",
+    "domain": "full-field240825",
+    "checkpoint_selection": {
+      "Heat3D": "frozen V7 G1 valid_iid sample-first checkpoint per seed",
+      "Therm-FM": "minimum valid normalized loss; metrics_at_loss_selected_checkpoint"
+    },
+    "thermfm_role": "external-pretrained dense-input capability reference; not same-information-budget",
+    "cross_domain_ranking": false
+  },
+  "heat3d_v7_p1i_e200_identity": {
+    "family": "V7 G1 Full e200 trained on P1i train768/valid_iid128",
+    "excluded_cohorts": ["Heat3D-on-DeepOHeat-v1 e200", "V6 canonical", "V7 e600"],
+    "repo_commit_sha": "191a7a06a681556f575a1c04e2b61cb13363efe1",
+    "launch_manifest_sha256": "83e9ff4ab6e1659de4c9a47b30a575023171508748d1643d49197402601136c4",
+    "parent_config_sha256": "ee95f0e94a667703660eb5aa7229f3c7ed50efd0b696b9778cea979639fd21a5",
+    "dataset_manifest_sha256": "f19987c659968c2ac14eade1f1ef7e206c8f7eeb94f58fde5897d6e765978514",
+    "split_manifest_sha256": "87aaa84af4b203d0a8ba93ed33b3757d46adc3143dad970371daa0f893ea491f",
+    "config_binding_by_seed": {"0": "83e9ff4ab6e1659de4c9a47b30a575023171508748d1643d49197402601136c4", "1": "83e9ff4ab6e1659de4c9a47b30a575023171508748d1643d49197402601136c4", "2": "83e9ff4ab6e1659de4c9a47b30a575023171508748d1643d49197402601136c4"},
+    "checkpoint_sha256_by_seed": {
+      "0": "7ee050c946513004c3e33ce3b28c6fd246965ee4e95ff661eca3d888d5786517",
+      "1": "1821a8ea395e485e34e45ca4c08bf846e4217b4afb5fdd15b30d00a8d3a6f019",
+      "2": "2ed4c5d0a07fe696347877ac68ca50438be1fecadf83429b3090c83d529b151b"
+    },
+    "native1024_prediction_sha256_by_seed": {
+      "0": "b0486f283730b010791b80923ebf635bb54d58582f29f2a1c3398e51da5647f1",
+      "1": "9f5d7d0239840e365023bc91fdfb84ea4aa437c56c637147ce73ecced1e2c76e",
+      "2": "556ba821db8ea7f32e58cf5d7d91e8e9c9aa6eeec989687c2944f27e03588c0b"
+    },
+    "u_v2_direct240825_sidecar_sha256_by_seed": {
+      "0": "a261c9342b45b91b337d7a9e302fcb1275e8f5eece35f2387eca3b0356eba801",
+      "1": "4167d3bbdf508294708e02aa43115660536f1ed91ebe6e8846b0eac363c33e5d",
+      "2": "0f67cb0393992a86cb5ac3fdbcc39311cf6df9598e1a173a1a9cc0aa05f66cea"
+    },
+    "per_seed_binding": {
+      "0": {"run_id": "Full_seed0", "config_sha256": "83e9ff4ab6e1659de4c9a47b30a575023171508748d1643d49197402601136c4", "dataset_manifest_sha256": "f19987c659968c2ac14eade1f1ef7e206c8f7eeb94f58fde5897d6e765978514", "split_manifest_sha256": "87aaa84af4b203d0a8ba93ed33b3757d46adc3143dad970371daa0f893ea491f", "checkpoint_sha256": "7ee050c946513004c3e33ce3b28c6fd246965ee4e95ff661eca3d888d5786517", "native_prediction_sha256": "b0486f283730b010791b80923ebf635bb54d58582f29f2a1c3398e51da5647f1", "u_v2_direct240825_sha256": "a261c9342b45b91b337d7a9e302fcb1275e8f5eece35f2387eca3b0356eba801"},
+      "1": {"run_id": "Full_seed1", "config_sha256": "83e9ff4ab6e1659de4c9a47b30a575023171508748d1643d49197402601136c4", "dataset_manifest_sha256": "f19987c659968c2ac14eade1f1ef7e206c8f7eeb94f58fde5897d6e765978514", "split_manifest_sha256": "87aaa84af4b203d0a8ba93ed33b3757d46adc3143dad970371daa0f893ea491f", "checkpoint_sha256": "1821a8ea395e485e34e45ca4c08bf846e4217b4afb5fdd15b30d00a8d3a6f019", "native_prediction_sha256": "9f5d7d0239840e365023bc91fdfb84ea4aa437c56c637147ce73ecced1e2c76e", "u_v2_direct240825_sha256": "4167d3bbdf508294708e02aa43115660536f1ed91ebe6e8846b0eac363c33e5d"},
+      "2": {"run_id": "Full_seed2", "config_sha256": "83e9ff4ab6e1659de4c9a47b30a575023171508748d1643d49197402601136c4", "dataset_manifest_sha256": "f19987c659968c2ac14eade1f1ef7e206c8f7eeb94f58fde5897d6e765978514", "split_manifest_sha256": "87aaa84af4b203d0a8ba93ed33b3757d46adc3143dad970371daa0f893ea491f", "checkpoint_sha256": "2ed4c5d0a07fe696347877ac68ca50438be1fecadf83429b3090c83d529b151b", "native_prediction_sha256": "556ba821db8ea7f32e58cf5d7d91e8e9c9aa6eeec989687c2944f27e03588c0b", "u_v2_direct240825_sha256": "0f67cb0393992a86cb5ac3fdbcc39311cf6df9598e1a173a1a9cc0aa05f66cea"}
+    },
+    "sidecar_binding": "POSTHOC_IMMUTABLE_RECEIPT_BOUND_NOT_REINFERRED",
+    "sidecar_binding_receipt": "docs/results/v7_g2_p23_g1_direct240825_posthoc_provenance_receipt.json",
+    "sidecar_binding_rule": "Per-seed immutable direct receipt carries checkpoint SHA, route, valid manifest and truth archive; no filename-only inference.",
+    "historical_checkpoint_to_p1i_replay": "FAIL_CLOSED_PRESERVED; d9d961a evidence remains authoritative for replay capability, not identity invalidation"
+  },
+  "metric_contract": {
+    "primary": "sample_first_relative_rmse_pct",
+    "point_global": "100*sqrt(sum SSE/sum truth_SSE)",
+    "cv_weighted_point_global": "100*sqrt(sum CV_SSE/sum CV_truth_energy)",
+    "temperature": ["rmse_K", "mae_K"],
+    "shape": ["Corr_point_pct", "Amp_range_pct", "Corr_CV_pct", "Amp_CVRMS_pct"],
+    "diagnostics": ["mean_abs_Amp_range_minus_1", "mean_abs_Amp_CVRMS_minus_1", "scale_log_error mean/RMSE", "signed_temperature_bias_K", "field_std_ratio", "legacy_top5_overlap_pct", "true_hotspot_top1_overlap_pct", "hotspot_RMSE_K", "peak_absolute_error_K"],
+    "dispersion": "SD across training seeds"
+  },
+  "v4_v5_definition_receipt": "docs/results/v7_g2_final_v4_v5_shape_definition_audit.json",
+  "bootstrap_amendment": "docs/results/v7_g2_final_bootstrap_amendment.json",
+  "negative_gate_receipt": "docs/results/v7_g2_final_negative_domain_gate_receipt.json",
+  "qualification_tests": {
+    "json_parse": "PASS",
+    "python_compile": "PASS",
+    "final_evaluator_synthetic_identity_scaling": "PASS",
+    "v4_shape_diagnostics_smoke": "PASS",
+    "negative_sample_id_coordinate_order_truth_row_gates": "PASS_FAIL_CLOSED"
+  },
+  "known_fail_closed_evidence": [
+    "d9d961a checkpoint-to-P1i inference FAIL_CLOSED retained",
+    "2960ab5 PASS is restricted to frozen historical sidecar identity/common-evaluator reproduction",
+    "no new test_iid, sealed IID, or DeepOHeat official100 access"
+  ],
+  "claim_set": {
+    "supported": ["valid-only same-domain descriptive metric comparison", "native1024 and full-field240825 results within their explicitly frozen tables"],
+    "conditional": ["shape/amplitude/hotspot differences are descriptive diagnostics on valid_iid=128"],
+    "unsupported": ["universal superiority", "same-information-budget superiority", "sealed/test generalization superiority", "cross-domain ranking"]
+  },
+  "provenance": {
+    "evaluator_script_sha256": "9d0db5971d67c07ac79dbe55aa7437a4c4f3a9694b44a6cd44f5726d81e3f074",
+    "fullfield_execution_prediction_spec_sha256": "a2595326aa33647ecc890c15ae2d742ef3c0e97a48484557c88b0fc713eebe90",
+    "fullfield_execution_prediction_spec_tracked_copy_sha256": "3793b1e231d0ee8a328bc08ab4a9347bf608aa3ecb7de412a0f9328152a8796a",
+    "fullfield_execution_prediction_spec": "docs/results/v7_g2_final_full_execution_prediction_spec.json",
+    "native_identity_prediction_spec_sha256": "6efb8bf23c95aa0070919036188fb010d0e0fe16d056f51acfb836db796f4be2",
+    "native_execution_prediction_spec_sha256": "9db841ad703cb588523377358526ebdcebebd2b6d9d342855109bc73211f8277",
+    "native_execution_prediction_spec_tracked_copy_sha256": "881150d2a8604589407df0774887a9028f93871287475822def6bea9c2aa5918",
+    "native_execution_prediction_spec": "docs/results/v7_g2_final_native_execution_prediction_spec.json",
+    "native_external_receipt": "docs/results/v7_g2_final_native_external_inference_receipt.json",
+    "all_prediction_files": "ignored devbox staging only; no data/checkpoint/prediction binaries committed"
+  },
+  "access_governance": {
+    "training": false,
+    "tuning": false,
+    "checkpoint_reselection": false,
+    "new_test_iid_access": false,
+    "sealed_access": false,
+    "deepoheat_official100_access": false
+  }
+}

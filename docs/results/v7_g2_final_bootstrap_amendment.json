@@ -1,0 +1,36 @@
+{
+  "schema_version": "heat3d_v7_g2_final_bootstrap_amendment_v1",
+  "status": "POST_RESULTS_STATISTICAL_CORRECTION",
+  "preserves": [
+    "docs/results/v7_g2_p1i_corrected_paired_bootstrap.json",
+    "legacy P7/P23 receipts"
+  ],
+  "comparison": "Heat3D V7 G1 e200 U-v2-direct240825 - Therm-FM",
+  "estimand": "case resampling; for every resample recompute the complete common-evaluator estimator separately for each training seed, then average the three seed estimates",
+  "unit": "physical case",
+  "n_cases": 128,
+  "n_training_seeds_per_model": 3,
+  "resamples": 10000,
+  "bootstrap_seed": 230023,
+  "interval": "percentile 95% CI",
+  "conditional_on": "frozen three-seed cohort",
+  "point_estimate_matches_main_table": true,
+  "training_seed_dispersion": "SD across training seeds; not a case-bootstrap CI",
+  "legacy_hierarchical_bootstrap": "preserved as historical, not the final estimand",
+  "prediction_ensemble_estimand": "not used",
+  "post_results_note": "This correction was made after existing results; it is not preregistered.",
+  "difference_heat3d_minus_thermfm": {
+    "sample_first_relative_rmse_pct": {"estimate": 0.5290279527892645, "ci95": [0.17511775328386736, 0.8827925090931723]},
+    "point_global_relative_rmse_pct": {"estimate": 0.3296624965582984, "ci95": [-0.4929432699193635, 1.1634004620597072]},
+    "cv_weighted_point_global_relative_rmse_pct": {"estimate": 0.18815900256448304, "ci95": [-0.681378392019947, 1.080140995321559]},
+    "rmse_K": {"estimate": 0.2617968028812361, "ci95": [-0.4025306152708296, 0.9028583117587234]},
+    "mae_K": {"estimate": 0.4612697705873472, "ci95": [0.11336961483556444, 0.7809307084041424]},
+    "peak_temperature_mae_K": {"estimate": -0.1475001474221549, "ci95": [-0.9029575124382972, 0.5714301620920498]},
+    "peak_temperature_rmse_K": {"estimate": -0.3669660549638154, "ci95": [-1.3181657139535017, 0.5459456429454705]},
+    "true_hotspot_region_rmse_K": {"estimate": 1.7322440867836915, "ci95": [0.9537999712279274, 2.4435839790317924]}
+  },
+  "source_sha256": "781edcbd8d22b3b6dda2bde3cb97317a0b39be78fc41a277f811d20c9af964db",
+  "test_iid_read": false,
+  "sealed_read": false,
+  "deepoheat_official100_read": false
+}
