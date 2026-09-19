@@ -1,7 +1,15 @@
 {
   "schema_version": "heat3d_v7_g2_final_evidence_freeze_v1",
-  "status": "G2_DEVELOPMENT_COMPLETE_VALID_ONLY_EVIDENCE_CLOSED",
+  "status": "G2_VALID_ONLY_EVIDENCE_CLOSED",
+  "status_flags": ["G2_VALID_ONLY_EVIDENCE_CLOSED", "G2_DEVELOPMENT_COMPLETE", "P24_READY_FOR_REVIEW_NOT_UNLOCKED"],
   "branch": "codex/v7-g2-baselines-finalize",
+  "branch_relationship": {
+    "closeout_branch": "codex/v7-g2-baselines-finalize",
+    "closeout_base_and_canonical_remote": "research/v7-g2-baselines@07e0f959caf1ca493f7a3fee3505e6240d107027",
+    "closeout_commit_before_current_changes": "07e0f959caf1ca493f7a3fee3505e6240d107027",
+    "push_performed_in_this_closeout": false,
+    "canonical_remote_unchanged": true
+  },
   "scope": "P1i valid_iid-only final evidence lock; no training, tuning, reselection, or new test/sealed access",
   "p24": "READY_FOR_REVIEW_NOT_UNLOCKED",
   "domain": {
@@ -27,6 +35,7 @@
     "external_inference_receipt": "docs/results/v7_g2_final_native_external_inference_receipt.json",
     "evaluator_output_sha256": "2f6d313c4296d8b48c768d7c2f635f8a61e5ddf385497db212c17d403001f871",
     "domain": "native1024",
+    "primary_metric": "point_global_relative_rmse_pct",
     "checkpoint_selection": "frozen per-seed valid_iid selections; no reselection",
     "cross_domain_ranking": false
   },
@@ -37,6 +46,7 @@
     "prediction_spec_artifact": "docs/results/v7_g2_final_evidence_prediction_specs.json",
     "evaluator_output_sha256": "89d93b99f7749565f9abc59b12d58c180e770c091bed3a889648e8a8c43c1692",
     "domain": "full-field240825",
+    "primary_metric": "sample_first_relative_rmse_pct",
     "checkpoint_selection": {
       "Heat3D": "frozen V7 G1 valid_iid sample-first checkpoint per seed",
       "Therm-FM": "minimum valid normalized loss; metrics_at_loss_selected_checkpoint"
@@ -89,13 +99,30 @@
   },
   "v4_v5_definition_receipt": "docs/results/v7_g2_final_v4_v5_shape_definition_audit.json",
   "bootstrap_amendment": "docs/results/v7_g2_final_bootstrap_amendment.json",
+  "p8_hierarchical_bootstrap": "docs/results/v7_g2_final_p8_hierarchical_bootstrap_native.json",
+  "archive_receipt": "docs/results/v7_g2_final_archive_receipt.json",
+  "plotting_audit": "docs/results/v7_g2_final_plotting_audit.json",
+  "performance_report": "docs/v7_g2_model_performance_report.md",
+  "plotting_audit_note": "docs/v7_g2_final_plotting_audit.md",
+  "closeout_status_note": "docs/v7_g2_final_closeout_status.md",
+  "closeout_artifact_sha256": {
+    "performance_report": "f7855b6c8437093c284ffc4464aee9e44a53aeb1ec6059c0c3964fb9fb9180b4",
+    "plotting_audit_note": "f1b05de0aac05ee8d60398c0d5b71e3c72322d740977656ff1389e415b9d5a76",
+    "closeout_status_note": "0f6f83629f61178fe38dcf1cd5d2f3d81244f80e4a5505374e687009bf65fc96",
+    "archive_receipt": "166545b9a80fe65184a884582339776e0c7fb8296027045258a23fa6ddd4802e",
+    "plotting_audit_receipt": "5c483b82d3273224d4fec0081b4eea9e669c0f6410bd362b7cbc97b26f8ee03b"
+  },
   "negative_gate_receipt": "docs/results/v7_g2_final_negative_domain_gate_receipt.json",
   "qualification_tests": {
     "json_parse": "PASS",
     "python_compile": "PASS",
     "final_evaluator_synthetic_identity_scaling": "PASS",
     "v4_shape_diagnostics_smoke": "PASS",
-    "negative_sample_id_coordinate_order_truth_row_gates": "PASS_FAIL_CLOSED"
+    "negative_sample_id_coordinate_order_truth_row_gates": "PASS_FAIL_CLOSED",
+    "p23_common_fullfield_unit_tests": "PASS",
+    "g2_adapter_unit_tests": "PASS",
+    "evaluator_cli_help": "PASS",
+    "plotting_cli_help": "PASS"
   },
   "known_fail_closed_evidence": [
     "d9d961a checkpoint-to-P1i inference FAIL_CLOSED retained",
@@ -124,6 +151,7 @@
     "tuning": false,
     "checkpoint_reselection": false,
     "new_test_iid_access": false,
+    "test_iid_visualization_only_authorized": true,
     "sealed_access": false,
     "deepoheat_official100_access": false
   }
