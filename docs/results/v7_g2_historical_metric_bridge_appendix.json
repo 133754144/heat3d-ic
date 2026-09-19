@@ -1,0 +1,58 @@
+{
+  "schema_version": "heat3d_v7_g2_historical_metric_bridge_appendix_v1",
+  "status": "APPENDIX_ONLY_NOT_FOR_RANKING",
+  "purpose": "Explain metric/evidence evolution without re-ranking cohorts",
+  "metrics": [
+    "point_global_relative_rmse_pct",
+    "sample_first_relative_rmse_pct",
+    "peak_temperature_rmse_K"
+  ],
+  "rows": [
+    {
+      "cohort": "Heat3D V6 historical full-field canonical",
+      "domain": "P1i V6 full-field 240825",
+      "values": {
+        "point_global_relative_rmse_pct_mean": 3.442625525047171,
+        "point_global_relative_rmse_pct_sd": 0.05843506828224949,
+        "sample_first_relative_rmse_pct_mean": 3.958292653590315,
+        "sample_first_relative_rmse_pct_sd": 0.009731300506066283,
+        "peak_temperature_rmse_K_mean": 3.774552005415641,
+        "peak_temperature_rmse_K_sd": 0.3785072688630482
+      },
+      "role": "Tier 1 historical canonical evidence"
+    },
+    {
+      "cohort": "Heat3D V7 G1 P1i-e200 U-v2",
+      "domain": "P1i valid_iid=128 full-field 240825",
+      "values": {
+        "point_global_relative_rmse_pct_mean": 3.478619336,
+        "point_global_relative_rmse_pct_sd": 0.172781905,
+        "sample_first_relative_rmse_pct_mean": 3.126233987,
+        "sample_first_relative_rmse_pct_sd": 0.177232586,
+        "peak_temperature_rmse_K_mean": 5.204861235,
+        "peak_temperature_rmse_K_sd": 0.110456915
+      },
+      "role": "Tier 2 V7 e200 reference evidence; not a V6 replacement",
+      "interpretation": "V7 e200 improves some metrics relative to V6 and worsens others; no uniform dominance claim"
+    },
+    {
+      "cohort": "Therm-FM Poseidon-T transfer",
+      "domain": "P1i valid_iid=128 full-field 240825",
+      "values": {
+        "point_global_relative_rmse_pct_mean": 3.1490,
+        "point_global_relative_rmse_pct_sd": 0.4603,
+        "sample_first_relative_rmse_pct_mean": 2.5972,
+        "sample_first_relative_rmse_pct_sd": 0.2399,
+        "peak_temperature_rmse_K_mean": 5.5718,
+        "peak_temperature_rmse_K_sd": 0.1800
+      },
+      "role": "Tier 2 pretrained-transfer evidence; not same-information-budget"
+    }
+  ],
+  "bridge_source": "docs/v7_g2_p23_v6_metric_semantic_bridge.json and docs/v7_g2_p20_p1i_heat3d_v6_canonical_audit.json",
+  "limitations": [
+    "V6 seed1/seed2 binary checkpoints are permanently unavailable for future replay; historical aggregate remains retained",
+    "V7 e200 and Therm-FM are reported only in their explicitly frozen same-domain valid-only roles",
+    "No appendix row is a sealed/test generalization result"
+  ]
+}

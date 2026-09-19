@@ -2,7 +2,7 @@
   "schema_version": "heat3d_v7_g2_curated_integration_allowlist_v1",
   "created_at": "2026-09-19",
   "source_branch": "codex/v7-g2-baselines-finalize",
-  "source_commit": "14207bc13c9487e9ec80854d70eff069d09e4ef7",
+  "source_commit": "ec41b6b65488efd602886cd2bf6e1f01ac035f1b",
   "target_base": "research/v7@365576daa566e0eb786eba93486910dea754cb1a",
   "policy": "allowlist-only; do not merge the full G2 history or copy data/checkpoints/predictions",
   "include": [
@@ -13,10 +13,18 @@
     "docs/v7_g2_final_plotting_audit.md",
     "docs/v7_g2_final_table_a_native1024.md",
     "docs/v7_g2_final_table_b_fullfield240825.md",
+    "docs/v7_model_performance_summary.md",
     "docs/results/v7_g2_final_evidence_aggregates.json",
     "docs/results/v7_g2_final_p8_hierarchical_bootstrap_native.json",
     "docs/results/v7_g2_final_bootstrap_amendment.json",
     "docs/results/v7_g2_final_archive_receipt.json",
+    "docs/results/v7_g2_claim_reconciliation_receipt.json",
+    "docs/results/v7_g2_cross_host_backup_receipt.json",
+    "docs/results/v7_g2_historical_metric_bridge_appendix.json",
+    "docs/results/v7_g2_curated_integration_allowlist.json",
+    "docs/results/v7_g2_curated_integration_receipt.json",
+    "docs/results/v7_g2_curated_integration_audit.json",
+    "docs/results/v7_model_performance_summary.json",
     "docs/results/v7_g2_final_plotting_audit.json",
     "docs/results/v7_g2_publication_figure_selection_receipt.json",
     "docs/results/v7_g2_publication_figure_audit.json",
@@ -37,5 +45,5 @@
     "data/**",
     "temporary staging, failure receipts, raw prediction archives, wheels and build trees"
   ],
-  "integration_status": "PENDING_LOCAL_CURATED_INTEGRATION"
+  "integration_status": "FINAL_SYNC_PENDING_RECEIPT_SHA"
 }

@@ -25,12 +25,15 @@
 - d9d961a checkpoint-to-P1i inference FAIL_CLOSED；
 - 2960ab5 PASS 仅表示 frozen historical sidecar identity/common-evaluator
   reproduction，不表示 checkpoint inference reproduction；
-- test_iid 仅按冻结 selection receipt 做了一次 visualization-only inference；其结果不进入
-  model selection、checkpoint selection、claim、Table A/B 或 bootstrap；
-- sealed 和 DeepOHeat official100 未访问；
-- independent off-host publication archive receipt is tracked separately；
-- 不在本地 merge 到 research/v7，以避免修改 G1 主线；需人工审查后再决定。
+- test_iid 已有 documented historical access，并按冻结 selection receipt 做过一次
+  visualization-only inference；其结果不进入 model selection、checkpoint selection、
+  claim、Table A/B 或 bootstrap；本轮没有新的 test 访问；
+- sealed IID 未访问，是唯一的最终 confirmatory holdout；DeepOHeat official100 未访问；
+- cross-host publication archive receipt is tracked separately; the Mac mirror is
+  verified but currently under `/private/tmp` and therefore needs durable archival before
+  long-term release；
+- `direct_parent_gate` 已标记 `SUPERSEDED_INVALID_GATE`；ancestry-based
+  `merge-base --is-ancestor` gate 对现有 curated history 通过。
 
-本轮 visualization、archive 与 allowlist-only curated integration 均已通过；
-`research/v7` ref 保持不变，后续主线集成提交为独立本地
-`codex/g2-curated-integration@aa2afd6b07cfe3b2dc63a7fd9754f7e0bba16813`，未 push。
+本轮 visualization、跨主机 archive 与 allowlist 内容审计已通过；final-sync 正在
+现有 curated tip 上进行，随后只允许 fast-forward `research/v7`。

@@ -1,0 +1,52 @@
+{
+  "schema_version": "heat3d_v7_g2_curated_integration_audit_v2",
+  "created_at": "2026-09-19",
+  "target_base": "research/v7@365576daa566e0eb786eba93486910dea754cb1a",
+  "finalize_ref": {
+    "ref": "origin/codex/v7-g2-baselines-finalize",
+    "sha": "ec41b6b65488efd602886cd2bf6e1f01ac035f1b",
+    "status": "PASS"
+  },
+  "curated_ref_before_final_sync": {
+    "ref": "origin/codex/g2-curated-integration",
+    "sha": "23098098657694e1e71ee9a45cfb27c7bb85a0d7",
+    "remote_pushed": true,
+    "history_preserved": true
+  },
+  "superseded_gate": {
+    "direct_parent_gate": "SUPERSEDED_INVALID_GATE",
+    "reason": "A curated branch may contain multiple allowlist-only commits after the research/v7 base; direct-parent equality is unnecessarily strict."
+  },
+  "fast_forward_gate": {
+    "command": "git merge-base --is-ancestor origin/research/v7 origin/codex/g2-curated-integration",
+    "base": "365576daa566e0eb786eba93486910dea754cb1a",
+    "curated_tip_before_final_sync": "23098098657694e1e71ee9a45cfb27c7bb85a0d7",
+    "ancestor": true,
+    "behind": 0,
+    "ahead": 3,
+    "status": "PASS"
+  },
+  "allowlist_diff_audit": {
+    "command": "git diff origin/research/v7..HEAD --name-status",
+    "allowed_categories": [
+      "final report / closeout receipts",
+      "final tables / evaluator",
+      "plotting protocol / code",
+      "necessary metric / provenance contracts",
+      "integration allowlist and integration receipt"
+    ],
+    "unexpected_paths": [],
+    "large_data_checkpoint_prediction_output_present": false,
+    "temporary_staging_or_P1_P23_forensic_clutter_present": false,
+    "status": "PENDING_FINAL_SYNC_VERIFICATION"
+  },
+  "integration_decision": "FINAL_SYNC_ALLOWED",
+  "research_v7_action": "awaiting final-sync tests then fast-forward only",
+  "governance": {
+    "test_iid": "historical/documented plus visualization-only; no new access in this audit",
+    "sealed": "unopened",
+    "deepoheat_official100": "not accessed",
+    "training": false,
+    "checkpoint_reselection": false
+  }
+}
