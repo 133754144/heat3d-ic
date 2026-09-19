@@ -1,0 +1,203 @@
+{
+  "schema_version": "heat3d_v7_g2_p8_hierarchical_seed_case_bootstrap_v1",
+  "status": "COMPLETE_VALID_ONLY",
+  "protocol": "docs/v7_g2_p8_common_task_comparison_hierarchy.json",
+  "protocol_sha256": "fd1daa3b34fc3bf93d65cc7516a5f7b40f1e5b88add8db8b7331199af08deb8e",
+  "estimand": "resample training-seed slots, then paired valid_iid cases within each selected seed; recompute full estimator per seed and average seed-level differences",
+  "comparisons": [
+    "Heat3D - GINO",
+    "Heat3D - Transolver"
+  ],
+  "metrics": [
+    "sample_first_relative_rmse_pct",
+    "point_global_relative_rmse_pct",
+    "cv_weighted_point_global_relative_rmse_pct",
+    "rmse_K",
+    "mae_K",
+    "peak_temperature_mae_K",
+    "peak_temperature_rmse_K",
+    "true_hotspot_region_rmse_K"
+  ],
+  "n_cases": 128,
+  "n_training_seeds": 3,
+  "resamples": 10000,
+  "bootstrap_seed": 20260907,
+  "interval": "percentile 95% CI",
+  "point_estimate_matches_main_table": {
+    "Heat3D": {
+      "sample_first_relative_rmse_pct": 0.0,
+      "point_global_relative_rmse_pct": 0.0,
+      "cv_weighted_point_global_relative_rmse_pct": 0.0,
+      "rmse_K": 0.0,
+      "mae_K": 0.0,
+      "peak_temperature_mae_K": 0.0,
+      "peak_temperature_rmse_K": 0.0,
+      "true_hotspot_region_rmse_K": 0.0
+    },
+    "GINO": {
+      "sample_first_relative_rmse_pct": 0.0,
+      "point_global_relative_rmse_pct": 0.0,
+      "cv_weighted_point_global_relative_rmse_pct": 0.0,
+      "rmse_K": 0.0,
+      "mae_K": 0.0,
+      "peak_temperature_mae_K": 0.0,
+      "peak_temperature_rmse_K": 0.0,
+      "true_hotspot_region_rmse_K": 0.0
+    },
+    "Transolver": {
+      "sample_first_relative_rmse_pct": 0.0,
+      "point_global_relative_rmse_pct": 0.0,
+      "cv_weighted_point_global_relative_rmse_pct": 0.0,
+      "rmse_K": 0.0,
+      "mae_K": 0.0,
+      "peak_temperature_mae_K": 0.0,
+      "peak_temperature_rmse_K": 0.0,
+      "true_hotspot_region_rmse_K": 0.0
+    }
+  },
+  "point_estimate": {
+    "Heat3D_minus_GINO": {
+      "sample_first_relative_rmse_pct": -13.321958826162346,
+      "point_global_relative_rmse_pct": -15.67379075877957,
+      "cv_weighted_point_global_relative_rmse_pct": -16.10192947401715,
+      "rmse_K": -12.222168202279398,
+      "mae_K": -9.08329884911043,
+      "peak_temperature_mae_K": -9.811774724272997,
+      "peak_temperature_rmse_K": -12.650745786757936,
+      "true_hotspot_region_rmse_K": -12.054368767565798
+    },
+    "Heat3D_minus_Transolver": {
+      "sample_first_relative_rmse_pct": -14.310913082409847,
+      "point_global_relative_rmse_pct": -16.498824948166856,
+      "cv_weighted_point_global_relative_rmse_pct": -16.904409681329373,
+      "rmse_K": -12.86551650203097,
+      "mae_K": -9.667682511350451,
+      "peak_temperature_mae_K": -9.39627161849757,
+      "peak_temperature_rmse_K": -12.160411091166274,
+      "true_hotspot_region_rmse_K": -11.79916616876088
+    }
+  },
+  "per_comparison": {
+    "Heat3D_minus_GINO": {
+      "sample_first_relative_rmse_pct": {
+        "estimate": -13.321958826162346,
+        "ci95": [
+          -14.785727891830673,
+          -11.827626084029436
+        ]
+      },
+      "point_global_relative_rmse_pct": {
+        "estimate": -15.67379075877957,
+        "ci95": [
+          -17.636124944553035,
+          -13.583312288428683
+        ]
+      },
+      "cv_weighted_point_global_relative_rmse_pct": {
+        "estimate": -16.10192947401715,
+        "ci95": [
+          -18.203752200839574,
+          -13.893070107114116
+        ]
+      },
+      "rmse_K": {
+        "estimate": -12.222168202279398,
+        "ci95": [
+          -13.887104109635102,
+          -10.549133929643869
+        ]
+      },
+      "mae_K": {
+        "estimate": -9.08329884911043,
+        "ci95": [
+          -10.235200751634345,
+          -7.9693806280230035
+        ]
+      },
+      "peak_temperature_mae_K": {
+        "estimate": -9.811774724272997,
+        "ci95": [
+          -11.143493892435844,
+          -8.492577943342294
+        ]
+      },
+      "peak_temperature_rmse_K": {
+        "estimate": -12.650745786757936,
+        "ci95": [
+          -14.403032626798673,
+          -10.910626962381595
+        ]
+      },
+      "true_hotspot_region_rmse_K": {
+        "estimate": -12.054368767565798,
+        "ci95": [
+          -13.748295909966318,
+          -10.37078606956638
+        ]
+      }
+    },
+    "Heat3D_minus_Transolver": {
+      "sample_first_relative_rmse_pct": {
+        "estimate": -14.310913082409847,
+        "ci95": [
+          -16.043375518437877,
+          -12.622021256771582
+        ]
+      },
+      "point_global_relative_rmse_pct": {
+        "estimate": -16.498824948166856,
+        "ci95": [
+          -18.22513111060363,
+          -14.744483194661631
+        ]
+      },
+      "cv_weighted_point_global_relative_rmse_pct": {
+        "estimate": -16.904409681329373,
+        "ci95": [
+          -18.647339790353538,
+          -15.087813082905402
+        ]
+      },
+      "rmse_K": {
+        "estimate": -12.86551650203097,
+        "ci95": [
+          -14.237200044985153,
+          -11.452578844367608
+        ]
+      },
+      "mae_K": {
+        "estimate": -9.667682511350451,
+        "ci95": [
+          -10.755734358024444,
+          -8.615976337740403
+        ]
+      },
+      "peak_temperature_mae_K": {
+        "estimate": -9.39627161849757,
+        "ci95": [
+          -10.609060795223206,
+          -8.244480181365748
+        ]
+      },
+      "peak_temperature_rmse_K": {
+        "estimate": -12.160411091166274,
+        "ci95": [
+          -13.73910310109661,
+          -10.563690218990882
+        ]
+      },
+      "true_hotspot_region_rmse_K": {
+        "estimate": -11.79916616876088,
+        "ci95": [
+          -13.409527731004406,
+          -10.177933170153647
+        ]
+      }
+    }
+  },
+  "source_per_case_sha256": "9cc6fe4ffbc0a0112716003f3881404a9a9a048beda734951f52a25335cfd40d",
+  "source_main_table_sha256": "2f6d313c4296d8b48c768d7c2f635f8a61e5ddf385497db212c17d403001f871",
+  "test_iid_read": false,
+  "sealed_read": false,
+  "deepoheat_official100_read": false
+}

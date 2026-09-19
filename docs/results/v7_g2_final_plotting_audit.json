@@ -1,0 +1,53 @@
+{
+  "schema_version": "heat3d_v7_g2_final_plotting_audit_v1",
+  "status": "VALID_FIGURES_COMPLETE_TEST_FIGURES_BLOCKED",
+  "scope": "Fixed visualization only; no model selection, training, or claim update",
+  "valid_fixture": {
+    "sample_id": "v6p1if1_0003",
+    "split_role": "valid_iid",
+    "truth_row": 3,
+    "fixture_sha256": "e35e6aa5a557de708d1d7967cc345a5d362fabed589c89259e9c15cd79c33152",
+    "full_field_archive_sha256": "49023ac1205b8e7cf7c5bf782b89fcdb34997704b3f9aa2fb2d46cf1a59163cb",
+    "grid": [65, 65, 57],
+    "nodes": 240825,
+    "z_slice_rule": "dense truth peak layer; z=0.00283125 m; 4,225 exact nodes",
+    "thermfm_layout_audit": {
+      "source": "z_x_y (57,65,65)",
+      "canonical": "x_y_z C-order",
+      "conversion": "transpose axes (1,2,0), then flatten",
+      "prediction_sha256": "fa9d007fbaa76140f3de372ddf7d0fd14a7f5c7c5f5fcb219ec8a2504a882035",
+      "slice_rmse_K": 10.869863510131836,
+      "slice_mae_K": 10.781682968139648,
+      "slice_peak_abs_error_K": 8.984710693359375,
+      "final_evaluator_case_rmse_K": 10.4913372348241,
+      "final_evaluator_case_mae_K": 10.376319105761526,
+      "consistency": "PASS_LAYOUT_AND_ARTIFACT_IDENTITY"
+    }
+  },
+  "root_cause_analysis": {
+    "old_pipeline_issue": "The prior generic figure route had no Therm-FM-specific layout contract and mixed exact dense rows with sparse-display assumptions; a raw z_x_y flatten or a different prediction artifact can therefore make the picture disagree with the evaluator.",
+    "confirmed_new_bug": false,
+    "confirmed_risk": "provenance/layout ambiguity, not a newly observed model/evaluator numerical mismatch",
+    "repair": "Use the exact final evaluator prediction archive, explicitly transpose Therm-FM z_x_y to canonical x_y_z, and use exact dense slices for full-field rows.",
+    "native_policy": "native1024 models use same-layer thin-plate RBF only for an explicitly labelled interpolated diagnostic; native-point scatter is also emitted; neither is a benchmark-equivalent full-field metric."
+  },
+  "figures": [
+    {"path":"research_artifacts/v7_g2_final_figures/valid_fullfield_exact_dense.png","sha256":"2d438a1636c01b1839970a3fb55ba7af534c17611e7f39ee36d139ad9e2d88a0","role":"valid_iid exact dense Heat3D U-v2 vs Therm-FM"},
+    {"path":"research_artifacts/v7_g2_final_figures/valid_fullfield_exact_dense.pdf","sha256":"b55ae53d1a9e30f4d667479e41df1230d8769f1d02443f52b4f6cede3fefced4","role":"valid_iid exact dense Heat3D U-v2 vs Therm-FM"},
+    {"path":"research_artifacts/v7_g2_final_figures/valid_native1024_interpolated_diagnostic.png","sha256":"289a0c73f2d2ff0585df0295c44e4dde42d851e608437aeca64789fec86a3e4f","role":"valid_iid native1024 interpolated diagnostic"},
+    {"path":"research_artifacts/v7_g2_final_figures/valid_native1024_interpolated_diagnostic.pdf","sha256":"0967406c97f13486330df58593e2a93341a3a175acde6cbf8fd4e63d3cb707ee","role":"valid_iid native1024 interpolated diagnostic"},
+    {"path":"research_artifacts/v7_g2_final_figures/valid_native1024_scatter.png","sha256":"c3c4f881a97d5ed89330525a6bc082da06c891c7e18e53c67b469783fff4df7d","role":"valid_iid native-point scatter"},
+    {"path":"research_artifacts/v7_g2_final_figures/valid_native1024_scatter.pdf","sha256":"f7fb85e7fed625f26d25ba4dd1644d45d03bedce6e1a06df62e65aa924776f2a","role":"valid_iid native-point scatter"}
+  ],
+  "test_iid_visualization": {
+    "status": "BLOCKED_NO_AUTHORIZED_FIXED_PREDICTION_ARCHIVE",
+    "read": false,
+    "reason": "No V7 G2 fixed test_iid prediction artifact was present. No fresh test inference was run, so no test image was fabricated or used for a claim."
+  },
+  "plot_script_sha256": {
+    "scripts/audit_v7_g2_plotting.py": "c25786e8f909f629dad48b967e58045e1f68f004f90257ce1e455e62e3aa02f3",
+    "scripts/plot_v7_g2_final_fixed.py": "0034f53cc1cca311356a14b6d135c3f7157521e79e41a08f69dcc3d76e116fad"
+  },
+  "sealed_read": false,
+  "deepoheat_official100_read": false
+}

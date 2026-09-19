@@ -1,0 +1,41 @@
+{
+  "schema_version": "heat3d_v7_g2_curated_integration_allowlist_v1",
+  "created_at": "2026-09-19",
+  "source_branch": "codex/v7-g2-baselines-finalize",
+  "source_commit": "14207bc13c9487e9ec80854d70eff069d09e4ef7",
+  "target_base": "research/v7@365576daa566e0eb786eba93486910dea754cb1a",
+  "policy": "allowlist-only; do not merge the full G2 history or copy data/checkpoints/predictions",
+  "include": [
+    "docs/v7_g2_model_performance_report.md",
+    "docs/v7_g2_final_closeout_status.md",
+    "docs/v7_g2_final_evidence_lock.md",
+    "docs/v7_g2_final_evidence_freeze.json",
+    "docs/v7_g2_final_plotting_audit.md",
+    "docs/v7_g2_final_table_a_native1024.md",
+    "docs/v7_g2_final_table_b_fullfield240825.md",
+    "docs/results/v7_g2_final_evidence_aggregates.json",
+    "docs/results/v7_g2_final_p8_hierarchical_bootstrap_native.json",
+    "docs/results/v7_g2_final_bootstrap_amendment.json",
+    "docs/results/v7_g2_final_archive_receipt.json",
+    "docs/results/v7_g2_final_plotting_audit.json",
+    "docs/results/v7_g2_publication_figure_selection_receipt.json",
+    "docs/results/v7_g2_publication_figure_audit.json",
+    "docs/results/v7_g2_publication_test_visualization_receipt.json",
+    "configs/heat3d_v7/g2_publication_figure_selection_protocol.json",
+    "scripts/evaluate_v7_g2_final_evidence.py",
+    "scripts/audit_v7_g2_plotting.py",
+    "scripts/plot_v7_g2_final_fixed.py",
+    "scripts/plot_v7_g2_publication_figures.py",
+    "scripts/run_v7_g2_publication_heat3d_test_visualization.py",
+    "scripts/run_v7_g2_publication_thermfm_test_visualization.py"
+  ],
+  "exclude": [
+    "research_artifacts/**",
+    "output/**",
+    "checkpoints/**",
+    "logs/**",
+    "data/**",
+    "temporary staging, failure receipts, raw prediction archives, wheels and build trees"
+  ],
+  "integration_status": "PENDING_LOCAL_CURATED_INTEGRATION"
+}

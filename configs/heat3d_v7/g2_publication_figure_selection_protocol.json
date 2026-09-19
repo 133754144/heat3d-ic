@@ -1,0 +1,52 @@
+{
+  "schema_version": "heat3d_v7_g2_publication_figure_selection_protocol_v1",
+  "status": "FROZEN_BEFORE_TEST_PREDICTION_ACCESS",
+  "purpose": "Publication and visualization-only figure case selection; no model selection or accuracy claim",
+  "dataset_id": "heat3d_v6_p1i_continuous_physics1024_v1",
+  "split_manifest_sha256": "87aaa84af4b203d0a8ba93ed33b3757d46adc3143dad970371daa0f893ea491f",
+  "roles": [
+    "valid_iid",
+    "test_iid_visualization_only"
+  ],
+  "input_only_features": [
+    "package_total_power_W",
+    "source_count",
+    "source_power_heterogeneity",
+    "top_h_W_m2K",
+    "bottom_h_W_m2K",
+    "k_region_count",
+    "material_conductivity_heterogeneity"
+  ],
+  "feature_definitions": {
+    "source_power_heterogeneity": "population std(source_power_W) / mean(source_power_W) over q blocks",
+    "material_conductivity_heterogeneity": "control-volume-weighted population SD of log10((kx*ky*kz)^(1/3)) over case-definition k regions"
+  },
+  "selection_rules": {
+    "candidate_pool": "all cases with the requested split role in the frozen split manifest",
+    "typical_median": "minimize normalized L1 distance to candidate-pool medians across all seven input-only features; each feature is min-max normalized within the candidate pool; ties resolve by ascending sample_id",
+    "high_power": "maximize package_total_power_W; ties resolve by ascending sample_id",
+    "strong_material_or_high_htc": "maximize material_conductivity_heterogeneity; ties resolve by larger top_h_W_m2K and then ascending sample_id",
+    "failure_case_diagnostic": "optional frozen historical valid case v6p1if1_0003; label as Therm-FM tail-error diagnostic, never representative"
+  },
+  "slice_rule": {
+    "full_field_grid": [65, 65, 57],
+    "source_layer": "aggregate input q-region control_volume_count by physical layer; choose the layer with the largest source footprint; ties choose the lower physical layer index",
+    "z_index": "choose the central grid plane of the selected source layer; the same z index is used for reference, Heat3D U-v2 and Therm-FM",
+    "no_prediction_or_truth_selection": true
+  },
+  "color_policy": {
+    "temperature": "Tmin/Tmax are min/max of the reference slice for that case; shared by reference and both predictions; prediction values remain unmodified and color clipping is disclosed with extend",
+    "error": "freeze Emax=max(5.0 K, pooled 99th percentile of absolute errors from both models on that case's displayed slice); one symmetric +/-Emax scale per case",
+    "normalization": "no per-model normalization, smoothing, interpolation or rescaling for full-field panels"
+  },
+  "native1024_policy": {
+    "primary": "native-point scatter/field at the frozen 1024 physical points",
+    "supplementary": "any dense image is labelled interpolated diagnostic and records interpolation method and extrapolated fraction"
+  },
+  "test_policy": {
+    "visualization_only": true,
+    "used_for_model_selection": false,
+    "used_for_claim_or_color_policy": false,
+    "sealed_access": false
+  }
+}
