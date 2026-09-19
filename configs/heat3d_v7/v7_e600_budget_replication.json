@@ -1,0 +1,83 @@
+{
+  "schema_version": "heat3d_v7_e600_budget_replication_contract_v1",
+  "experiment_id": "V7-E600-Budget-Replication",
+  "status": "frozen_prelaunch",
+  "experiment_role": "post_g2_v7_budget_study",
+  "scientific_scope": "V7 Full P1i only; this cohort does not modify or supersede G2/V6 evidence",
+  "parent_config": "configs/heat3d_v7/v7_g1_full_p1i.json",
+  "parent_config_sha256": "ee95f0e94a667703660eb5aa7229f3c7ed50efd0b696b9778cea979639fd21a5",
+  "dataset": {
+    "dataset_id": "heat3d_v6_p1i_continuous_physics1024_v1",
+    "manifest_path": "configs/heat3d_v6_p1i/v6_p1i_formal1024_v1_manifest.json",
+    "manifest_sha256": "f19987c659968c2ac14eade1f1ef7e206c8f7eeb94f58fde5897d6e765978514",
+    "subset_path": "data/heat3d_v6_p1i_continuous_physics1024_v1",
+    "full_field_archive_path": "data/heat3d_v6_p1i_continuous_physics1024_v1_full_fields/full_fields.h5",
+    "full_field_archive_sha256": "49023ac1205b8e7cf7c5bf782b89fcdb34997704b3f9aa2fb2d46cf1a59163cb",
+    "roles": {
+      "train": 768,
+      "valid_iid": 128,
+      "test_iid": "forbidden",
+      "sealed": "forbidden"
+    }
+  },
+  "frozen_scientific_invariants": {
+    "architecture_source": "parent_config.model unchanged",
+    "graph_source": "parent_config.graph unchanged",
+    "loss_source": "parent_config.loss unchanged",
+    "batch_size": 24,
+    "micro_batch_size": 24,
+    "validation_batch_size": 32,
+    "train_samples_per_epoch": 768,
+    "train_batches_per_epoch": 32,
+    "drop_last": false,
+    "optimizer": "adamw",
+    "learning_rate": 0.0005,
+    "min_learning_rate": 0.00005,
+    "weight_decay": 0.0001,
+    "gradient_clip_norm": 1.0,
+    "lr_schedule": "warmup_cosine",
+    "warmup_epochs": 10,
+    "cosine_horizon_epochs": 600,
+    "initialization": "random",
+    "seed_set": [0, 1, 2],
+    "test_iid_access": false,
+    "sealed_access": false,
+    "deepoheat_official100_access": false
+  },
+  "budget_change": {
+    "only_changed_variables": ["epochs", "cosine_horizon_epochs"],
+    "epochs": 600,
+    "cosine_horizon_epochs": 600,
+    "resume_from_e200": false,
+    "u_v2_full_field_evaluation": false
+  },
+  "checkpoint_selection": {
+    "primary_metric": "sample_first_relative_rmse_pct",
+    "tie_break": "earliest_epoch",
+    "selection_split": "valid_iid",
+    "secondary_checkpoint": "point_global_best",
+    "endpoint_checkpoint": "final_e600",
+    "reselection_after_training": false
+  },
+  "output_contract": {
+    "output_root": "output/heat3d_v7_e600_budget",
+    "run_layout": "seed{seed}",
+    "no_overwrite": true,
+    "tracked_artifacts": "receipts and reports only; checkpoints/output remain ignored"
+  },
+  "execution_contract": {
+    "run_order": [0, 1, 2],
+    "max_concurrent_training_processes": 1,
+    "preflight_required": ["git/code/config/dataset SHA", "nvidia-smi", "disk space", "active process audit"],
+    "fail_closed_on": ["non_finite", "manifest drift", "checkpoint integrity failure", "wrong split role", "output collision"],
+    "runner": "scripts/run_heat3d_v7_e600_budget_replication.py",
+    "runner_sha_recorded_in_receipt": true
+  },
+  "comparison_role": {
+    "v7_e200": "descriptive prior cohort; not overwritten",
+    "v6_e600": "historical frozen family; not overwritten",
+    "new_e600": "independent V7 replication cohort",
+    "native1024_aggregation_only": true,
+    "full_field_u_v2_deferred": true
+  }
+}
