@@ -1,0 +1,335 @@
+{
+  "schema_version": "heat3d-v8-mass-hbm-compatibility-audit-v1",
+  "audit_date": "2026-09-19",
+  "status": "AUDIT_AND_PROTOCOL_COMPLETE_NO_TRAINING",
+  "scope_contract": {
+    "dataset_read_only": true,
+    "training_calls": 0,
+    "solver_calls": 0,
+    "g1_evidence_modified": false,
+    "g2_scientific_results_modified": false,
+    "sealed_split_accessed": false,
+    "silent_clipping": false,
+    "unit_guessing": false,
+    "normalization_refit": false
+  },
+  "sources": {
+    "paper": {
+      "title": "MASS-HBM: A Multiphysics Atom-to-System Simulation Tool for Thermal-Reliability-Aware System-Technology Co-Optimization of HBM",
+      "venue": "IEDM 2026",
+      "local_path": "/Users/xuyihua/Library/Containers/com.tencent.xinWeChat/Data/Documents/xwechat_files/wxid_ad0h3h59rte722_df03/msg/file/2026-07/finalfinal.pdf",
+      "pages": 4,
+      "evidence_class": "PAPER_DERIVED"
+    },
+    "raw_dataset": {
+      "path": "/Users/xuyihua/Downloads/GlobalThermal_AI_Dataset",
+      "schema_version": "global-thermal-ai-handoff-v2",
+      "source_git_head": "6c167dc88104f52beedf3a20c837a1d3771c5c1c",
+      "metadata_sha256": {
+        "dataset_index.csv": "c5e0a85ed164f094dcfcb1985aac429f991000ccdf3014c9e1523fcc40566554",
+        "dataset_metadata.json": "d86df19866022b35e416afe8a4678dc00a4db1b4d713d7f5171f54334e0f1fc3",
+        "files_manifest.csv": "fe67a43f1033de13472b07cbfa58d7a3d536bb4ecd1113bcc3affba9de391157"
+      },
+      "evidence_class": "RAW_DATASET_DERIVED"
+    },
+    "heat3d_contract": {
+      "dataset": "V6-P1i formal1024",
+      "v7_config": "configs/heat3d_v7/v7_g1_full_p1i.json",
+      "evidence_class": "REPOSITORY_DERIVED"
+    }
+  },
+  "inventory": {
+    "case_count": 314,
+    "training_eligible_as_packaged": 314,
+    "skipped_source_cases": 3,
+    "result_kind": "FINAL_CONVERGED",
+    "simulation_mode": "full_coupling",
+    "experiments": {
+      "Baseline": 4,
+      "Exp0_SolverAcceleration": 6,
+      "Exp1_CapacityScaling": 12,
+      "Exp2_ModelWorkload": 79,
+      "Exp3_SizeSweep": 105,
+      "Exp4_STCOOverview": 108
+    },
+    "architectures": {
+      "2.5D-HBM": 27,
+      "3D-P-HBM": 26,
+      "3D-V-HBM": 29,
+      "LC-V-HBM": 232
+    },
+    "manifest_file_count": 6940,
+    "manifest_total_bytes": 3782471081,
+    "suffix_counts": {
+      ".csv": 3456,
+      ".json": 1884,
+      ".md": 1,
+      ".npy": 942,
+      ".npz": 628,
+      ".py": 1,
+      ".yaml": 28
+    },
+    "case_tree": [
+      "structure",
+      "thermal_parameters",
+      "boundary_conditions",
+      "power_input",
+      "temperature_output",
+      "provenance",
+      "labels.json"
+    ],
+    "core_arrays": {
+      "power_density_map.npy": {"unit": "W/m^3", "axis_order": "z,y,x", "location": "cell"},
+      "final_material_k_maps.npz": {"keys": ["kx_w_mk", "ky_w_mk", "kz_w_mk"], "unit": "W/(m K)", "location": "cell"},
+      "final_interface_tbr_map.npz": {"key": "interface_tbr_m2k_w", "unit": "m^2 K/W", "location": "z-face"},
+      "temperature_map.npy": {"unit": "K", "axis_order": "z,y,x", "location": "cell"},
+      "temperature_map_C.npy": {"unit": "degC", "derivation": "temperature_map.npy - 273.15", "location": "cell"}
+    },
+    "mesh": {
+      "representation": "structured Cartesian fields; uniform x/y and nonuniform z",
+      "explicit_connectivity_file": false,
+      "connectivity_adapter": "derive 6-neighbor Cartesian adjacency from shape and spacing",
+      "cell_volume_source": "solver_geometry.json z_cell_thicknesses_m plus x/y spacing",
+      "shape_counts": {
+        "14x130x130": 260,
+        "17x130x130": 40,
+        "14x65x65": 1,
+        "17x65x65": 2,
+        "other_shapes": 11
+      },
+      "field_point_count": {"min": 59150, "q25": 236600, "q50": 236600, "q75": 236600, "max": 490100}
+    },
+    "case_fields": [
+      "solver_geometry.json",
+      "materials.csv",
+      "interfaces.csv",
+      "physical_interface_manifest.csv",
+      "boundary_conditions.json",
+      "lc_sink_audit.csv",
+      "lc_region_mask_audit.csv",
+      "power_density_map.npy",
+      "component_power_by_die.csv",
+      "power_feedback.csv",
+      "power_conservation_audit.csv",
+      "temperature_map.npy",
+      "temperature_map_C.npy",
+      "stack_temperature_summary.csv",
+      "convergence_history.csv",
+      "case_summary.json",
+      "case_manifest.json",
+      "latest_state.json"
+    ]
+  },
+  "paper_derived_facts": [
+    "The solver uses a self-consistent electrothermal loop that updates temperature-dependent conductivity, interface resistance, and leakage/refresh power until temperature and power converge.",
+    "Thermal conductivity is described as k(T,sigma), and interface resistance as temperature/stress dependent.",
+    "Adaptive meshing starts from structure/interface information and subsequently follows the evolving temperature field, retaining refinement near hotspots.",
+    "The architecture space includes 2.5D, 3D-P, 3D-V and liquid-cooled variants; liquid channels can be inserted between groups.",
+    "The paper uses 75 degC warning and 100 degC critical temperature thresholds.",
+    "The paper presents stress/strain and reliability outputs, but that does not establish that stress/strain fields are present in this handoff dataset."
+  ],
+  "physics_semantics": {
+    "coordinates": {"meaning": "cell-center position reconstructed from structured geometry", "unit": "m after adapter", "location": "cell", "availability": "DERIVABLE", "lifecycle": "PRE_SOLVE"},
+    "cell_volume": {"meaning": "control-volume measure", "unit": "m^3", "location": "cell", "availability": "DERIVABLE", "lifecycle": "PRE_SOLVE"},
+    "material_region": {"meaning": "material/component membership and spatial placement", "unit": "categorical", "location": "cell/region", "availability": "PRESENT_IN_TABLES", "lifecycle": "PRE_SOLVE"},
+    "final_k": {"meaning": "converged axis-aligned conductivity", "unit": "W/(m K)", "shape": "[Nz,Ny,Nx] x 3", "location": "cell", "tensor": "diagonal3", "lifecycle": "CONVERGED_SOLVER_STATE", "leakage_class": "TARGET_DEPENDENT_ORACLE_ONLY"},
+    "nominal_k": {"meaning": "reference/baseline material conductivity before temperature feedback", "unit": "W/(m K)", "location": "material/cell after reconstruction", "tensor": "diagonal3", "lifecycle": "PRE_SOLVE", "availability": "TABLE_DERIVATION_REQUIRED"},
+    "final_q": {"meaning": "converged volumetric heat generation including electrothermal feedback", "unit": "W/m^3", "shape": "[Nz,Ny,Nx]", "location": "cell", "lifecycle": "CONVERGED_SOLVER_STATE", "leakage_class": "TARGET_DEPENDENT_ORACLE_ONLY"},
+    "initial_power": {"meaning": "workload/reference component power before feedback", "unit": "W and W/m^3 after spatialization", "location": "global/component/cell", "lifecycle": "PRE_SOLVE", "availability": "PRESENT_BUT_ADAPTER_REQUIRED"},
+    "final_Rint": {"meaning": "converged thermal boundary resistance", "unit": "m^2 K/W", "location": "interface/z-face or homogenized tensor representation", "lifecycle": "CONVERGED_SOLVER_STATE", "leakage_class": "TARGET_DEPENDENT_ORACLE_ONLY"},
+    "nominal_Rint": {"meaning": "reference/calibration interface resistance parameters", "unit": "m^2 K/W", "location": "interface", "lifecycle": "PRE_SOLVE", "availability": "PRESENT_IN_CALIBRATION_METADATA"},
+    "external_bc": {"meaning": "ambient and external convection", "unit": "K and W/(m^2 K)", "location": "boundary face", "lifecycle": "PRE_SOLVE"},
+    "internal_liquid_sink": {"meaning": "reduced-order distributed internal coolant sink", "unit": "K, W/(m^2 K), W/K", "location": "internal cell/face regions", "lifecycle": "PRE_SOLVE_WITH_CASE_AUDIT_FIELDS"},
+    "temperature": {"meaning": "converged steady-state temperature", "unit": "K primary", "location": "cell", "lifecycle": "LABEL_OUTPUT"},
+    "adaptive_mesh": {"meaning": "final refinement influenced by evolving gradients/hotspots", "location": "geometry/discretization", "lifecycle": "CONVERGED_SOLVER_STATE", "leakage_class": "TARGET_DEPENDENT_ORACLE_ONLY"},
+    "stress_strain": {"meaning": "mechanical state referenced by paper", "unit": "UNKNOWN", "location": "UNKNOWN", "lifecycle": "UNKNOWN", "availability": "ABSENT_FROM_HANDOFF_MANIFEST"},
+    "solver_iterations": {"meaning": "coupled convergence history", "unit": "iteration/residual/time", "location": "global/iteration", "lifecycle": "METADATA_ONLY"},
+    "runtime": {"meaning": "case and phase timing", "unit": "s", "location": "global/iteration", "lifecycle": "METADATA_ONLY"}
+  },
+  "quantitative_ranges": {
+    "raw_all_314_cases": {
+      "extent_mm": {"x": [65.0, 65.0], "y": [65.0, 65.0], "z": [0.442, 5.760]},
+      "temperature_C": {"min_field_min": 20.0000000467, "max_field_max": 145.0484369883},
+      "deltaT_C": {"min": 15.5525431799, "q25": 32.2274948422, "q50": 46.8858121014, "q75": 57.6154420128, "max": 125.0484208232},
+      "total_power_W": {"min": 184.7120813435, "q25": 388.0572204998, "q50": 570.7350245190, "q75": 791.6709631173, "max": 1141.2414953185},
+      "case_wall_time_s": {"min": 7.7891749580, "q25": 17.8675181148, "q50": 30.7516360210, "q75": 71.9121623327, "max": 418.9020715830},
+      "coupled_iterations": {"min": 2, "q25": 4, "q50": 5.5, "q75": 7, "max": 29},
+      "temperature_dependent_cell_fraction": {"min": 0.0081825866, "q50": 0.0900084531, "max": 0.2243422849},
+      "temperature_dependent_hbm_cell_fraction": [1.0, 1.0],
+      "leakage_power_W": [0.1417443906, 83.3985582665],
+      "refresh_power_W": [0.8456841786, 165.1089109799],
+      "effective_internal_coolant_htc_W_m2K": [2222.5801310550, 10000.0],
+      "coolant_gap_mm": {"minimum": [0.42, 6.9], "mean": [0.84, 13.8]},
+      "local_final_interface_resistance_m2K_W": [1.5800774205e-7, 1.6158386797e-7],
+      "calibrated_interface_resistance_m2K_W": [2.2504668534e-6, 3.3544026306e-6],
+      "capacity_GB": [48.0, 828.0],
+      "bandwidth_TBps": [2.015112331264, 44.05583382016],
+      "pitch_um_observed": [50, 100, 150, 200, 250, 300, 400, 500],
+      "group_count_observed": [1, 2, 3, 4, 5, 6, 7, 8, 9, 10],
+      "frequency_factor": [0.5, 1.0]
+    },
+    "representative_32_case_array_audit": {
+      "method": "deterministic stratification; at most 100000 uniformly strided values per array; envelopes are per-case statistic envelopes, not pooled voxel quantiles",
+      "k_axis_observed_sample_range_W_mK": [0.6, 174.5542053509],
+      "q_observed_sample_range_W_m3": [0.0, 11187503849.570572],
+      "q_case_q99_envelope_W_m3": [1541666666.6666667, 5227272727.272728],
+      "interface_tbr_observed_sample_range_m2K_W": [0.0, 3.3120227069e-6],
+      "temperature_observed_sample_range_K": [293.1500013970, 414.9433474192]
+    },
+    "frozen_v6_p1i": {
+      "footprint_mm": [10.0, 10.0],
+      "total_thickness_mm": 4.175,
+      "full_field_nodes": 240825,
+      "support_points": 1024,
+      "k_local_envelope_W_mK": [0.16, 400.0],
+      "q_envelope_W_m3": [100000000.0, 80000000000.0],
+      "boundary": "top and bottom Robin plus adiabatic sides",
+      "top_h_W_m2K": [500.0, 1600.0],
+      "bottom_h_W_m2K": [20.0, 200.0],
+      "interface_resistance": 0.0
+    },
+    "interpretation": "Some k, q, thickness and point-count ranges overlap, but geometry, state dependence, interface resistance and internal-cooling semantics do not; numerical overlap is not physics compatibility."
+  },
+  "leakage_partition": {
+    "deployable_pre_solve_inputs": [
+      "geometry and nominal mesh generated without temperature feedback",
+      "material/region identity and reference-temperature conductivity parameters",
+      "initial workload/activity and reference/component power",
+      "external ambient/HTC and liquid-cooling design parameters",
+      "nominal/calibration Rint parameters",
+      "architecture, pitch, slab/group counts and thicknesses"
+    ],
+    "converged_solver_state_inputs": [
+      "final_material_k_maps.npz",
+      "power_density_map.npy when it is the final feedback-updated map",
+      "final_interface_tbr_map.npz",
+      "final adaptive/refined mesh or any temperature-guided placement",
+      "final leakage/refresh/component power"
+    ],
+    "labels_outputs": ["temperature_map.npy", "temperature_map_C.npy convenience copy", "optional scalar peak/stack temperature labels"],
+    "metadata_only": ["convergence_history.csv", "iteration count", "runtime/timing", "solver backend", "provenance and checksums"],
+    "forbidden_track_b_chains": [
+      "T -> adaptive mesh -> model input",
+      "T/stress -> k(T,sigma) -> model input",
+      "T -> P(T) leakage/refresh -> model input",
+      "T/stress -> Rint -> model input"
+    ]
+  },
+  "compatibility_matrix": [
+    {"feature": "coordinates", "track_a": "ADAPTER_ONLY", "track_b": "ADAPTER_ONLY", "reason": "reconstruct cell centers in metres from structured geometry"},
+    {"feature": "mesh_connectivity", "track_a": "ADAPTER_ONLY", "track_b": "ADAPTER_ONLY", "reason": "no explicit connectivity file; derive structured 6-neighbor graph"},
+    {"feature": "cell_volume", "track_a": "ADAPTER_ONLY", "track_b": "ADAPTER_ONLY", "reason": "must use nonuniform z thickness for loss/metrics"},
+    {"feature": "scalar_k", "track_a": "LOSSY_MAPPING", "track_b": "LOSSY_MAPPING", "reason": "broadcast only when metadata proves isotropy"},
+    {"feature": "diagonal3_k", "track_a": "DIRECT_COMPATIBLE", "track_b": "ADAPTER_ONLY", "reason": "final diag3 shape matches P1i but is oracle-only; Track B must reconstruct nominal diag3"},
+    {"feature": "full6_k", "track_a": "MODEL_SCHEMA_CHANGE_REQUIRED", "track_b": "MODEL_SCHEMA_CHANGE_REQUIRED", "reason": "not observed in handoff; current P1i cannot encode off-diagonal terms"},
+    {"feature": "final_q", "track_a": "DIRECT_COMPATIBLE", "track_b": "UNSUPPORTED", "reason": "numerically compatible but feedback-updated and oracle-only"},
+    {"feature": "initial_power_workload", "track_a": "ADAPTER_ONLY", "track_b": "MODEL_SCHEMA_CHANGE_REQUIRED", "reason": "requires component/local activity representation"},
+    {"feature": "arbitrary_material_interfaces", "track_a": "MODEL_SCHEMA_CHANGE_REQUIRED", "track_b": "MODEL_SCHEMA_CHANGE_REQUIRED", "reason": "material/region and interface topology absent from 11-channel contract"},
+    {"feature": "interface_Rint", "track_a": "MODEL_SCHEMA_CHANGE_REQUIRED", "track_b": "MODEL_SCHEMA_CHANGE_REQUIRED", "reason": "requires interface-aware edge/face feature; P1i assumes perfect contact"},
+    {"feature": "external_top_bottom_Robin", "track_a": "ADAPTER_ONLY", "track_b": "ADAPTER_ONLY", "reason": "same class for compatible cases, but MASS top HTC is outside frozen P1i range"},
+    {"feature": "internal_liquid_cooling_Robin", "track_a": "MODEL_SCHEMA_CHANGE_REQUIRED", "track_b": "MODEL_SCHEMA_CHANGE_REQUIRED", "reason": "distributed internal sink cannot be encoded by top/bottom flags"},
+    {"feature": "arbitrary_boundary_normals", "track_a": "MODEL_SCHEMA_CHANGE_REQUIRED", "track_b": "MODEL_SCHEMA_CHANGE_REQUIRED", "reason": "current flags do not carry normals or generic face BC type"},
+    {"feature": "adaptive_irregular_mesh", "track_a": "MODEL_SCHEMA_CHANGE_REQUIRED", "track_b": "UNSUPPORTED", "reason": "RIGNO accepts points, but current loader/physics contract is fixed; temperature-guided final mesh is forbidden for Track B"},
+    {"feature": "variable_2p5D_3D-P_3D-V_geometry", "track_a": "MODEL_SCHEMA_CHANGE_REQUIRED", "track_b": "MODEL_SCHEMA_CHANGE_REQUIRED", "reason": "65 mm family and variable z/topology are outside frozen P1i geometry contract"},
+    {"feature": "power_temperature_feedback", "track_a": "ORACLE_ONLY", "track_b": "MODEL_SCHEMA_CHANGE_REQUIRED", "reason": "Track B learns initial-input to converged-temperature map without receiving final power"},
+    {"feature": "temperature_dependent_conductivity", "track_a": "ORACLE_ONLY", "track_b": "MODEL_SCHEMA_CHANGE_REQUIRED", "reason": "Track B receives nominal law parameters, not final evaluated k"},
+    {"feature": "variable_point_count_59150_to_490100", "track_a": "ADAPTER_ONLY", "track_b": "ADAPTER_ONLY", "reason": "1024 support can condition, but full-field query must be sparse/cached/chunked"},
+    {"feature": "temperature_target", "track_a": "DIRECT_COMPATIBLE", "track_b": "DIRECT_COMPATIBLE", "reason": "Kelvin cell field after coordinate alignment"},
+    {"feature": "stress_strain", "track_a": "UNSUPPORTED", "track_b": "UNSUPPORTED", "reason": "no handoff arrays or units"},
+    {"feature": "solver_iterations_runtime", "track_a": "METADATA_ONLY", "track_b": "METADATA_ONLY", "reason": "benchmark/provenance only, never model input"}
+  ],
+  "split_protocol": {
+    "forbidden_default": "random sample-level or voxel-level split",
+    "atomic_group": "all records and iteration states from one solver case",
+    "group_key": ["architecture", "scan_family", "geometry_case_id", "pitch_um", "slab_count", "group_count", "model_name", "phase", "cooling_policy", "cooling_parameter_bin", "source_case_identity"],
+    "iid_policy": "assign entire physical-design groups first, then deterministic group hash into approximately 60/20/20 train/valid/test with architecture and experiment balance; report actual counts before training",
+    "ood_suites": {
+      "unseen_geometry": "hold out complete geometry_case_id/thickness families",
+      "unseen_pitch": "hold out complete pitch values, including edge pitches where sample support permits",
+      "unseen_slab_count": "hold out complete slab/layer-count values",
+      "unseen_workload": "hold out complete model_name plus phase families",
+      "unseen_cooling": "hold out coolant-HTC/gap bins and keep conventional versus internal-liquid regimes separate",
+      "cross_architecture": "leave-one-architecture-out; LC-V is a distinct cooling/topology domain and must not be mixed into IID claims"
+    }
+  },
+  "experiments": {
+    "track_a_oracle_field_diagnostic": {
+      "claim_boundary": "representation-capacity diagnostic only; forbidden for solver-replacement or deployability claims",
+      "inputs": ["coordinates/cell volumes", "converged diag3 k", "converged q", "converged Rint edge/face field", "all BC including internal sink", "final mesh"],
+      "target": "converged temperature field in K",
+      "changes": ["V8 adapter", "interface-aware edge features", "generic BC representation", "variable-geometry batching", "weighted full-field loss"],
+      "support_query": "physics-stratified 1024 support with quotas for sources/interfaces/internal coolant/boundaries plus sparse chunked full-cell query",
+      "split": "same group-aware IID/OOD protocol as Track B",
+      "metrics": ["sample-first relative RMSE", "RMSE K", "MAE K", "peak-temperature error", "top-1% hotspot RMSE", "hotspot-location error", "75C threshold", "100C threshold"]
+    },
+    "track_b_end_to_end_surrogate": {
+      "claim_boundary": "primary accuracy-speed solver-replacement benchmark",
+      "inputs": ["pre-solve geometry and cell volumes", "material/region identity", "reference/nominal k or law parameters", "initial workload/activity and power", "nominal/calibration Rint", "external and internal cooling design BC"],
+      "forbidden_inputs": ["final k", "final q", "final Rint", "temperature-guided final mesh", "final leakage/refresh power", "convergence history"],
+      "target": "MASS-HBM converged temperature field in K",
+      "changes": ["new V8 physics contract", "interface-aware edge/face features", "generic BC and internal-sink encoding", "component/workload features", "leakage gate", "variable-geometry batching"],
+      "support_query": "target-independent geometry/physics quotas; cached geometry neighborhoods for repeated geometry; sparse KD-tree and chunked full-field query",
+      "split": "group-aware train/valid/test plus six named OOD suites",
+      "metrics": ["sample-first relative RMSE", "RMSE K", "MAE K", "peak-temperature error", "top-1% hotspot RMSE", "hotspot-location error", "75C threshold", "100C threshold", "latency", "throughput", "peak memory"]
+    }
+  },
+  "architecture_decision": {
+    "selected": 5,
+    "decision": "NEW_V8_PHYSICS_CONTRACT",
+    "rigno_backbone": "retain unless Phase 2 evidence shows insufficient capacity",
+    "required": [
+      "expanded local pre-solve feature schema",
+      "interface-aware edge/face Rint and normal features",
+      "generic external/internal boundary-condition representation",
+      "variable geometry and nonuniform control-volume weights",
+      "explicit oracle/deployable provenance mask and validation gate",
+      "sparse KD-tree, geometry-cached neighborhoods and chunked query"
+    ],
+    "frozen_v7_action": "NO_CHANGE"
+  },
+  "efficiency_benchmark": {
+    "mass_hbm_chain": ["mesh/preprocess", "multiphysics/self-consistent iteration", "thermal solve"],
+    "heat3d_chain": ["preprocess", "support selection", "graph/query construction", "network forward", "full-field query/postprocess"],
+    "regimes": ["cold-start", "warm/cached", "throughput"],
+    "measurements": ["median/p95 latency", "cases/s", "peak host memory", "peak accelerator memory", "training GPU-hours", "training energy if available"],
+    "cache_policy": "report uncached geometry and cached-identical-geometry separately; never hide preprocessing or query construction",
+    "required_query_optimizations": ["sparse KD-tree", "cached neighborhood for repeated geometry", "chunked query"],
+    "g2_evidence": {"full_query_points": 571256, "query_graph_cold_s": 4.4454481260, "query_graph_steady_median_s": 3.9225237170, "query_graph_steady_p95_s": 4.6581057828, "valid128_e2e_approx_s": 1008},
+    "break_even_formula": "N_break_even = training_compute_cost / (MASS_HBM_warm_case_cost - Heat3D_warm_case_cost); also report cold and engineering-inclusive variants"
+  },
+  "metric_contract": {
+    "sample_first_relative_rmse_pct": "100 * mean_i sqrt(sum_j w_ij*(pred-true)^2 / sum_j w_ij*(true-T_ref_i)^2)",
+    "rmse_K": "volume-weighted per-sample RMSE in kelvin; report sample distribution and aggregate explicitly",
+    "mae_K": "volume-weighted absolute error in kelvin",
+    "peak_temperature_error": "signed and absolute error of sample maximum in kelvin",
+    "hotspot_top1pct_rmse": "RMSE K on truth-defined hottest 1% by physical volume",
+    "hotspot_location_error": "Euclidean distance in mm between truth/predicted maxima plus optional top-1% centroid distance",
+    "threshold_75C": "pointwise and case-level confusion, precision, recall, F1 and temperature-margin error",
+    "threshold_100C": "pointwise and case-level confusion, precision, recall, F1 and temperature-margin error",
+    "efficiency": "cold/warm latency, throughput and peak host/accelerator memory"
+  },
+  "verdicts": {
+    "current_v7_plus_adapter": {"decision": "NO_GO", "go_type": "NONE", "reason": "cannot express Rint, internal cooling, generic normals, variable geometry or deployable nonlinear inputs"},
+    "track_a": {"decision": "CONDITIONAL_GO", "go_type": "MODEL_SCHEMA_CHANGE_GO", "condition": "V8 oracle-labeled diagnostic with claim firewall"},
+    "track_b": {"decision": "CONDITIONAL_GO", "go_type": "MODEL_SCHEMA_CHANGE_GO", "condition": "V8 pre-solve contract, author clarifications, leakage gates and group-aware split receipt"},
+    "formal_training_now": "NO_GO",
+    "smoke_training_next": "NO_GO_UNTIL_PHASE1_ADAPTER_AND_LEAKAGE_GATES_COMPLETE_AND_NEW_EXPLICIT_TRAINING_AUTHORIZATION"
+  },
+  "unknowns_for_authors": [
+    "Provide stress/strain field files, units, discretization location and whether they are initial or converged; none are in the handoff manifest.",
+    "Specify the exact functional forms and parameters for k(T,sigma), Rint(T,sigma), leakage P(T) and refresh feedback needed to reconstruct deployable pre-solve inputs.",
+    "Confirm whether every packaged power_density_map.npy is iteration-final and identify a canonical iteration-0 volumetric map for every case.",
+    "Confirm whether packaged solver geometry is pre-solve or the result of temperature-guided adaptation/local refinement, and provide a target-independent base mesh if different.",
+    "Define the face indexing/orientation of final_interface_tbr_map.npz for all architectures, especially rotated_homogenized_tensor cases.",
+    "Clarify whether LC-V sink audit fields are design inputs or include converged-temperature controller updates, and provide the pre-solve sink field contract.",
+    "Explain the one case with interface_review_status=REVIEW_REQUIRED before it enters any split.",
+    "Provide comparable per-phase timing instrumentation and hardware details for mesh, coupled update and thermal solve."
+  ],
+  "minimum_next_phases": [
+    {"phase": 1, "name": "data adapter", "training": false, "exit_gate": "read-only schema validator, unit/provenance checks, nominal-vs-final leakage classification, group manifest"},
+    {"phase": 2, "name": "1-3 sample end-to-end smoke", "training": "requires new explicit authorization", "exit_gate": "finite forward/loss/gradient on pre-solve-only inputs; no performance claim"},
+    {"phase": 3, "name": "small pilot", "training": "requires authorization", "exit_gate": "group-disjoint pilot with Track A/B separation and full metrics"},
+    {"phase": 4, "name": "formal training", "training": "requires authorization", "exit_gate": "frozen V8 contract, split receipt, seeds and resource budget"},
+    {"phase": 5, "name": "accuracy-latency benchmark", "training": false, "exit_gate": "matched hardware, complete-chain cold/warm/throughput/memory and break-even report"}
+  ]
+}
