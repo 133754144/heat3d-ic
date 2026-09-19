@@ -1,0 +1,129 @@
+{
+  "schema_version": "heat3d_v7_g2_publication_figure_selection_receipt_v1",
+  "status": "FROZEN_BEFORE_TEST_PREDICTION_ACCESS",
+  "protocol": "configs/heat3d_v7/g2_publication_figure_selection_protocol.json",
+  "protocol_sha256": "b6e1207d103b70aee3818126460ba23db68dc656a06c2451f203412fae568b27",
+  "split_manifest_sha256": "87aaa84af4b203d0a8ba93ed33b3757d46adc3143dad970371daa0f893ea491f",
+  "input_metadata_only": true,
+  "model_error_read": false,
+  "prediction_read": false,
+  "truth_label_read": false,
+  "sealed_access": false,
+  "selection_proof": {
+    "candidate_roles": {
+      "valid_iid": 128,
+      "test_iid": 128
+    },
+    "features": [
+      "package_total_power_W",
+      "source_count",
+      "source_power_heterogeneity",
+      "top_h_W_m2K",
+      "bottom_h_W_m2K",
+      "k_region_count",
+      "material_conductivity_heterogeneity"
+    ],
+    "proof": "All selection fields are case-definition/input metadata; no target, prediction, error, ranking or checkpoint metric was read."
+  },
+  "valid_iid": {
+    "typical_median": {
+      "sample_id": "v6p1if1_0163",
+      "sample_meta_sha256": "d9c3eda6bf78b031c072d14f2beb03258c4b47ff503a4462b4a9e361f58fa1d6",
+      "features": {
+        "package_total_power_W": 6.96861836304084,
+        "source_count": 7,
+        "source_power_heterogeneity": 0.0,
+        "top_h_W_m2K": 1046.4448647227225,
+        "bottom_h_W_m2K": 77.31321313637805,
+        "k_region_count": 6,
+        "material_conductivity_heterogeneity": 0.22865472761796188
+      },
+      "selected_z_index": 27,
+      "selected_source_layer": "silicon_die_lower"
+    },
+    "high_power": {
+      "sample_id": "v6p1if1_0467",
+      "sample_meta_sha256": "546eeae703d44b2d849ff31b437c22e9a796ed500bedee7a567ae634fbfb00ad",
+      "features": {
+        "package_total_power_W": 14.659899517570572,
+        "source_count": 5,
+        "source_power_heterogeneity": 0.0,
+        "top_h_W_m2K": 1280.78824262758,
+        "bottom_h_W_m2K": 23.092457725941518,
+        "k_region_count": 4,
+        "material_conductivity_heterogeneity": 0.4287471295191664
+      },
+      "selected_z_index": 39,
+      "selected_source_layer": "silicon_die_upper"
+    },
+    "strong_material_or_high_htc": {
+      "sample_id": "v6p1if1_0650",
+      "sample_meta_sha256": "a7259488dcfe2cd19de6b33bbe76e3a36f7cff80ac7bc7a373c846b68dac8fa6",
+      "features": {
+        "package_total_power_W": 2.9904098237033914,
+        "source_count": 3,
+        "source_power_heterogeneity": 0.0,
+        "top_h_W_m2K": 898.2806700340078,
+        "bottom_h_W_m2K": 41.595709671273035,
+        "k_region_count": 8,
+        "material_conductivity_heterogeneity": 0.5252376068896506
+      },
+      "selected_z_index": 39,
+      "selected_source_layer": "silicon_die_upper"
+    },
+    "failure_case_diagnostic": {
+      "sample_id": "v6p1if1_0003",
+      "sample_meta_sha256": "50e87afa90f44208a77c6d214d7b335c5312e5619bf41caffc56de8e558ca2f0",
+      "selected_z_index": 27,
+      "selected_source_layer": "silicon_die_lower",
+      "label": "Therm-FM tail-error diagnostic; not representative evidence"
+    }
+  },
+  "test_iid_visualization_only": {
+    "typical_median": {
+      "sample_id": "v6p1if1_0740",
+      "sample_meta_sha256": "fc561ebee43a2dd8a006f78433e523050386d3bbf03ac90759692d02471f3d0e",
+      "features": {
+        "package_total_power_W": 7.608467944576988,
+        "source_count": 6,
+        "source_power_heterogeneity": 0.0,
+        "top_h_W_m2K": 1174.824220757529,
+        "bottom_h_W_m2K": 43.73896718282587,
+        "k_region_count": 5,
+        "material_conductivity_heterogeneity": 0.30235589253728246
+      },
+      "selected_z_index": 39,
+      "selected_source_layer": "silicon_die_upper"
+    },
+    "high_power": {
+      "sample_id": "v6p1if1_0571",
+      "sample_meta_sha256": "b9ca8804682d3bc187076b74070cdd015462db6de4fbd6d690a57ac636050656",
+      "features": {
+        "package_total_power_W": 16.21247140261187,
+        "source_count": 4,
+        "source_power_heterogeneity": 0.0,
+        "top_h_W_m2K": 1322.872397285868,
+        "bottom_h_W_m2K": 24.21211218455051,
+        "k_region_count": 8,
+        "material_conductivity_heterogeneity": 0.39657526540787386
+      },
+      "selected_z_index": 39,
+      "selected_source_layer": "silicon_die_upper"
+    },
+    "strong_material_or_high_htc": {
+      "sample_id": "v6p1if1_0871",
+      "sample_meta_sha256": "3857b9da981d958d190479f05410608acbd2b239471965c98b98b3c83f2fc48c",
+      "features": {
+        "package_total_power_W": 4.90409432971092,
+        "source_count": 3,
+        "source_power_heterogeneity": 0.0,
+        "top_h_W_m2K": 597.1802679785625,
+        "bottom_h_W_m2K": 107.66459952541024,
+        "k_region_count": 4,
+        "material_conductivity_heterogeneity": 0.49823420145635255
+      },
+      "selected_z_index": 27,
+      "selected_source_layer": "silicon_die_lower"
+    }
+  }
+}
