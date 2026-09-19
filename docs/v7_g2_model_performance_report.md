@@ -218,6 +218,6 @@ P24_READY_FOR_REVIEW_NOT_UNLOCKED。figure selection、exact-dense plotting audi
 codex/v7-g2-baselines-finalize closeout branch based on
 research/v7-g2-baselines@07e0f959caf1ca493f7a3fee3505e6240d107027。
 现有 `codex/g2-curated-integration` history 保持不变；旧的 direct-parent 规则已由
-ancestry gate `git merge-base --is-ancestor origin/research/v7 HEAD` 取代。当前
-final-sync 仅允许纳入 ec41b6b 的最终证据文件，完成测试后再 fast-forward
-`research/v7`，不创建 merge commit。
+ancestry gate `git merge-base --is-ancestor origin/research/v7 HEAD` 取代。ec41b6b
+最终证据已完成 final-sync，`research/v7` 已从 `365576d...` fast-forward 到
+`4204674...`，没有 merge commit。

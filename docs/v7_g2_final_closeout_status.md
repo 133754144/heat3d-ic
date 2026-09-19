@@ -35,5 +35,6 @@
 - `direct_parent_gate` 已标记 `SUPERSEDED_INVALID_GATE`；ancestry-based
   `merge-base --is-ancestor` gate 对现有 curated history 通过。
 
-本轮 visualization、跨主机 archive 与 allowlist 内容审计已通过；final-sync 正在
-现有 curated tip 上进行，随后只允许 fast-forward `research/v7`。
+本轮 visualization、跨主机 archive、allowlist 与 ancestry 审计已通过；`research/v7`
+已从 `365576d...` fast-forward 到 `4204674...`，没有 merge commit。receipt closure
+将在主线同步后记录。
